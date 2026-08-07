@@ -17,6 +17,7 @@ class ChatCompletionRequest(BaseModel):
 
     instance_id: str  # 目标 chat 实例 ID
     session_id: str | None = None  # 为空则惰性创建新会话
+    model: str | None = None  # 从实例 deployment 列表中选定的具体部署；None 表示用实例默认
     messages: list[ChatMessage]  # 累积的多轮对话上下文
     system_prompt: str | None = None  # 可选系统提示词（注入首条 system 消息）
     temperature: float = 1.0  # 服务端 clamp 到 [0, 2]

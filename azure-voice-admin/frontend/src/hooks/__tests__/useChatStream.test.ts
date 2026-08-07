@@ -186,6 +186,40 @@ describe('useChatStream', () => {
     ])
   })
 
+  it('includes the model in the request body when provided, omits it otherwise', async () => {
+    // 传入 model 时，请求体应带上 model
+    const bytesA = encodeFrames([
+      frame({ type: 'delta', content: 'ok' }),
+      frame({ type: 'done', usage: { input_tokens: 1, output_tokens: 1 } }),
+    ])
+    const fetchMockA = mockFetchOnce(makeFakeResponse([bytesA]))
+    const { result: resultA } = renderHook(() => useChatStream('inst-1'))
+
+    await act(async () => {
+      await resultA.current.sendMessage('hi', DEFAULT_PARAMS, 'gpt-4o')
+    })
+
+    const bodyA = JSON.parse((fetchMockA.mock.calls[0][1] as RequestInit).body as string)
+    expect(bodyA.model).toBe('gpt-4o')
+
+    vi.unstubAllGlobals()
+
+    // 未传入 model 时，请求体不应包含 model 键
+    const bytesB = encodeFrames([
+      frame({ type: 'delta', content: 'ok' }),
+      frame({ type: 'done', usage: { input_tokens: 1, output_tokens: 1 } }),
+    ])
+    const fetchMockB = mockFetchOnce(makeFakeResponse([bytesB]))
+    const { result: resultB } = renderHook(() => useChatStream('inst-1'))
+
+    await act(async () => {
+      await resultB.current.sendMessage('hi', DEFAULT_PARAMS)
+    })
+
+    const bodyB = JSON.parse((fetchMockB.mock.calls[0][1] as RequestInit).body as string)
+    expect('model' in bodyB).toBe(false)
+  })
+
   it('newConversation clears messages, sessionId, usage and error', async () => {
     const bytes = encodeFrames([
       frame({ type: 'session', session_id: 'sess-clear' }),

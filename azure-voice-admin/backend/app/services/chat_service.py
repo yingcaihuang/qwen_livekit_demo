@@ -64,6 +64,25 @@ class ChatService:
         return coerced
 
     @staticmethod
+    def _parse_deployments(deployment: str) -> list[str]:
+        """Split a comma-separated ``deployment`` string into a clean model list.
+
+        A chat instance may share one endpoint + api key across MANY
+        deployments, stored comma-separated (e.g. ``"gpt-5.5, gpt-4o"``). This
+        splits on commas, strips surrounding whitespace, drops empty entries,
+        and de-duplicates while preserving first-seen order.
+        """
+        seen: set[str] = set()
+        result: list[str] = []
+        for raw in (deployment or "").split(","):
+            name = raw.strip()
+            if not name or name in seen:
+                continue
+            seen.add(name)
+            result.append(name)
+        return result
+
+    @staticmethod
     def _azure_chat_url(endpoint: str) -> str:
         """Resolve the Azure Chat Completions URL (v1 / OpenAI-compatible surface).
 
@@ -246,8 +265,19 @@ class ChatService:
 
         # 3) Build the Azure request.
         url = self._azure_chat_url(instance["endpoint"])
+        # Choose the deployment/model for THIS turn. Only a model that belongs
+        # to this instance's own comma-separated list is honored (guards against
+        # arbitrary/unauthorized values); otherwise fall back to the first
+        # configured deployment, or the raw string if the list is empty.
+        deployments = self._parse_deployments(instance["deployment"])
+        if request.model and request.model in deployments:
+            chosen_model = request.model
+        elif deployments:
+            chosen_model = deployments[0]
+        else:
+            chosen_model = instance["deployment"]
         body: dict = {
-            "model": instance["deployment"],
+            "model": chosen_model,
             "messages": self._build_messages(request),
             "temperature": self._clamp_temperature(request.temperature),
             "stream": True,

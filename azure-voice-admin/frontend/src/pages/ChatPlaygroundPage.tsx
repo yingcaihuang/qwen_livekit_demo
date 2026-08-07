@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { AlertTriangle, MessageSquareText, Boxes, History } from 'lucide-react'
+import { AlertTriangle, MessageSquareText, Boxes, History, Cpu } from 'lucide-react'
 import { ChatMessageList } from '@/components/chat/ChatMessageList'
 import { ChatComposer } from '@/components/chat/ChatComposer'
 import { ChatParamsPanel } from '@/components/chat/ChatParamsPanel'
@@ -54,6 +54,22 @@ function ChatPlayground({ instanceId, resumeSessionId }: ChatPlaygroundProps) {
   const { data: instance } = useApi<InstanceDetail>(`/api/instances/${instanceId}`)
   const { messages, streaming, usage, timing, error, sendMessage, newConversation, loadSession } =
     useChatStream(instanceId)
+
+  // 解析实例的部署模型列表（chat 实例可用英文逗号分隔多个模型，共享 endpoint+key）
+  const deployments = (instance?.deployment ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+
+  // 当前选中的模型；实例加载或列表变化时同步到第一个可用模型
+  const [selectedModel, setSelectedModel] = useState<string>(deployments[0] ?? '')
+
+  useEffect(() => {
+    const first = deployments[0]
+    if (!first) return
+    setSelectedModel((prev) => (deployments.includes(prev) ? prev : first))
+    // deployments 由 instance.deployment 派生，用其字符串作为依赖键
+  }, [instance?.deployment]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // 续聊：加载状态与「仅执行一次」防抖（避免 StrictMode 下 effect 双跑重复加载）
   const [resuming, setResuming] = useState<boolean>(Boolean(resumeSessionId))
@@ -110,19 +126,52 @@ function ChatPlayground({ instanceId, resumeSessionId }: ChatPlaygroundProps) {
           </p>
         </div>
         {instance && (
-          <div className="flex items-center gap-2 rounded-lg border bg-card px-3 py-2 shadow-sm">
-            <div
-              className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-sm"
-              aria-hidden="true"
-            >
-              <Boxes className="h-4 w-4" />
-            </div>
-            <div className="min-w-0">
-              <div className="truncate text-sm font-semibold" title={instance.name}>
-                {instance.name}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* 模型选择器：从实例的部署列表中选择本次对话使用的模型 */}
+            {deployments.length > 0 && (
+              <div className="flex items-center gap-2 rounded-lg border bg-card px-3 py-2 shadow-sm">
+                <label
+                  htmlFor="chat-model-select"
+                  className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground"
+                >
+                  <Cpu className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+                  模型
+                </label>
+                {deployments.length === 1 ? (
+                  <span className="rounded-md bg-gradient-to-r from-emerald-500 to-teal-500 px-2.5 py-1 font-mono text-xs font-semibold text-white shadow-sm">
+                    {deployments[0]}
+                  </span>
+                ) : (
+                  <select
+                    id="chat-model-select"
+                    value={selectedModel}
+                    onChange={(e) => setSelectedModel(e.target.value)}
+                    className="rounded-md border border-input bg-gradient-to-r from-emerald-50 to-teal-50 px-2.5 py-1 font-mono text-xs font-semibold text-emerald-700 shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500"
+                  >
+                    {deployments.map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
-              <div className="truncate font-mono text-xs text-muted-foreground">
-                {instance.deployment}
+            )}
+
+            <div className="flex items-center gap-2 rounded-lg border bg-card px-3 py-2 shadow-sm">
+              <div
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-sm"
+                aria-hidden="true"
+              >
+                <Boxes className="h-4 w-4" />
+              </div>
+              <div className="min-w-0">
+                <div className="truncate text-sm font-semibold" title={instance.name}>
+                  {instance.name}
+                </div>
+                <div className="truncate font-mono text-xs text-muted-foreground">
+                  {instance.deployment}
+                </div>
               </div>
             </div>
           </div>
@@ -161,6 +210,7 @@ function ChatPlayground({ instanceId, resumeSessionId }: ChatPlaygroundProps) {
             params={params}
             onSend={sendMessage}
             onNewConversation={newConversation}
+            model={selectedModel}
           />
         </div>
 

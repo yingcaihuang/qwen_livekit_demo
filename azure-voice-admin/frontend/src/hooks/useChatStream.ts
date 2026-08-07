@@ -25,8 +25,9 @@ export interface UseChatStreamResult {
    * 追加用户消息并向 /api/chat/completions 发起 POST 流式请求。
    * @param content 用户输入文本
    * @param params  Chat 参数（system_prompt / temperature / max_tokens）
+   * @param model   可选，本次请求使用的部署模型名（属于实例的 deployment 列表）
    */
-  sendMessage: (content: string, params: ChatParams) => Promise<void>
+  sendMessage: (content: string, params: ChatParams, model?: string | null) => Promise<void>
   /** 清空上下文，开启新的 Chat_Session（需求 2.7） */
   newConversation: () => void
   /**
@@ -101,7 +102,7 @@ export function useChatStream(instanceId: string): UseChatStreamResult {
   )
 
   const sendMessage = useCallback(
-    async (content: string, params: ChatParams) => {
+    async (content: string, params: ChatParams, model?: string | null) => {
       // 已有请求进行中则忽略新的发送
       if (abortRef.current) return
 
@@ -169,17 +170,23 @@ export function useChatStream(instanceId: string): UseChatStreamResult {
       }
 
       try {
+        // 仅在提供了非空 model 时才写入请求体，避免影响未传入时的请求形状
+        const requestBody: Record<string, unknown> = {
+          instance_id: instanceId,
+          session_id: sessionIdRef.current ?? undefined,
+          messages: outgoing,
+          system_prompt: params.system_prompt,
+          temperature: params.temperature,
+          max_tokens: params.max_tokens,
+        }
+        if (model) {
+          requestBody.model = model
+        }
+
         const response = await fetch(CHAT_ENDPOINT, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            instance_id: instanceId,
-            session_id: sessionIdRef.current ?? undefined,
-            messages: outgoing,
-            system_prompt: params.system_prompt,
-            temperature: params.temperature,
-            max_tokens: params.max_tokens,
-          }),
+          body: JSON.stringify(requestBody),
           signal: controller.signal,
         })
 

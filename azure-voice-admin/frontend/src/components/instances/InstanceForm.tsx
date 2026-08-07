@@ -258,6 +258,9 @@ export function InstanceForm({ mode, instanceId, initialData }: InstanceFormProp
               onChange={(e) => handleChange('deployment', e.target.value)}
               placeholder="例如：gpt-4o-realtime-preview"
             />
+            <p className="text-xs text-muted-foreground">
+              对话类型可用英文逗号分隔填写多个模型，例如：gpt-5.5, gpt-4o；测试时可在对话页选择
+            </p>
             {errors.deployment && (
               <p className="text-sm text-destructive">{errors.deployment}</p>
             )}

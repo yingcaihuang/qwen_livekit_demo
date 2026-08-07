@@ -10,9 +10,11 @@ interface ChatComposerProps {
   /** 当前 Chat 参数（发送时透传给 sendMessage） */
   params: ChatParams
   /** 发送消息回调（追加用户消息并发起流式请求） */
-  onSend: (content: string, params: ChatParams) => void
+  onSend: (content: string, params: ChatParams, model?: string | null) => void
   /** 新对话回调（清空上下文，需求 2.7） */
   onNewConversation: () => void
+  /** 可选，本次发送使用的模型（透传给 onSend） */
+  model?: string | null
 }
 
 /**
@@ -25,15 +27,16 @@ export function ChatComposer({
   params,
   onSend,
   onNewConversation,
+  model,
 }: ChatComposerProps) {
   const [value, setValue] = useState('')
 
   const submit = useCallback(() => {
     const content = value.trim()
     if (!content || streaming) return
-    onSend(content, params)
+    onSend(content, params, model)
     setValue('')
-  }, [value, streaming, onSend, params])
+  }, [value, streaming, onSend, params, model])
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement>) => {

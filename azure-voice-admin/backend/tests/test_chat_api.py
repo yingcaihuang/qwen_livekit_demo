@@ -59,6 +59,23 @@ async def chat_instance_id(client):
     return resp.json()["id"]
 
 
+@pytest.fixture
+async def multi_deployment_instance_id(client):
+    """Create a chat instance sharing one endpoint across several deployments."""
+    resp = await client.post(
+        "/api/instances",
+        json={
+            "name": "multi-chat-instance",
+            "endpoint": "https://test.openai.azure.com",
+            "api_key": "sk-test-key-12345",
+            "deployment": "gpt-5.5, gpt-4o, gpt-4o-mini",
+            "type": "chat",
+        },
+    )
+    assert resp.status_code == 201
+    return resp.json()["id"]
+
+
 class _FakeContent:
     """Async-iterable stand-in for ``aiohttp`` response ``.content``."""
 
@@ -495,3 +512,90 @@ class TestChatRequestForwarding:
         assert body["temperature"] == 0.0
         # max_tokens omitted from the request => absent from the body (pass-through None).
         assert "max_tokens" not in body
+
+
+class TestChatModelSelection:
+    """Per-request model selection from an instance's deployment list.
+
+    A chat instance may list several deployments (comma-separated) sharing one
+    endpoint + api key. The frontend sends ``model`` to pick one; only a model
+    that belongs to THIS instance's list is honored, otherwise the first
+    configured deployment is used. The model travels in the request body only
+    (the URL never encodes the deployment).
+    """
+
+    async def test_selected_model_forwarded_when_in_list(
+        self, client, multi_deployment_instance_id, monkeypatch
+    ):
+        """A valid model from the instance's list is forwarded in body['model']."""
+        session = _capture(monkeypatch, _CapturingSession(_sse_chunks()))
+
+        resp = await client.post(
+            "/api/chat/completions",
+            json={
+                "instance_id": multi_deployment_instance_id,
+                "messages": [{"role": "user", "content": "hi"}],
+                "model": "gpt-4o",
+            },
+        )
+        assert resp.status_code == 200
+        assert session.calls[0]["json"]["model"] == "gpt-4o"
+
+    async def test_no_model_uses_first_deployment(
+        self, client, multi_deployment_instance_id, monkeypatch
+    ):
+        """With no model provided, the first deployment in the list is used."""
+        session = _capture(monkeypatch, _CapturingSession(_sse_chunks()))
+
+        resp = await client.post(
+            "/api/chat/completions",
+            json={
+                "instance_id": multi_deployment_instance_id,
+                "messages": [{"role": "user", "content": "hi"}],
+            },
+        )
+        assert resp.status_code == 200
+        assert session.calls[0]["json"]["model"] == "gpt-5.5"
+
+    async def test_invalid_model_falls_back_to_first(
+        self, client, multi_deployment_instance_id, monkeypatch
+    ):
+        """A model not in the instance's list is rejected and falls back to the first.
+
+        An arbitrary/unauthorized model value is never forwarded to Azure.
+        """
+        session = _capture(monkeypatch, _CapturingSession(_sse_chunks()))
+
+        resp = await client.post(
+            "/api/chat/completions",
+            json={
+                "instance_id": multi_deployment_instance_id,
+                "messages": [{"role": "user", "content": "hi"}],
+                "model": "evil-model",
+            },
+        )
+        assert resp.status_code == 200
+        assert session.calls[0]["json"]["model"] == "gpt-5.5"
+
+
+class TestParseDeployments:
+    """Unit tests for ChatService._parse_deployments."""
+
+    def test_parse_deployments_strips_dedupes_and_drops_empties(self):
+        from app.services.chat_service import ChatService
+
+        assert ChatService._parse_deployments("gpt-5.5, gpt-4o ,, gpt-4o, gpt-4o-mini") == [
+            "gpt-5.5",
+            "gpt-4o",
+            "gpt-4o-mini",
+        ]
+
+    def test_parse_deployments_single_value(self):
+        from app.services.chat_service import ChatService
+
+        assert ChatService._parse_deployments("gpt-5.5") == ["gpt-5.5"]
+
+    def test_parse_deployments_empty_string(self):
+        from app.services.chat_service import ChatService
+
+        assert ChatService._parse_deployments("") == []
