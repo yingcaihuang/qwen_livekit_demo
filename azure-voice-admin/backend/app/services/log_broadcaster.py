@@ -113,6 +113,9 @@ class LogBroadcaster:
                     )
                     continue
 
+                # Skip if parsed JSON is not a dict (e.g., a bare string)
+                if not isinstance(data, dict):
+                    continue
                 # Build a normalized log entry
                 log_entry = {
                     "session_id": session_id,
@@ -161,6 +164,7 @@ class LogBroadcaster:
                     entry.get("payload", "{}"),
                 )
                 for entry in buffer
+                if isinstance(entry, dict)
             ],
         )
         await db.commit()
@@ -171,6 +175,8 @@ class LogBroadcaster:
         buffer = self._log_buffers.get(session_id, [])
         messages = []
         for entry in buffer:
+            if not isinstance(entry, dict):
+                continue
             if entry.get("event_type") == "message.added":
                 try:
                     payload = json.loads(entry.get("payload", "{}"))
