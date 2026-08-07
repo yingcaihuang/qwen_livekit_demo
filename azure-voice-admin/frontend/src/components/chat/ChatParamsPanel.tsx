@@ -1,12 +1,19 @@
-import { Settings2, Thermometer, Hash, Gauge, Timer, Zap } from 'lucide-react'
+import { Settings2, Thermometer, Hash, Gauge, Timer, Zap, Cpu } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
+import { ModelSelect } from '@/components/chat/ModelSelect'
 import { formatDuration } from '@/lib/format'
 import type { ChatParams, ChatTiming, TokenUsage } from '@/types'
 
 interface ChatParamsPanelProps {
   params: ChatParams
   onChange: (params: ChatParams) => void
+  /** 实例可用的部署模型列表 */
+  deployments: string[]
+  /** 当前选中的模型 */
+  selectedModel: string
+  /** 模型切换回调 */
+  onModelChange: (model: string) => void
   /** 最近一次响应的用量（可用时展示） */
   usage?: TokenUsage | null
   /** 最近一次响应的性能计时（可用时展示） */
@@ -23,7 +30,15 @@ function clampTemperature(value: number): number {
  * 参数面板：system prompt / temperature(0-2) / max_tokens(正整数或留空)。
  * 状态由上层页面持有并通过 onChange 回传（需求 2.4/2.5/2.6）。
  */
-export function ChatParamsPanel({ params, onChange, usage, timing }: ChatParamsPanelProps) {
+export function ChatParamsPanel({
+  params,
+  onChange,
+  deployments,
+  selectedModel,
+  onModelChange,
+  usage,
+  timing,
+}: ChatParamsPanelProps) {
   const handleSystemPrompt = (system_prompt: string) => {
     onChange({ ...params, system_prompt })
   }
@@ -57,6 +72,17 @@ export function ChatParamsPanel({ params, onChange, usage, timing }: ChatParamsP
         </div>
         <h2 className="text-sm font-semibold">对话参数</h2>
       </div>
+
+      {/* Model */}
+      {deployments.length > 0 && (
+        <div className="space-y-1.5">
+          <Label className="flex items-center gap-1.5">
+            <Cpu className="h-3.5 w-3.5 text-emerald-600" aria-hidden="true" />
+            模型 / Model
+          </Label>
+          <ModelSelect value={selectedModel} options={deployments} onChange={onModelChange} />
+        </div>
+      )}
 
       {/* System prompt */}
       <div className="space-y-1.5">
