@@ -28,7 +28,9 @@ export function InstancesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center p-12">
-        <p className="text-muted-foreground">加载中...</p>
+        <div className="rounded-xl border bg-card px-8 py-6 text-center shadow-sm">
+          <p className="text-muted-foreground">加载中...</p>
+        </div>
       </div>
     )
   }
@@ -36,17 +38,28 @@ export function InstancesPage() {
   if (error) {
     return (
       <div className="flex items-center justify-center p-12">
-        <p className="text-destructive">加载失败: {error.message}</p>
+        <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-8 py-6 text-center shadow-sm">
+          <p className="text-destructive">加载失败: {error.message}</p>
+        </div>
       </div>
     )
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">实例管理</h1>
-        <Button onClick={() => navigate('/instances/new')}>
-          <Plus />
+      {/* Header */}
+      <div className="flex items-end justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-3xl font-bold tracking-tight text-transparent">
+            实例管理
+          </h1>
+          <p className="text-sm text-muted-foreground">管理你的 Azure OpenAI 语音实例</p>
+        </div>
+        <Button
+          onClick={() => navigate('/instances/new')}
+          className="bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md transition hover:from-indigo-700 hover:to-violet-700 hover:shadow-lg"
+        >
+          <Plus aria-hidden="true" />
           新建实例
         </Button>
       </div>

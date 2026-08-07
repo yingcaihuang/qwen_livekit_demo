@@ -77,19 +77,25 @@ export function HistoryPage() {
   if (error) {
     return (
       <div className="flex items-center justify-center p-12">
-        <p className="text-destructive">加载失败: {error}</p>
+        <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-8 py-6 text-center shadow-sm">
+          <p className="text-destructive">加载失败: {error}</p>
+        </div>
       </div>
     )
   }
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">会话历史</h1>
+      {/* Header */}
+      <div className="space-y-1">
+        <h1 className="bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-3xl font-bold tracking-tight text-transparent">
+          会话历史
+        </h1>
+        <p className="text-sm text-muted-foreground">查看历史语音会话与用量</p>
       </div>
 
       {/* Filter */}
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-gradient-to-r from-muted/50 to-transparent px-4 py-3 shadow-sm">
         <label htmlFor="instance-filter" className="text-sm font-medium text-muted-foreground">
           按实例筛选:
         </label>
@@ -97,7 +103,7 @@ export function HistoryPage() {
           id="instance-filter"
           value={instanceFilter}
           onChange={(e) => handleFilterChange(e.target.value)}
-          className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+          className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/40 hover:border-indigo-400/60"
         >
           <option value="">全部实例</option>
           {instances.map((instance) => (
@@ -111,7 +117,9 @@ export function HistoryPage() {
       {/* Session List */}
       {loading ? (
         <div className="flex items-center justify-center p-12">
-          <p className="text-muted-foreground">加载中...</p>
+          <div className="rounded-xl border bg-card px-8 py-6 text-center shadow-sm">
+            <p className="text-muted-foreground">加载中...</p>
+          </div>
         </div>
       ) : (
         <SessionList sessions={sessionsData?.items ?? []} onDelete={handleDelete} />
@@ -119,9 +127,10 @@ export function HistoryPage() {
 
       {/* Pagination Controls */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between rounded-xl border bg-card px-4 py-3 shadow-sm">
           <p className="text-sm text-muted-foreground">
-            共 {sessionsData?.total ?? 0} 条记录，第 {page}/{totalPages} 页
+            共 <span className="font-semibold text-foreground">{sessionsData?.total ?? 0}</span> 条记录，第{' '}
+            <span className="font-semibold text-foreground">{page}</span>/{totalPages} 页
           </p>
           <div className="flex items-center gap-2">
             <Button
