@@ -185,14 +185,17 @@ class ProcessManager:
         return [sid for sid, proc in self._processes.items() if proc.returncode is None]
 
     def get_stdout_reader(self, session_id: str) -> asyncio.StreamReader | None:
-        """Return the stdout StreamReader of the agent process for log broadcasting.
+        """Return the stderr StreamReader of the agent process for log broadcasting.
 
-        Returns None if no process exists for the session or if stdout is unavailable.
+        Our structured JSON logs are written to stderr to avoid pollution from
+        livekit-agents framework logs which go to stdout.
+
+        Returns None if no process exists for the session or if stderr is unavailable.
         """
         process = self._processes.get(session_id)
         if process is None:
             return None
-        return process.stdout
+        return process.stderr
 
 
 # Module-level singleton instance

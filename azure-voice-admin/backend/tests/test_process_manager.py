@@ -212,7 +212,7 @@ class TestGetStdoutReader:
         assert pm.get_stdout_reader("unknown") is None
 
     @pytest.mark.asyncio
-    async def test_returns_stdout_for_running_process(self, pm):
+    async def test_returns_stderr_for_running_process(self, pm):
         proc = await asyncio.create_subprocess_exec(
             sys.executable,
             "-c",
@@ -224,7 +224,7 @@ class TestGetStdoutReader:
 
         reader = pm.get_stdout_reader("stdout-session")
         assert reader is not None
-        assert reader is proc.stdout
+        assert reader is proc.stderr
 
         proc.kill()
         await proc.wait()

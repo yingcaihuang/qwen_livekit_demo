@@ -1,7 +1,7 @@
 """Log Broadcaster service for managing real-time debug log distribution.
 
 Responsible for:
-- Collecting JSON lines from Agent Worker stdout streams
+- Collecting JSON lines from Agent Worker stderr streams
 - Broadcasting log entries to subscribed WebSocket clients in real-time
 - Buffering logs for batch persistence after session ends
 """
@@ -24,7 +24,7 @@ class LogBroadcaster:
     Internal state:
     - _subscribers: session_id → set of connected WebSocket clients
     - _log_buffers: session_id → list of buffered log entry dicts
-    - _reader_tasks: session_id → asyncio Task reading stdout
+    - _reader_tasks: session_id → asyncio Task reading stderr
     """
 
     _instance: "LogBroadcaster | None" = None
@@ -83,17 +83,17 @@ class LogBroadcaster:
                 self._subscribers[session_id].discard(ws)
 
     async def start_reading(self, session_id: str, stdout_reader: asyncio.StreamReader) -> None:
-        """Start an asyncio task that reads JSON lines from stdout and broadcasts them.
+        """Start an asyncio task that reads JSON lines from stderr and broadcasts them.
 
         Args:
             session_id: The session this reader is associated with.
-            stdout_reader: The StreamReader connected to Agent Worker's stdout.
+            stdout_reader: The StreamReader connected to Agent Worker's stderr.
         """
         task = asyncio.create_task(self._read_stdout(session_id, stdout_reader))
         self._reader_tasks[session_id] = task
 
     async def _read_stdout(self, session_id: str, reader: asyncio.StreamReader) -> None:
-        """Internal coroutine that reads lines from stdout and broadcasts parsed entries."""
+        """Internal coroutine that reads lines from stderr and broadcasts parsed entries."""
         try:
             while True:
                 line = await reader.readline()
@@ -131,7 +131,7 @@ class LogBroadcaster:
         except asyncio.CancelledError:
             logger.info("Reader task cancelled for session %s", session_id)
         except Exception as e:
-            logger.error("Error reading stdout for session %s: %s", session_id, e)
+            logger.error("Error reading stderr for session %s: %s", session_id, e)
 
     def stop_reading(self, session_id: str) -> None:
         """Cancel the reading task for a session."""

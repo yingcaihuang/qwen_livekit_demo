@@ -4,7 +4,7 @@ This script is executed as a subprocess by the Process Manager. It:
 1. Reads Azure credentials and LiveKit room info from environment variables.
 2. Connects to the specified LiveKit room using livekit-agents.
 3. Uses Azure OpenAI Realtime API for voice interaction via the openai realtime plugin.
-4. Outputs JSON lines to stdout for debug logging.
+4. Outputs JSON lines to stderr for debug logging (avoiding livekit-agents stdout pollution).
 5. On session end, HTTP POSTs token usage to the management server.
 
 Environment variables (all required):
@@ -37,7 +37,7 @@ from livekit.agents import (
 from livekit.plugins import openai, silero
 
 # ---------------------------------------------------------------------------
-# Structured stdout logging helpers
+# Structured stderr logging helpers
 # ---------------------------------------------------------------------------
 
 
@@ -51,7 +51,7 @@ def emit_event(
     direction: str = "internal",
     payload: str = "{}",
 ) -> None:
-    """Write a structured JSON event line to stdout."""
+    """Write a structured JSON event line to stderr."""
     line = json.dumps(
         {
             "type": "event",
@@ -62,11 +62,11 @@ def emit_event(
         },
         ensure_ascii=False,
     )
-    print(line, flush=True)
+    print(line, file=sys.stderr, flush=True)
 
 
 def emit_error(message: str, details: str = "") -> None:
-    """Write a structured error JSON line to stdout."""
+    """Write a structured error JSON line to stderr."""
     line = json.dumps(
         {
             "type": "error",
@@ -76,7 +76,7 @@ def emit_error(message: str, details: str = "") -> None:
         },
         ensure_ascii=False,
     )
-    print(line, flush=True)
+    print(line, file=sys.stderr, flush=True)
 
 
 # ---------------------------------------------------------------------------
