@@ -1,12 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { AlertTriangle, MessageSquareText, Boxes } from 'lucide-react'
+import { AlertTriangle, MessageSquareText, Boxes, History } from 'lucide-react'
 import { ChatMessageList } from '@/components/chat/ChatMessageList'
 import { ChatComposer } from '@/components/chat/ChatComposer'
 import { ChatParamsPanel } from '@/components/chat/ChatParamsPanel'
 import { useChatStream } from '@/hooks/useChatStream'
 import { useApi } from '@/hooks/useApi'
-import type { ChatParams, InstanceDetail } from '@/types'
+import type { ChatMessage, ChatParams, InstanceDetail, Message } from '@/types'
 
 const DEFAULT_PARAMS: ChatParams = {
   system_prompt: '',
@@ -17,9 +17,10 @@ const DEFAULT_PARAMS: ChatParams = {
 export function ChatPlaygroundPage() {
   const [searchParams] = useSearchParams()
   const instanceId = searchParams.get('instance') ?? ''
+  const resumeSessionId = searchParams.get('session')
 
   return instanceId ? (
-    <ChatPlayground instanceId={instanceId} />
+    <ChatPlayground instanceId={instanceId} resumeSessionId={resumeSessionId} />
   ) : (
     <MissingInstance />
   )
@@ -44,13 +45,49 @@ function MissingInstance() {
 
 interface ChatPlaygroundProps {
   instanceId: string
+  /** 若存在，则续聊该会话：加载历史消息并复用 session_id（可能为 null） */
+  resumeSessionId: string | null
 }
 
-function ChatPlayground({ instanceId }: ChatPlaygroundProps) {
+function ChatPlayground({ instanceId, resumeSessionId }: ChatPlaygroundProps) {
   const [params, setParams] = useState<ChatParams>(DEFAULT_PARAMS)
   const { data: instance } = useApi<InstanceDetail>(`/api/instances/${instanceId}`)
-  const { messages, streaming, usage, timing, error, sendMessage, newConversation } =
+  const { messages, streaming, usage, timing, error, sendMessage, newConversation, loadSession } =
     useChatStream(instanceId)
+
+  // 续聊：加载状态与「仅执行一次」防抖（避免 StrictMode 下 effect 双跑重复加载）
+  const [resuming, setResuming] = useState<boolean>(Boolean(resumeSessionId))
+  const resumedRef = useRef(false)
+
+  useEffect(() => {
+    if (!resumeSessionId || resumedRef.current) return
+    resumedRef.current = true
+
+    let cancelled = false
+    setResuming(true)
+    ;(async () => {
+      try {
+        const res = await fetch(`/api/sessions/${resumeSessionId}/messages`)
+        if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`)
+        const history = (await res.json()) as Message[]
+        if (cancelled) return
+        const mapped: ChatMessage[] = history.map((m) => ({
+          role: m.role,
+          content: m.content,
+        }))
+        loadSession(resumeSessionId, mapped)
+      } catch {
+        // 加载失败时静默回退为新对话（错误横幅仅用于发送阶段的流式错误）
+        if (!cancelled) loadSession(resumeSessionId, [])
+      } finally {
+        if (!cancelled) setResuming(false)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [resumeSessionId, loadSession])
 
   return (
     <div className="flex min-h-[calc(100vh-3rem)] flex-col gap-4 lg:h-[calc(100vh-3rem)]">
@@ -61,7 +98,16 @@ function ChatPlayground({ instanceId }: ChatPlaygroundProps) {
             <MessageSquareText className="h-6 w-6 text-emerald-600" aria-hidden="true" />
             对话测试 / Chat Playground
           </h1>
-          <p className="text-sm text-muted-foreground">多轮流式对话，实时逐字渲染模型回复</p>
+          <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            {resumeSessionId ? (
+              <>
+                <History className="h-3.5 w-3.5 text-emerald-600" aria-hidden="true" />
+                继续之前的对话
+              </>
+            ) : (
+              '多轮流式对话，实时逐字渲染模型回复'
+            )}
+          </p>
         </div>
         {instance && (
           <div className="flex items-center gap-2 rounded-lg border bg-card px-3 py-2 shadow-sm">
@@ -102,7 +148,13 @@ function ChatPlayground({ instanceId }: ChatPlaygroundProps) {
         {/* Conversation */}
         <div className="flex min-h-0 flex-col overflow-hidden rounded-xl border bg-card shadow-sm">
           <div className="min-h-0 flex-1 overflow-y-auto p-4">
-            <ChatMessageList messages={messages} streaming={streaming} />
+            {resuming ? (
+              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                加载会话中…
+              </div>
+            ) : (
+              <ChatMessageList messages={messages} streaming={streaming} />
+            )}
           </div>
           <ChatComposer
             streaming={streaming}

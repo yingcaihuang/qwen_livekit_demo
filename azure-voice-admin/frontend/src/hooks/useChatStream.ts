@@ -29,6 +29,13 @@ export interface UseChatStreamResult {
   sendMessage: (content: string, params: ChatParams) => Promise<void>
   /** 清空上下文，开启新的 Chat_Session（需求 2.7） */
   newConversation: () => void
+  /**
+   * 载入已有会话以继续对话：复用给定 session_id 并预填历史消息。
+   * 后续 sendMessage 会以该 session_id 追加到同一后端会话。
+   * @param sessionId       要续聊的会话 ID
+   * @param initialMessages 该会话的历史消息（user/assistant）
+   */
+  loadSession: (sessionId: string, initialMessages: ChatMessage[]) => void
 }
 
 const CHAT_ENDPOINT = '/api/chat/completions'
@@ -74,6 +81,24 @@ export function useChatStream(instanceId: string): UseChatStreamResult {
     setError(null)
     setStreaming(false)
   }, [])
+
+  const loadSession = useCallback(
+    (resumeSessionId: string, initialMessages: ChatMessage[]) => {
+      // 取消进行中的请求（若有）
+      abortRef.current?.abort()
+      abortRef.current = null
+      // 复用会话 ID，并同步 ref 以便 sendMessage 立即读取到最新值
+      sessionIdRef.current = resumeSessionId
+      setSessionId(resumeSessionId)
+      messagesRef.current = initialMessages
+      setMessages(initialMessages)
+      setUsage(null)
+      setTiming(null)
+      setError(null)
+      setStreaming(false)
+    },
+    [],
+  )
 
   const sendMessage = useCallback(
     async (content: string, params: ChatParams) => {
@@ -218,5 +243,6 @@ export function useChatStream(instanceId: string): UseChatStreamResult {
     error,
     sendMessage,
     newConversation,
+    loadSession,
   }
 }

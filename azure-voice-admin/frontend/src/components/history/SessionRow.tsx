@@ -72,9 +72,21 @@ function formatTime(isoString: string): string {
   })
 }
 
-/** 根据历史条目类型解析详情路由：image → 图像详情，其余 → 会话详情。 */
+/**
+ * 根据历史条目类型解析目标路由：
+ * - image → 只读图像详情
+ * - chat  → 可续聊的对话测试页（复用 session_id，加载历史消息后继续对话）
+ * - voice → 只读会话详情
+ */
 function detailPath(item: HistoryItem): string {
-  return item.type === 'image' ? `/history/image/${item.id}` : `/history/${item.id}`
+  switch (item.type) {
+    case 'image':
+      return `/history/image/${item.id}`
+    case 'chat':
+      return `/chat/new?instance=${item.instance_id}&session=${item.id}`
+    default:
+      return `/history/${item.id}`
+  }
 }
 
 export function SessionRow({ item, onDelete }: HistoryRowProps) {

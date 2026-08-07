@@ -6,9 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useApi } from '@/hooks/useApi'
 import type { Session, LogEntry, Message } from '@/types'
 
-const statusConfig: Record<Session['status'], { label: string; className: string }> = {
+const statusConfig: Record<string, { label: string; className: string }> = {
   connecting: { label: '连接中', className: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
   connected: { label: '已连接', className: 'bg-blue-100 text-blue-800 border-blue-200' },
+  active: { label: '进行中', className: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
   completed: { label: '已完成', className: 'bg-green-100 text-green-800 border-green-200' },
   error: { label: '错误', className: 'bg-red-100 text-red-800 border-red-200' },
   cancelled: { label: '已取消', className: 'bg-gray-100 text-gray-800 border-gray-200' },
@@ -61,7 +62,10 @@ export function SessionDetailPage() {
     )
   }
 
-  const status = statusConfig[session.status]
+  const status = statusConfig[session.status] ?? {
+    label: session.status,
+    className: 'bg-gray-100 text-gray-800 border-gray-200',
+  }
 
   return (
     <div className="space-y-6 p-6">

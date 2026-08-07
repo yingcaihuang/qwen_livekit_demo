@@ -150,6 +150,42 @@ describe('useChatStream', () => {
     expect(result.current.streaming).toBe(false)
   })
 
+  it('loadSession preloads messages and reuses session_id on the next send', async () => {
+    const bytes = encodeFrames([
+      frame({ type: 'delta', content: 'continued' }),
+      frame({ type: 'done', usage: { input_tokens: 4, output_tokens: 6 } }),
+    ])
+    const fetchMock = mockFetchOnce(makeFakeResponse([bytes]))
+
+    const { result } = renderHook(() => useChatStream('inst-1'))
+
+    act(() => {
+      result.current.loadSession('sess-resume', [
+        { role: 'user', content: '之前的问题' },
+        { role: 'assistant', content: '之前的回答' },
+      ])
+    })
+
+    expect(result.current.sessionId).toBe('sess-resume')
+    expect(result.current.messages).toEqual([
+      { role: 'user', content: '之前的问题' },
+      { role: 'assistant', content: '之前的回答' },
+    ])
+
+    await act(async () => {
+      await result.current.sendMessage('新的问题', DEFAULT_PARAMS)
+    })
+
+    // 请求体应带上续聊的 session_id，并把新消息追加到已有历史之后
+    const body = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string)
+    expect(body.session_id).toBe('sess-resume')
+    expect(body.messages).toEqual([
+      { role: 'user', content: '之前的问题' },
+      { role: 'assistant', content: '之前的回答' },
+      { role: 'user', content: '新的问题' },
+    ])
+  })
+
   it('newConversation clears messages, sessionId, usage and error', async () => {
     const bytes = encodeFrames([
       frame({ type: 'session', session_id: 'sess-clear' }),
