@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useApi } from '@/hooks/useApi'
-import type { Session, LogEntry } from '@/types'
+import type { Session, LogEntry, Message } from '@/types'
 
 const statusConfig: Record<Session['status'], { label: string; className: string }> = {
   connecting: { label: '连接中', className: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
@@ -41,6 +41,7 @@ export function SessionDetailPage() {
   const navigate = useNavigate()
   const { data: session, loading, error } = useApi<Session>(`/api/sessions/${id}`)
   const { data: logs } = useApi<LogEntry[]>(`/api/sessions/${id}/logs`)
+  const { data: messages } = useApi<Message[]>(`/api/sessions/${id}/messages`)
 
   if (loading) {
     return (
@@ -218,6 +219,44 @@ export function SessionDetailPage() {
         ) : (
           <div className="flex items-center justify-center p-8 border rounded-lg">
             <p className="text-muted-foreground">暂无调试日志</p>
+          </div>
+        )}
+      </div>
+
+      {/* Conversation Transcript */}
+      <div>
+        <h2 className="text-lg font-semibold mb-4">对话记录</h2>
+        {messages && messages.length > 0 ? (
+          <div className="space-y-3 border rounded-lg p-4 max-h-[600px] overflow-y-auto">
+            {messages.map((msg) => (
+              <div
+                key={msg.id}
+                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-[75%] rounded-lg px-4 py-2 ${
+                    msg.role === 'user'
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-100 text-gray-900'
+                  }`}
+                >
+                  <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                  <p
+                    className={`text-xs mt-1 ${
+                      msg.role === 'user' ? 'text-blue-100' : 'text-gray-400'
+                    }`}
+                  >
+                    {msg.timestamp
+                      ? new Date(msg.timestamp).toLocaleTimeString('zh-CN')
+                      : ''}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex items-center justify-center p-8 border rounded-lg">
+            <p className="text-muted-foreground">暂无对话记录</p>
           </div>
         )}
       </div>

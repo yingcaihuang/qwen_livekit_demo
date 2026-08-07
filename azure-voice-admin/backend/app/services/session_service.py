@@ -149,12 +149,13 @@ class SessionService:
             # ProcessManager not yet implemented (task 3.4) — skip gracefully
             pass
 
-        # Persist debug logs to database
+        # Persist debug logs and conversation messages to database
         try:
             from app.services.log_broadcaster import get_log_broadcaster
 
             broadcaster = get_log_broadcaster()
             broadcaster.stop_reading(session_id)
+            await broadcaster.persist_messages(session_id, db)
             await broadcaster.persist_logs(session_id, db)
         except Exception as e:
             logging.getLogger("session_service").error(

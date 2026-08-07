@@ -280,6 +280,18 @@ async def entrypoint(ctx: JobContext) -> None:
                 ),
             )
 
+        @session.on("conversation_item_added")
+        def _on_conversation_item(ev) -> None:
+            """Capture conversation transcripts (user input and AI responses)."""
+            role = getattr(ev, "role", None)
+            text = getattr(ev, "text", None)
+            if role and text:
+                emit_event(
+                    "message.added",
+                    direction="inbound" if role == "user" else "outbound",
+                    payload=json.dumps({"role": role, "text": text}),
+                )
+
         # Subscribe to errors
         @session.on("error")
         def _on_error(ev) -> None:

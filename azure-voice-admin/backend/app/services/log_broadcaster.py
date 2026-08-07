@@ -166,6 +166,39 @@ class LogBroadcaster:
         await db.commit()
         logger.info("Persisted %d log entries for session %s", len(buffer), session_id)
 
+    async def persist_messages(self, session_id: str, db: aiosqlite.Connection) -> None:
+        """Extract message.added events from buffer and save to session_messages table."""
+        buffer = self._log_buffers.get(session_id, [])
+        messages = []
+        for entry in buffer:
+            if entry.get("event_type") == "message.added":
+                try:
+                    payload = json.loads(entry.get("payload", "{}"))
+                    role = payload.get("role")
+                    text = payload.get("text")
+                    if role and text:
+                        messages.append(
+                            (
+                                session_id,
+                                role,
+                                text,
+                                entry.get("timestamp", ""),
+                            )
+                        )
+                except (json.JSONDecodeError, TypeError):
+                    pass
+
+        if messages:
+            await db.executemany(
+                """
+                INSERT INTO session_messages (session_id, role, content, timestamp)
+                VALUES (?, ?, ?, ?)
+                """,
+                messages,
+            )
+            await db.commit()
+            logger.info("Persisted %d messages for session %s", len(messages), session_id)
+
     def get_buffer(self, session_id: str) -> list[dict[str, Any]]:
         """Get the current log buffer for a session (for testing/inspection)."""
         return self._log_buffers.get(session_id, [])

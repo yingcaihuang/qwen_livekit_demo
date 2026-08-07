@@ -36,3 +36,13 @@ CREATE INDEX IF NOT EXISTS idx_sessions_instance_id ON sessions(instance_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_start_time ON sessions(start_time DESC);
 CREATE INDEX IF NOT EXISTS idx_session_logs_session_id ON session_logs(session_id);
 CREATE INDEX IF NOT EXISTS idx_session_logs_event_type ON session_logs(event_type);
+
+CREATE TABLE IF NOT EXISTS session_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+    role TEXT NOT NULL,  -- 'user' or 'assistant'
+    content TEXT NOT NULL,
+    timestamp TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_session_messages_session_id ON session_messages(session_id);

@@ -83,3 +83,12 @@ export interface SessionResponse {
   livekit_token: string;
   livekit_url: string;
 }
+
+/** 对话消息记录 */
+export interface Message {
+  id: number;
+  session_id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+}

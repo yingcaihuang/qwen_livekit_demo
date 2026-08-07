@@ -98,6 +98,43 @@ async def get_session_logs(session_id: str, db: aiosqlite.Connection = Depends(g
     ]
 
 
+@router.get("/{session_id}/messages")
+async def get_session_messages(session_id: str, db: aiosqlite.Connection = Depends(get_db)):
+    """Get conversation transcript for a session.
+
+    Returns an array of messages (user and assistant) from the session_messages table.
+    Returns 404 if session doesn't exist.
+    """
+    from fastapi import HTTPException
+
+    # Verify session exists
+    cursor = await db.execute("SELECT id FROM sessions WHERE id = ?", (session_id,))
+    if not await cursor.fetchone():
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    cursor = await db.execute(
+        """
+        SELECT id, session_id, role, content, timestamp
+        FROM session_messages
+        WHERE session_id = ?
+        ORDER BY id ASC
+        """,
+        (session_id,),
+    )
+    rows = await cursor.fetchall()
+
+    return [
+        {
+            "id": row[0],
+            "session_id": row[1],
+            "role": row[2],
+            "content": row[3],
+            "timestamp": row[4],
+        }
+        for row in rows
+    ]
+
+
 @router.post("/{session_id}/stop")
 async def stop_session(session_id: str, db: aiosqlite.Connection = Depends(get_db)):
     """Stop an active session.
