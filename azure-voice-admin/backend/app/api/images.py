@@ -51,6 +51,17 @@ async def list_generations(
     )
 
 
+@router.get("/queue")
+async def list_queue(db: aiosqlite.Connection = Depends(get_db)) -> dict:
+    """Return the live image job queue (pending + processing jobs).
+
+    Registered with a literal ``/queue`` path BEFORE the ``/{generation_id}``
+    detail route so the word ``queue`` is not captured as a generation id.
+    Delegates to :meth:`ImageService.list_queue`.
+    """
+    return await _image_service.list_queue(db)
+
+
 @router.post("/generations", status_code=HTTP_202_ACCEPTED)
 async def create_generation(
     instance_id: str = Form(...),

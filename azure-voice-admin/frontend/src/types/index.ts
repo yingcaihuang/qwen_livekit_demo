@@ -210,6 +210,30 @@ export interface ImageGeneration {
   error_message?: string | null;
 }
 
+/**
+ * 图像生成队列中的单个任务项（GET /api/images/queue 返回的 items 元素）。
+ * 仅包含进行中的任务（pending / processing），按入队顺序（最旧优先）排列。
+ */
+export interface ImageQueueItem {
+  id: string;
+  generation_id: string;
+  instance_id: string;
+  instance_name: string;
+  prompt: string;
+  status: 'pending' | 'processing';
+  n: number;
+  size: string;
+  created_at: string;
+}
+
+/** 图像生成队列快照（GET /api/images/queue 响应）。 */
+export interface ImageQueue {
+  items: ImageQueueItem[];
+  pending: number;
+  processing: number;
+  total: number;
+}
+
 // ---------------------------------------------------------------------------
 // Unified History（统一历史）
 // ---------------------------------------------------------------------------

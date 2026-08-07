@@ -590,6 +590,123 @@ class TestRecoverInterruptedJobs:
             assert body["error_message"] == "服务重启导致生成任务中断，请重新发起"
 
 
+class TestImageQueue:
+    """Tests for GET /api/images/queue (live pending/processing job queue)."""
+
+    async def test_empty_queue(self, client):
+        """With no jobs, the queue is empty and all counts are zero."""
+        resp = await client.get("/api/images/queue")
+        assert resp.status_code == 200
+        assert resp.json() == {"items": [], "pending": 0, "processing": 0, "total": 0}
+
+    async def test_queue_not_shadowed_by_detail_route(self, client):
+        """GET /api/images/queue resolves to the queue, not the {generation_id} route.
+
+        A generation named "queue" does not exist, so if the literal ``/queue``
+        path were captured by ``/{generation_id}`` this would 404. Instead we
+        must get 200 with the queue shape.
+        """
+        resp = await client.get("/api/images/queue")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert set(body.keys()) == {"items", "pending", "processing", "total"}
+
+    async def test_pending_jobs_appear_in_order_with_instance_name(self, client, image_instance_id):
+        """Enqueued (unprocessed) jobs show as pending, ordered by created_at."""
+        first = await client.post(
+            "/api/images/generations",
+            data={"instance_id": image_instance_id, "prompt": "first prompt", "n": 2},
+        )
+        second = await client.post(
+            "/api/images/generations",
+            data={"instance_id": image_instance_id, "prompt": "second prompt"},
+        )
+        assert first.status_code == 202
+        assert second.status_code == 202
+        first_id = first.json()["generation_id"]
+        second_id = second.json()["generation_id"]
+
+        resp = await client.get("/api/images/queue")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["pending"] == 2
+        assert body["processing"] == 0
+        assert body["total"] == 2
+        assert len(body["items"]) == 2
+
+        # Ordered by created_at ASC (oldest first = queue order).
+        ids = [item["id"] for item in body["items"]]
+        assert ids == [first_id, second_id]
+
+        item = body["items"][0]
+        assert item["id"] == item["generation_id"] == first_id
+        assert item["instance_id"] == image_instance_id
+        assert item["instance_name"] == "image-instance"
+        assert item["prompt"] == "first prompt"
+        assert item["status"] == "pending"
+        assert item["n"] == 2
+        assert item["size"] == "1024x1024"
+        assert item["created_at"]
+
+    async def test_completed_job_leaves_queue(self, client, image_instance_id, monkeypatch):
+        """Processing one job to completion removes it; the other remains."""
+        _patch_azure(monkeypatch, _azure_payload())
+
+        first = await client.post(
+            "/api/images/generations",
+            data={"instance_id": image_instance_id, "prompt": "process me"},
+        )
+        second = await client.post(
+            "/api/images/generations",
+            data={"instance_id": image_instance_id, "prompt": "still waiting"},
+        )
+        first_id = first.json()["generation_id"]
+        second_id = second.json()["generation_id"]
+
+        # Both start pending.
+        assert (await client.get("/api/images/queue")).json()["pending"] == 2
+
+        # Complete the first job (Azure mocked).
+        await _process(first_id)
+
+        resp = await client.get("/api/images/queue")
+        body = resp.json()
+        assert body["pending"] == 1
+        assert body["processing"] == 0
+        assert body["total"] == 1
+        assert [item["id"] for item in body["items"]] == [second_id]
+
+    async def test_processing_row_shows_up(self, client, image_instance_id):
+        """A row manually set to 'processing' appears with a processing count."""
+        import aiosqlite
+
+        pending = await client.post(
+            "/api/images/generations",
+            data={"instance_id": image_instance_id, "prompt": "pending one"},
+        )
+        processing = await client.post(
+            "/api/images/generations",
+            data={"instance_id": image_instance_id, "prompt": "processing one"},
+        )
+        processing_id = processing.json()["generation_id"]
+
+        async with aiosqlite.connect(db_mod.DB_PATH) as db:
+            await db.execute(
+                "UPDATE image_generations SET status = 'processing' WHERE id = ?",
+                (processing_id,),
+            )
+            await db.commit()
+
+        resp = await client.get("/api/images/queue")
+        body = resp.json()
+        assert body["pending"] == 1
+        assert body["processing"] == 1
+        assert body["total"] == 2
+        statuses = {item["id"]: item["status"] for item in body["items"]}
+        assert statuses[pending.json()["generation_id"]] == "pending"
+        assert statuses[processing_id] == "processing"
+
+
 class TestImageHistory:
     """Tests for list/detail/delete history endpoints."""
 

@@ -9,6 +9,7 @@ import { ImagePlaygroundPage } from '@/pages/ImagePlaygroundPage'
 import { HistoryPage } from '@/pages/HistoryPage'
 import { SessionDetailPage } from '@/pages/SessionDetailPage'
 import { ImageDetailPage } from '@/pages/ImageDetailPage'
+import { Toaster } from '@/components/ui/toast'
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
           <Route path="/history/:id" element={<SessionDetailPage />} />
           <Route path="/history/image/:id" element={<ImageDetailPage />} />
         </Routes>
+        <Toaster />
       </AppShell>
     </BrowserRouter>
   )

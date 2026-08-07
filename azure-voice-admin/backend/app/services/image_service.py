@@ -679,6 +679,64 @@ class ImageService:
         rows = await cursor.fetchall()
         return [self._row_to_dict(row) for row in rows]
 
+    async def list_queue(self, db: aiosqlite.Connection) -> dict:
+        """Return the current image job queue (pending + processing jobs).
+
+        Queries ``image_generations`` joined to ``instances`` for rows whose
+        status is ``pending`` or ``processing``, ordered by ``created_at`` ASC
+        (oldest first = queue order, tiebroken by ``id`` ASC). Each item exposes
+        both ``id`` and ``generation_id`` (equal) alongside the resolved
+        ``instance_name``. Returns::
+
+            {"items": [...], "pending": p, "processing": pr, "total": p + pr}
+
+        where ``total`` == ``pending`` + ``processing``.
+        """
+        cursor = await db.execute(
+            """
+            SELECT g.id AS id, g.instance_id AS instance_id,
+                   i.name AS instance_name, g.prompt AS prompt,
+                   g.status AS status, g.n AS n, g.size AS size,
+                   g.created_at AS created_at
+            FROM image_generations AS g
+            JOIN instances AS i ON i.id = g.instance_id
+            WHERE g.status IN ('pending', 'processing')
+            ORDER BY g.created_at ASC, g.id ASC
+            """
+        )
+        rows = await cursor.fetchall()
+
+        items: list[dict] = []
+        pending = 0
+        processing = 0
+        for row in rows:
+            data = dict(row)
+            status = data["status"]
+            if status == "pending":
+                pending += 1
+            elif status == "processing":
+                processing += 1
+            items.append(
+                {
+                    "id": data["id"],
+                    "generation_id": data["id"],
+                    "instance_id": data["instance_id"],
+                    "instance_name": data["instance_name"],
+                    "prompt": data["prompt"],
+                    "status": status,
+                    "n": data["n"],
+                    "size": data["size"],
+                    "created_at": data["created_at"],
+                }
+            )
+
+        return {
+            "items": items,
+            "pending": pending,
+            "processing": processing,
+            "total": pending + processing,
+        }
+
     async def get_generation(self, db: aiosqlite.Connection, generation_id: str) -> dict | None:
         """Return a single image generation metadata row as a dict, or None."""
         cursor = await db.execute("SELECT * FROM image_generations WHERE id = ?", (generation_id,))

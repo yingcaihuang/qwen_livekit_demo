@@ -1,12 +1,16 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { AlertTriangle, ImageOff, Loader2 } from 'lucide-react'
+import { AlertTriangle, ImageOff, Layers, Loader2 } from 'lucide-react'
 import { ImagePromptBar } from '@/components/image/ImagePromptBar'
 import { ImageParamsPanel } from '@/components/image/ImageParamsPanel'
 import { ImageResultGrid } from '@/components/image/ImageResultGrid'
 import { ImageEmptyState } from '@/components/image/ImageEmptyState'
 import { ImageMetrics } from '@/components/image/ImageMetrics'
-import type { ImageGeneration, ImageParams, Instance } from '@/types'
+import { ImageQueuePanel } from '@/components/image/ImageQueuePanel'
+import { Button } from '@/components/ui/button'
+import { toast } from '@/components/ui/toast'
+import { cn } from '@/lib/utils'
+import type { ImageGeneration, ImageParams, ImageQueue, Instance } from '@/types'
 
 /** 生成任务是否处于进行中（需要继续轮询）。 */
 function isPendingStatus(status?: string): boolean {
@@ -14,6 +18,8 @@ function isPendingStatus(status?: string): boolean {
 }
 
 const POLL_INTERVAL_MS = 2000
+/** 页面级队列计数轮询间隔（轻量，仅用于按钮徽标）。 */
+const QUEUE_COUNT_POLL_MS = 3000
 
 const DEFAULT_PARAMS: ImageParams = {
   size: '1024x1024',
@@ -34,6 +40,27 @@ export function ImagePlaygroundPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<ImageGeneration | null>(null)
+  const [queueOpen, setQueueOpen] = useState(false)
+  const [queueCount, setQueueCount] = useState(0)
+
+  // 轻量拉取队列总数，用于「队列」按钮上的实时徽标。
+  const refreshQueueCount = useCallback(async () => {
+    try {
+      const res = await fetch('/api/images/queue')
+      if (!res.ok) return
+      const data = (await res.json()) as ImageQueue
+      setQueueCount(data.total)
+    } catch {
+      // 静默失败，下个周期继续尝试
+    }
+  }, [])
+
+  // 页面级队列计数轮询（每 ~3s），提供实时徽标。
+  useEffect(() => {
+    void refreshQueueCount()
+    const timer = setInterval(refreshQueueCount, QUEUE_COUNT_POLL_MS)
+    return () => clearInterval(timer)
+  }, [refreshQueueCount])
 
   // 拉取实例信息用于标题展示（失败不阻塞页面）
   useEffect(() => {
@@ -124,24 +151,55 @@ export function ImagePlaygroundPage() {
 
       const data = (await response.json()) as ImageGeneration
       setResult(data)
+
+      // 异步入队成功（202 pending）：提示用户任务已进入后台队列。
+      if (isPendingStatus(data.status)) {
+        toast({
+          title: '已加入生成队列',
+          description: '任务在后台生成，可离开页面，稍后在会话历史查看',
+          action: { label: '查看队列', onClick: () => setQueueOpen(true) },
+        })
+        void refreshQueueCount()
+      }
     } catch (err) {
       // 生成失败展示错误横幅，并保留参数便于重试（需求 9.2）
       setError(err instanceof Error ? err.message : '生成失败，请重试')
     } finally {
       setLoading(false)
     }
-  }, [instanceId, prompt, params, referenceImage])
+  }, [instanceId, prompt, params, referenceImage, refreshQueueCount])
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="space-y-1">
-        <h1 className="bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-3xl font-bold tracking-tight text-transparent">
-          图像生成 / Image Playground
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          {instanceName ? `实例：${instanceName}` : '通过 Azure OpenAI 生成或编辑图像'}
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-3xl font-bold tracking-tight text-transparent">
+            图像生成 / Image Playground
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {instanceName ? `实例：${instanceName}` : '通过 Azure OpenAI 生成或编辑图像'}
+          </p>
+        </div>
+
+        <Button
+          variant="outline"
+          onClick={() => setQueueOpen(true)}
+          className="relative shrink-0 border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 text-amber-700 hover:from-amber-100 hover:to-orange-100 hover:text-amber-800"
+        >
+          <Layers className="h-4 w-4" aria-hidden="true" />
+          队列
+          {queueCount > 0 && (
+            <span
+              className={cn(
+                'absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full',
+                'bg-gradient-to-br from-orange-500 to-rose-500 px-1 text-[11px] font-bold text-white shadow-md',
+              )}
+            >
+              {queueCount}
+            </span>
+          )}
+        </Button>
       </div>
 
       {!instanceId ? (
@@ -223,6 +281,8 @@ export function ImagePlaygroundPage() {
           </div>
         </div>
       )}
+
+      <ImageQueuePanel open={queueOpen} onOpenChange={setQueueOpen} />
     </div>
   )
 }
