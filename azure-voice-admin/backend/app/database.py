@@ -55,7 +55,19 @@ async def _migrate(db: aiosqlite.Connection) -> None:
                 f"ALTER TABLE image_generations ADD COLUMN {column_name} {column_type}"
             )
 
-    # 3) other new tables are created via IF NOT EXISTS in schema.sql (already
+    # 3) session_messages model/endpoint columns — databases created before
+    #    per-assistant-turn model/endpoint tracking was added lack these
+    #    columns. SQLite has no "ADD COLUMN IF NOT EXISTS", so check the
+    #    existing columns first and add only the missing ones. Both are nullable
+    #    so pre-existing rows keep NULL (old messages have no model/endpoint).
+    #    Mirrors the instances.type / image_generations timing patterns above.
+    cursor = await db.execute("PRAGMA table_info(session_messages)")
+    message_columns = {row[1] for row in await cursor.fetchall()}
+    for column_name in ("model", "endpoint"):
+        if column_name not in message_columns:
+            await db.execute(f"ALTER TABLE session_messages ADD COLUMN {column_name} TEXT")
+
+    # 4) other new tables are created via IF NOT EXISTS in schema.sql (already
     #    idempotent), so no extra work is needed here.
 
     await db.commit()

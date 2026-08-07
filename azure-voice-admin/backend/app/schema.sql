@@ -43,7 +43,9 @@ CREATE TABLE IF NOT EXISTS session_messages (
     session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
     role TEXT NOT NULL,  -- 'user' or 'assistant'
     content TEXT NOT NULL,
-    timestamp TEXT NOT NULL
+    timestamp TEXT NOT NULL,
+    model TEXT,     -- deployment/model used for an assistant turn; NULL for user rows
+    endpoint TEXT   -- full resolved Azure URL hit for an assistant turn; NULL for user rows
 );
 
 CREATE INDEX IF NOT EXISTS idx_session_messages_session_id ON session_messages(session_id);

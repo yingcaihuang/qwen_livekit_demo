@@ -90,6 +90,8 @@ function ChatPlayground({ instanceId, resumeSessionId }: ChatPlaygroundProps) {
         const mapped: ChatMessage[] = history.map((m) => ({
           role: m.role,
           content: m.content,
+          model: m.model,
+          endpoint: m.endpoint,
         }))
         loadSession(resumeSessionId, mapped)
       } catch {

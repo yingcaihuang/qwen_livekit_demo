@@ -143,6 +143,22 @@ export function useChatStream(instanceId: string): UseChatStreamResult {
           case 'done':
             setUsage(event.usage)
             if (event.timing) setTiming(event.timing)
+            // 将本次回复的 model / endpoint 附加到最后一条 assistant 气泡，
+            // 使刚完成的回复气泡携带其模型与端点信息以供展示。
+            if (event.model !== undefined || event.endpoint !== undefined) {
+              setMessages((prev) => {
+                if (prev.length === 0) return prev
+                const next = prev.slice()
+                const last = next[next.length - 1]
+                if (!last || last.role !== 'assistant') return prev
+                next[next.length - 1] = {
+                  ...last,
+                  model: event.model,
+                  endpoint: event.endpoint,
+                }
+                return next
+              })
+            }
             break
           case 'error':
             setError(event.message)

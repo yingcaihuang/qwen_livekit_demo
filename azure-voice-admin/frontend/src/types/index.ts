@@ -105,6 +105,10 @@ export interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: string;
+  /** 生成该回复所用的模型（仅 assistant 消息，user 消息为 null） */
+  model?: string | null;
+  /** 生成该回复所调用的完整 Azure 端点 URL（仅 assistant 消息，user 消息为 null） */
+  endpoint?: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -115,6 +119,10 @@ export interface Message {
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
+  /** 生成该回复所用的模型（附加在 assistant 消息上用于展示） */
+  model?: string | null;
+  /** 生成该回复所调用的完整 Azure 端点 URL（附加在 assistant 消息上用于展示） */
+  endpoint?: string | null;
 }
 
 /**
@@ -154,7 +162,7 @@ export interface ChatTiming {
 export type ChatStreamEvent =
   | { type: 'session'; session_id: string }
   | { type: 'delta'; content: string }
-  | { type: 'done'; usage: TokenUsage; timing?: ChatTiming }
+  | { type: 'done'; usage: TokenUsage; timing?: ChatTiming; model?: string; endpoint?: string }
   | { type: 'error'; message: string };
 
 // ---------------------------------------------------------------------------

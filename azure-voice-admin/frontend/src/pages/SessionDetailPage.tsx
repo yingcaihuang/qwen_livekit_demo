@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useApi } from '@/hooks/useApi'
 import { MarkdownMessage } from '@/components/chat/MarkdownMessage'
+import { MessageMeta } from '@/components/chat/MessageMeta'
 import type { Session, LogEntry, Message } from '@/types'
 
 const statusConfig: Record<string, { label: string; className: string }> = {
@@ -250,7 +251,10 @@ export function SessionDetailPage() {
                   {msg.role === 'user' ? (
                     <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                   ) : (
-                    <MarkdownMessage content={msg.content} />
+                    <>
+                      <MarkdownMessage content={msg.content} />
+                      <MessageMeta model={msg.model} endpoint={msg.endpoint} />
+                    </>
                   )}
                   <p
                     className={`text-xs mt-1 ${

@@ -170,6 +170,8 @@ class ChatService:
         assistant_content: str,
         input_tokens: int,
         output_tokens: int,
+        model: str | None = None,
+        endpoint: str | None = None,
     ) -> None:
         """Persist a completed chat turn.
 
@@ -177,17 +179,21 @@ class ChatService:
         ``session_messages`` (role + content + timestamp) and cumulatively adds
         the turn's token usage onto the ``sessions`` row (Requirements 3.2,
         3.3, 3.6). Turns that returned no usage contribute zero.
+
+        The ``model`` and ``endpoint`` used for the turn are recorded on the
+        ASSISTANT message only; the user message stores NULL for both.
         """
         now = self._now()
-        rows: list[tuple[str, str, str, str]] = []
+        # Each row is (session_id, role, content, timestamp, model, endpoint).
+        rows: list[tuple[str, str, str, str, str | None, str | None]] = []
         if user_content is not None:
-            rows.append((session_id, "user", user_content, now))
-        rows.append((session_id, "assistant", assistant_content, now))
+            rows.append((session_id, "user", user_content, now, None, None))
+        rows.append((session_id, "assistant", assistant_content, now, model, endpoint))
 
         await db.executemany(
             """
-            INSERT INTO session_messages (session_id, role, content, timestamp)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO session_messages (session_id, role, content, timestamp, model, endpoint)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
             rows,
         )
@@ -408,6 +414,8 @@ class ChatService:
                 assistant_content,
                 input_tokens,
                 output_tokens,
+                model=chosen_model,
+                endpoint=url,
             )
         except Exception as exc:  # noqa: BLE001 - persistence failure shouldn't crash the response
             logger.error("Failed to persist chat turn for session %s: %s", session_id, exc)
@@ -420,6 +428,8 @@ class ChatService:
         yield self._sse(
             {
                 "type": "done",
+                "model": chosen_model,
+                "endpoint": url,
                 "usage": {
                     "input_tokens": input_tokens,
                     "output_tokens": output_tokens,

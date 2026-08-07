@@ -29,3 +29,39 @@ export function formatDateTime(s?: string | null): string {
   if (Number.isNaN(date.getTime())) return '—'
   return date.toLocaleString('zh-CN')
 }
+
+/**
+ * 将完整的 Azure 端点 URL 压缩为简短标签。
+ * - 空值 => ''
+ * - 取 URL 的 pathname（去掉查询串）
+ * - 若路径包含 `/openai/`，返回其后的部分
+ *   （如 `https://.../openai/v1/responses?x=1` -> `v1/responses`；
+ *    `.../openai/v1/chat/completions` -> `v1/chat/completions`）
+ * 解析失败时回退到字符串操作，保持健壮。
+ */
+export function formatEndpoint(url?: string | null): string {
+  if (!url) return ''
+
+  const fromPath = (path: string): string => {
+    // 去掉查询串与哈希
+    let p = path.split('?')[0]?.split('#')[0] ?? ''
+    const marker = '/openai/'
+    const idx = p.indexOf(marker)
+    if (idx !== -1) {
+      p = p.slice(idx + marker.length)
+    }
+    // 去掉首尾多余的斜杠
+    return p.replace(/^\/+/, '').replace(/\/+$/, '')
+  }
+
+  try {
+    const parsed = new URL(url)
+    return fromPath(parsed.pathname)
+  } catch {
+    // 非法/相对 URL：尽力从字符串中提取路径部分
+    const withoutScheme = url.replace(/^[a-z]+:\/\//i, '')
+    const slashIdx = withoutScheme.indexOf('/')
+    const path = slashIdx === -1 ? '' : withoutScheme.slice(slashIdx)
+    return fromPath(path || url)
+  }
+}

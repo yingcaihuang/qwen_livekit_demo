@@ -51,6 +51,17 @@ CREATE TABLE IF NOT EXISTS sessions (
     error_message TEXT
 );
 
+-- An early session_messages table WITHOUT the per-assistant-turn model /
+-- endpoint columns. The migration must add these idempotently to pre-existing
+-- databases (both nullable, so old messages keep NULL).
+CREATE TABLE IF NOT EXISTS session_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+    role TEXT NOT NULL,
+    content TEXT NOT NULL,
+    timestamp TEXT NOT NULL
+);
+
 -- An early image_generations table WITHOUT the performance timing columns
 -- (started_at / ended_at / duration_ms / ttfb_ms). The migration must add
 -- these idempotently to pre-existing databases.
@@ -77,6 +88,9 @@ CREATE TABLE IF NOT EXISTS image_generations (
 
 # Performance timing columns added to image_generations by the migration.
 _TIMING_COLUMNS = {"started_at", "ended_at", "duration_ms", "ttfb_ms"}
+
+# Per-assistant-turn columns added to session_messages by the migration.
+_MESSAGE_COLUMNS = {"model", "endpoint"}
 
 
 async def _build_old_db(db_path: str, legacy_rows: list[dict]) -> None:
@@ -153,6 +167,9 @@ class TestMigrationIntegration:
             # The old image_generations table exists but WITHOUT timing columns.
             assert await _table_exists(db, "image_generations")
             assert not (_TIMING_COLUMNS & await _column_names(db, "image_generations"))
+            # The old session_messages table exists but WITHOUT model/endpoint.
+            assert await _table_exists(db, "session_messages")
+            assert not (_MESSAGE_COLUMNS & await _column_names(db, "session_messages"))
 
         db_mod.DB_PATH = test_db
 
@@ -173,6 +190,10 @@ class TestMigrationIntegration:
             # Performance timing columns were added to the pre-existing
             # image_generations table (idempotent ALTER TABLE migration).
             assert _TIMING_COLUMNS <= await _column_names(db, "image_generations")
+
+            # model/endpoint columns were added to the pre-existing
+            # session_messages table (idempotent ALTER TABLE migration).
+            assert _MESSAGE_COLUMNS <= await _column_names(db, "session_messages")
 
             cursor = await db.execute(
                 "SELECT id, name, endpoint, api_key, deployment, description, type "
@@ -208,6 +229,7 @@ class TestMigrationIntegration:
             assert "type" in await _column_names(db, "instances")
             assert await _table_exists(db, "image_generations")
             assert _TIMING_COLUMNS <= await _column_names(db, "image_generations")
+            assert _MESSAGE_COLUMNS <= await _column_names(db, "session_messages")
             cursor = await db.execute("SELECT COUNT(*) FROM instances")
             assert (await cursor.fetchone())[0] == 0
 

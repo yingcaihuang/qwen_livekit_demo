@@ -223,6 +223,9 @@ class TestChatCompletions:
         done = events[-1]
         assert done["type"] == "done"
         assert done["usage"] == {"input_tokens": 7, "output_tokens": 3}
+        # The done event records the model used and the resolved Azure endpoint.
+        assert done["model"] == "gpt-5.5"
+        assert done["endpoint"].endswith("/openai/v1/responses")
         # The done event carries (non-persisted) performance timing.
         timing = done["timing"]
         assert isinstance(timing["total_ms"], int) and timing["total_ms"] >= 0
@@ -238,6 +241,12 @@ class TestChatCompletions:
         roles = [m["role"] for m in msgs]
         assert roles == ["user", "assistant"]
         assert msgs[1]["content"] == "Hello world"
+        # The ASSISTANT message records the model + endpoint used for the turn;
+        # the USER message has NULL for both.
+        assert msgs[0]["model"] is None
+        assert msgs[0]["endpoint"] is None
+        assert msgs[1]["model"] == "gpt-5.5"
+        assert "/openai/v1/responses" in msgs[1]["endpoint"]
 
         detail = (await client.get(f"/api/sessions/{session_id}")).json()
         assert detail["input_tokens"] == 7
@@ -545,6 +554,39 @@ class TestChatModelSelection:
         )
         assert resp.status_code == 200
         assert session.calls[0]["json"]["model"] == "gpt-4o"
+
+    async def test_selected_model_recorded_on_assistant_message(
+        self, client, multi_deployment_instance_id, monkeypatch
+    ):
+        """The chosen model + endpoint are recorded on the persisted assistant turn.
+
+        The done event and the persisted ASSISTANT message both report the
+        selected deployment (gpt-4o) and the resolved /responses endpoint, while
+        the USER message keeps NULL for both.
+        """
+        _capture(monkeypatch, _CapturingSession(_sse_chunks()))
+
+        resp = await client.post(
+            "/api/chat/completions",
+            json={
+                "instance_id": multi_deployment_instance_id,
+                "messages": [{"role": "user", "content": "hi"}],
+                "model": "gpt-4o",
+            },
+        )
+        assert resp.status_code == 200
+        events = _parse_sse(resp.text)
+        session_id = events[0]["session_id"]
+        done = events[-1]
+        assert done["model"] == "gpt-4o"
+        assert "/openai/v1/responses" in done["endpoint"]
+
+        msgs = (await client.get(f"/api/sessions/{session_id}/messages")).json()
+        assert [m["role"] for m in msgs] == ["user", "assistant"]
+        assert msgs[0]["model"] is None
+        assert msgs[0]["endpoint"] is None
+        assert msgs[1]["model"] == "gpt-4o"
+        assert "/openai/v1/responses" in msgs[1]["endpoint"]
 
     async def test_no_model_uses_first_deployment(
         self, client, multi_deployment_instance_id, monkeypatch

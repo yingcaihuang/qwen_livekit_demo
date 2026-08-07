@@ -2,6 +2,7 @@ import { Bot, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { ChatMessage } from '@/types'
 import { MarkdownMessage } from './MarkdownMessage'
+import { MessageMeta } from './MessageMeta'
 
 interface ChatBubbleProps {
   message: ChatMessage
@@ -61,7 +62,14 @@ export function ChatBubble({ message, isStreaming = false }: ChatBubbleProps) {
       ) : (
         // assistant：占满会话列剩余宽度，富文本可用整宽（公式/图/表/图片有空间）
         <div className="min-w-0 flex-1 break-words rounded-2xl rounded-bl-sm border bg-card px-4 py-2.5 text-sm text-card-foreground shadow-sm">
-          {showTyping ? <TypingIndicator /> : <MarkdownMessage content={message.content} />}
+          {showTyping ? (
+            <TypingIndicator />
+          ) : (
+            <>
+              <MarkdownMessage content={message.content} />
+              <MessageMeta model={message.model} endpoint={message.endpoint} />
+            </>
+          )}
         </div>
       )}
       {isUser && (

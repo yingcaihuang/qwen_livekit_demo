@@ -114,7 +114,7 @@ async def get_session_messages(session_id: str, db: aiosqlite.Connection = Depen
 
     cursor = await db.execute(
         """
-        SELECT id, session_id, role, content, timestamp
+        SELECT id, session_id, role, content, timestamp, model, endpoint
         FROM session_messages
         WHERE session_id = ?
         ORDER BY id ASC
@@ -130,6 +130,8 @@ async def get_session_messages(session_id: str, db: aiosqlite.Connection = Depen
             "role": row[2],
             "content": row[3],
             "timestamp": row[4],
+            "model": row[5],
+            "endpoint": row[6],
         }
         for row in rows
     ]
