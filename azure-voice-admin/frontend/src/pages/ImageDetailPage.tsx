@@ -1,8 +1,11 @@
+import { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useApi } from '@/hooks/useApi'
 import { ImageDetail, type ImageDetailData } from '@/components/history/ImageDetail'
+
+const POLL_INTERVAL_MS = 2000
 
 /**
  * 图像生成详情页（路由 `/history/image/:id`）。
@@ -11,7 +14,17 @@ import { ImageDetail, type ImageDetailData } from '@/components/history/ImageDet
 export function ImageDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { data, loading, error } = useApi<ImageDetailData>(`/api/images/${id}`)
+  const { data, loading, error, refetch } = useApi<ImageDetailData>(`/api/images/${id}`)
+
+  // 任务仍在进行时（pending/processing）每 2s 重新拉取详情，直至终态或卸载。
+  const status = data?.status
+  useEffect(() => {
+    if (status !== 'pending' && status !== 'processing') return
+    const timer = setInterval(() => {
+      refetch()
+    }, POLL_INTERVAL_MS)
+    return () => clearInterval(timer)
+  }, [status, refetch])
 
   if (loading) {
     return (

@@ -205,7 +205,8 @@ export interface ImageGeneration {
   compression?: number;
   n?: number;
   image_paths?: string[];
-  status?: string;
+  // 异步生成任务状态：pending -> processing -> completed | failed（旧记录可能缺失）
+  status?: 'pending' | 'processing' | 'completed' | 'failed' | string;
   error_message?: string | null;
 }
 

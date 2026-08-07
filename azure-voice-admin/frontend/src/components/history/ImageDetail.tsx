@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, Calendar, ImageIcon, Layers } from 'lucide-react'
+import { AlertTriangle, ArrowDown, ArrowUp, Calendar, ImageIcon, Layers, Loader2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TypeBadge } from '@/components/instances/TypeBadge'
 import { ImageMetrics } from '@/components/image/ImageMetrics'
@@ -72,6 +72,8 @@ export function ImageDetail({ data }: ImageDetailProps) {
   const compression = data.compression ?? data.params?.compression
   const variations = data.n ?? data.params?.n ?? data.images.length
   const images = data.images ?? []
+  const isPending = data.status === 'pending' || data.status === 'processing'
+  const isFailed = data.status === 'failed'
 
   return (
     <div className="space-y-6">
@@ -132,50 +134,60 @@ export function ImageDetail({ data }: ImageDetailProps) {
         ttfbMs={data.ttfb_ms}
       />
 
-      {/* Error (if any) */}
-      {data.error_message && (
-        <Card className="border-destructive">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-destructive">错误信息</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-destructive">{data.error_message}</p>
-          </CardContent>
-        </Card>
+      {/* Result: status-aware（生成中 / 失败 / 完成） */}
+      {isPending ? (
+        <div className="flex min-h-[240px] flex-col items-center justify-center gap-4 rounded-2xl border border-amber-200/60 bg-gradient-to-br from-amber-50/70 to-orange-50/50 p-10 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-lg">
+            <Loader2 className="h-7 w-7 animate-spin" aria-hidden="true" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-lg font-semibold text-foreground">生成中…</p>
+            <p className="text-sm text-muted-foreground">
+              任务正在后台运行，结果就绪后将自动刷新
+            </p>
+          </div>
+        </div>
+      ) : isFailed ? (
+        <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <div className="space-y-1">
+            <p className="font-semibold">{data.error_message || '生成失败'}</p>
+            <p className="text-destructive/80">该任务未能完成，可返回重新生成。</p>
+          </div>
+        </div>
+      ) : (
+        <div>
+          <h2 className="mb-3 flex items-center gap-1.5 text-lg font-semibold">
+            <ImageIcon className="h-5 w-5 text-amber-500" />
+            生成结果
+            <span className="text-sm font-normal text-muted-foreground">（{images.length} 张）</span>
+          </h2>
+          {images.length > 0 ? (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {images.map((url, index) => (
+                <a
+                  key={url}
+                  href={url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="group overflow-hidden rounded-xl border bg-card shadow-sm transition hover:shadow-md"
+                >
+                  <img
+                    src={url}
+                    alt={`生成图片 ${index + 1}`}
+                    className="aspect-square w-full object-cover transition group-hover:scale-[1.02]"
+                    loading="lazy"
+                  />
+                </a>
+              ))}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center rounded-lg border p-8">
+              <p className="text-muted-foreground">暂无图片</p>
+            </div>
+          )}
+        </div>
       )}
-
-      {/* Image grid */}
-      <div>
-        <h2 className="mb-3 flex items-center gap-1.5 text-lg font-semibold">
-          <ImageIcon className="h-5 w-5 text-amber-500" />
-          生成结果
-          <span className="text-sm font-normal text-muted-foreground">（{images.length} 张）</span>
-        </h2>
-        {images.length > 0 ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {images.map((url, index) => (
-              <a
-                key={url}
-                href={url}
-                target="_blank"
-                rel="noreferrer"
-                className="group overflow-hidden rounded-xl border bg-card shadow-sm transition hover:shadow-md"
-              >
-                <img
-                  src={url}
-                  alt={`生成图片 ${index + 1}`}
-                  className="aspect-square w-full object-cover transition group-hover:scale-[1.02]"
-                  loading="lazy"
-                />
-              </a>
-            ))}
-          </div>
-        ) : (
-          <div className="flex items-center justify-center rounded-lg border p-8">
-            <p className="text-muted-foreground">暂无图片</p>
-          </div>
-        )}
-      </div>
     </div>
   )
 }

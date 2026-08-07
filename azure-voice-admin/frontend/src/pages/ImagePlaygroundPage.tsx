@@ -1,12 +1,19 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { AlertTriangle, ImageOff } from 'lucide-react'
+import { AlertTriangle, ImageOff, Loader2 } from 'lucide-react'
 import { ImagePromptBar } from '@/components/image/ImagePromptBar'
 import { ImageParamsPanel } from '@/components/image/ImageParamsPanel'
 import { ImageResultGrid } from '@/components/image/ImageResultGrid'
 import { ImageEmptyState } from '@/components/image/ImageEmptyState'
 import { ImageMetrics } from '@/components/image/ImageMetrics'
 import type { ImageGeneration, ImageParams, Instance } from '@/types'
+
+/** 生成任务是否处于进行中（需要继续轮询）。 */
+function isPendingStatus(status?: string): boolean {
+  return status === 'pending' || status === 'processing'
+}
+
+const POLL_INTERVAL_MS = 2000
 
 const DEFAULT_PARAMS: ImageParams = {
   size: '1024x1024',
@@ -51,6 +58,31 @@ export function ImagePlaygroundPage() {
   const updateParams = useCallback((patch: Partial<ImageParams>) => {
     setParams((prev) => ({ ...prev, ...patch }))
   }, [])
+
+  // 轮询：任务处于 pending/processing 时每 2s 拉取一次详情，直至终态或卸载。
+  // 依赖 result?.id + result?.status，避免终态后继续轮询。
+  const resultId = result?.id
+  const resultStatus = result?.status
+  useEffect(() => {
+    if (!resultId || !isPendingStatus(resultStatus)) return
+
+    let cancelled = false
+    const timer = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/images/${resultId}`)
+        if (!res.ok) return
+        const data = (await res.json()) as ImageGeneration
+        if (!cancelled) setResult(data)
+      } catch {
+        // 轮询失败保持静默，下个周期继续尝试
+      }
+    }, POLL_INTERVAL_MS)
+
+    return () => {
+      cancelled = true
+      clearInterval(timer)
+    }
+  }, [resultId, resultStatus])
 
   const handleSubmit = useCallback(async () => {
     if (!instanceId) {
@@ -141,7 +173,34 @@ export function ImagePlaygroundPage() {
               </div>
             )}
 
-            {result ? (
+            {!result ? (
+              <ImageEmptyState />
+            ) : isPendingStatus(result.status) ? (
+              <div className="flex min-h-[320px] flex-col items-center justify-center gap-4 rounded-2xl border border-amber-200/60 bg-gradient-to-br from-amber-50/70 to-orange-50/50 p-10 text-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-lg">
+                  <Loader2 className="h-8 w-8 animate-spin" aria-hidden="true" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-lg font-semibold text-foreground">正在生成图像…</p>
+                  <p className="text-sm text-muted-foreground">
+                    可以离开页面，稍后在会话历史查看结果
+                  </p>
+                </div>
+                {result.prompt && (
+                  <p className="max-w-md whitespace-pre-wrap rounded-lg bg-background/70 px-4 py-2 text-sm text-muted-foreground shadow-sm">
+                    {result.prompt}
+                  </p>
+                )}
+              </div>
+            ) : result.status === 'failed' ? (
+              <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <div className="space-y-1">
+                  <p className="font-semibold">{result.error_message || '生成失败'}</p>
+                  <p className="text-destructive/80">请调整提示词或参数后重新生成。</p>
+                </div>
+              </div>
+            ) : (
               <>
                 <ImageResultGrid result={result} />
                 <ImageMetrics
@@ -151,8 +210,6 @@ export function ImagePlaygroundPage() {
                   ttfbMs={result.ttfb_ms}
                 />
               </>
-            ) : (
-              <ImageEmptyState />
             )}
           </div>
 

@@ -48,6 +48,22 @@ const statusConfig: Record<string, StatusStyle> = {
     pill: 'bg-slate-100 text-slate-600 ring-1 ring-slate-200',
     dot: 'bg-slate-400',
   },
+  // 图像生成异步任务状态
+  pending: {
+    label: '排队中',
+    pill: 'bg-amber-100 text-amber-700 ring-1 ring-amber-200',
+    dot: 'bg-amber-500',
+  },
+  processing: {
+    label: '生成中',
+    pill: 'bg-sky-100 text-sky-700 ring-1 ring-sky-200',
+    dot: 'bg-sky-500',
+  },
+  failed: {
+    label: '失败',
+    pill: 'bg-rose-100 text-rose-700 ring-1 ring-rose-200',
+    dot: 'bg-rose-500',
+  },
 }
 
 function getStatusStyle(status: string): StatusStyle {

@@ -34,7 +34,6 @@ from pathlib import Path
 
 import aiosqlite
 import pytest
-from fastapi import HTTPException
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
@@ -246,14 +245,17 @@ class TestProperty11VariationCount:
             prompt="a red bicycle",
             params=ImageParams(n=n),
         )
-        response = await service.generate(db, request)
+        # Async model: enqueue returns a pending record, then a worker step
+        # (process_job) performs the Azure call and writes the files.
+        record = await service.enqueue_generation(db, request)
+        await service.process_job(record["generation_id"])
 
-        # Response exposes exactly one accessible URL per requested variation.
-        assert len(response.images) == n
-
-        # Persisted image_paths contains exactly n entries, each on disk.
-        row = await service.get_generation(db, response.generation_id)
+        # Persisted image_paths contains exactly n entries, each on disk, and
+        # the record exposes exactly one accessible URL per requested variation.
+        row = await service.get_generation(db, record["generation_id"])
         assert row is not None
+        assert row["status"] == "completed"
+        assert len(row["images"]) == n
         assert len(row["image_paths"]) == n
         for rel in row["image_paths"]:
             assert (image_svc.IMAGES_DIR / rel).is_file()
@@ -288,10 +290,12 @@ class TestProperty12MetadataIntegrity:
             prompt=prompt,
             params=ImageParams(n=n, compression=compression),
         )
-        response = await service.generate(db, request)
+        record = await service.enqueue_generation(db, request)
+        await service.process_job(record["generation_id"])
 
-        row = await service.get_generation(db, response.generation_id)
+        row = await service.get_generation(db, record["generation_id"])
         assert row is not None
+        assert row["status"] == "completed"
         # Metadata completeness (Req 5.2): prompt, params, usage, instance_id.
         assert row["prompt"] == prompt
         assert row["instance_id"] == instance_id
@@ -305,10 +309,6 @@ class TestProperty12MetadataIntegrity:
 
         # Performance timing is captured and persisted (numeric, non-negative,
         # with non-empty wall-clock start/end stamps).
-        assert isinstance(response.duration_ms, int) and response.duration_ms >= 0
-        assert isinstance(response.ttfb_ms, int) and response.ttfb_ms >= 0
-        assert response.started_at
-        assert response.ended_at
         assert isinstance(row["duration_ms"], int) and row["duration_ms"] >= 0
         assert isinstance(row["ttfb_ms"], int) and row["ttfb_ms"] >= 0
         assert row["started_at"]
@@ -316,34 +316,40 @@ class TestProperty12MetadataIntegrity:
 
     @_io_settings
     @given(n=st.integers(min_value=1, max_value=4))
-    async def test_property12_write_failure_persists_no_metadata_or_partial_dir(
+    async def test_property12_write_failure_marks_failed_no_dangling_refs(
         self, db, service, monkeypatch, n
     ):
-        """On write failure: no metadata row and no partial directory remains."""
+        """On write failure: the row is marked 'failed' with NO dangling refs.
+
+        In the async model the pending row always exists (enqueue persists it).
+        When processing fails, the worker must capture the failure on the row
+        (status='failed', error_message set) WITHOUT persisting any image_paths
+        that would reference non-existent files (Req 5.5). The worker must never
+        raise (it keeps serving subsequent jobs).
+        """
         await _reset(db)
         instance_id = await _insert_instance(db)
         # Azure returns invalid base64 -> decoding fails during the file write.
         _patch_azure(monkeypatch, _azure_payload(n=n, b64=_INVALID_B64))
-
-        # Snapshot the images root before the failed attempt.
-        image_svc.IMAGES_DIR.mkdir(parents=True, exist_ok=True)
-        dirs_before = {p.name for p in image_svc.IMAGES_DIR.iterdir()}
 
         request = ImageGenerationRequest(
             instance_id=instance_id,
             prompt="will fail",
             params=ImageParams(n=n),
         )
-        with pytest.raises(HTTPException):
-            await service.generate(db, request)
+        record = await service.enqueue_generation(db, request)
+        gen_id = record["generation_id"]
+        # process_job must NOT raise even though decoding fails.
+        await service.process_job(gen_id)
 
-        # No metadata row was persisted (Req 5.5).
-        cursor = await db.execute("SELECT COUNT(*) FROM image_generations")
-        assert (await cursor.fetchone())[0] == 0
-
-        # No partial directory left behind (cleanup happened).
-        dirs_after = {p.name for p in image_svc.IMAGES_DIR.iterdir()}
-        assert dirs_after == dirs_before
+        row = await service.get_generation(db, gen_id)
+        assert row is not None
+        # The failure is captured on the row (Req 9.2-style surfacing).
+        assert row["status"] == "failed"
+        assert row["error_message"]
+        # No dangling references: image_paths stays empty (no files were written).
+        assert row["image_paths"] == []
+        assert row["images"] == []
 
 
 # ----------------------------------------------------------------------------
@@ -365,17 +371,19 @@ class TestProperty13DeleteCleansUp:
             prompt="to be deleted",
             params=ImageParams(n=n),
         )
-        response = await service.generate(db, request)
-        gen_dir = image_svc.IMAGES_DIR / response.generation_id
+        record = await service.enqueue_generation(db, request)
+        gen_id = record["generation_id"]
+        await service.process_job(gen_id)
+        gen_dir = image_svc.IMAGES_DIR / gen_id
 
         # Preconditions: row + on-disk directory both exist.
         assert gen_dir.is_dir()
-        assert await service.get_generation(db, response.generation_id) is not None
+        assert await service.get_generation(db, gen_id) is not None
 
-        await service.delete_generation(db, response.generation_id)
+        await service.delete_generation(db, gen_id)
 
         # The DB row is gone and the directory (and its files) removed.
-        assert await service.get_generation(db, response.generation_id) is None
+        assert await service.get_generation(db, gen_id) is None
         assert not gen_dir.exists()
 
 

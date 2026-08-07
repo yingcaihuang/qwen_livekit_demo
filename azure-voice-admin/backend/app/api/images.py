@@ -18,13 +18,12 @@ never conflicts with the ``GET /{generation_id}`` detail route.
 
 import aiosqlite
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile
-from fastapi.responses import FileResponse
-from starlette.status import HTTP_204_NO_CONTENT
+from fastapi.responses import FileResponse, JSONResponse
+from starlette.status import HTTP_202_ACCEPTED, HTTP_204_NO_CONTENT
 
 from app.database import get_db
 from app.models.image import (
     ImageGenerationRequest,
-    ImageGenerationResponse,
     ImageParams,
 )
 from app.services.image_service import ImageService
@@ -52,7 +51,7 @@ async def list_generations(
     )
 
 
-@router.post("/generations", response_model=ImageGenerationResponse)
+@router.post("/generations", status_code=HTTP_202_ACCEPTED)
 async def create_generation(
     instance_id: str = Form(...),
     prompt: str = Form(...),
@@ -63,14 +62,17 @@ async def create_generation(
     n: int = Form(1),
     file: UploadFile | None = File(default=None),
     db: aiosqlite.Connection = Depends(get_db),
-) -> ImageGenerationResponse:
-    """Generate (or edit) images from a ``multipart/form-data`` request.
+) -> JSONResponse:
+    """Enqueue an image generation job from a ``multipart/form-data`` request.
 
     Builds an :class:`ImageGenerationRequest` (with nested :class:`ImageParams`)
-    from the form fields and delegates to :meth:`ImageService.generate`. When a
-    reference ``file`` is attached, the service takes the Azure *edits* path;
-    otherwise it uses *generations*. The service persists files first and
-    metadata second, then returns accessible URLs for each saved image.
+    from the form fields and delegates to
+    :meth:`ImageService.enqueue_generation`. Azure is NOT called here: the
+    request returns immediately (HTTP 202) with a ``pending`` record (same shape
+    as the detail endpoint, with empty ``images``). A background worker performs
+    the Azure call and updates the row status to ``completed`` / ``failed``.
+    When a reference ``file`` is attached, the worker takes the Azure *edits*
+    path; otherwise it uses *generations*.
     """
     request = ImageGenerationRequest(
         instance_id=instance_id,
@@ -83,7 +85,8 @@ async def create_generation(
             n=n,
         ),
     )
-    return await _image_service.generate(db, request, reference_image=file)
+    record = await _image_service.enqueue_generation(db, request, reference_image=file)
+    return JSONResponse(content=record, status_code=HTTP_202_ACCEPTED)
 
 
 @router.get("/{generation_id}")

@@ -99,6 +99,18 @@ async def lifespan(app: FastAPI):
     await init_db()
     logger.info("Database initialized successfully.")
 
+    # Recover any image generation jobs left mid-flight by a previous run and
+    # start the in-process worker pool. Wrap in try/except so a queue failure
+    # never blocks application startup.
+    try:
+        from app.services.image_queue import recover_interrupted_jobs, start_workers
+
+        await recover_interrupted_jobs()
+        await start_workers()
+        logger.info("Image generation workers started.")
+    except Exception as e:
+        logger.error(f"Failed to start image generation workers: {e}")
+
     # Check LiveKit server connectivity
     livekit_url = os.environ.get("LIVEKIT_URL", "ws://localhost:7880")
     livekit_reachable = _check_livekit_reachable(livekit_url)
@@ -126,6 +138,15 @@ async def lifespan(app: FastAPI):
         await cleanup_task
     except asyncio.CancelledError:
         pass
+
+    # Stop image generation workers.
+    try:
+        from app.services.image_queue import stop_workers
+
+        await stop_workers()
+    except Exception as e:
+        logger.error(f"Failed to stop image generation workers: {e}")
+
     logger.info("Application shutting down.")
 
 
