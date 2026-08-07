@@ -1,21 +1,16 @@
 """Azure OpenAI configuration for the Azure OpenAI Testing Platform.
 
-Centralizes Azure OpenAI related configuration so that values such as the
-API version are read from the environment (with sensible defaults) rather than
-being hardcoded at call sites. Follows the same module-level constant style as
-``database.py`` (values read via ``os.environ.get`` with defaults).
+Centralizes data-storage related configuration so that values are read from the
+environment (with sensible defaults) rather than being hardcoded at call sites.
+Follows the same module-level constant style as ``database.py`` (values read via
+``os.environ.get`` with defaults).
+
+Azure OpenAI URLs use the ``/openai/v1`` (OpenAI-compatible) surface, so no
+``api-version`` configuration is required.
 """
 
 import os
 from pathlib import Path
-
-# Azure API versions used by the chat and image request paths. These are read
-# from the environment so they can be updated without code changes, and each
-# has a sensible stable default (Requirements 9.4).
-AZURE_OPENAI_CHAT_API_VERSION = os.environ.get("AZURE_OPENAI_CHAT_API_VERSION", "2024-10-21")
-AZURE_OPENAI_IMAGE_API_VERSION = os.environ.get(
-    "AZURE_OPENAI_IMAGE_API_VERSION", "2025-04-01-preview"
-)
 
 # Root directory for persisted data. Defaults to the same location used by the
 # SQLite database (see ``DB_PATH`` in ``database.py``) so generated image files

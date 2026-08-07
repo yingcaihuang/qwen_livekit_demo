@@ -25,8 +25,8 @@ import aiohttp
 import aiosqlite
 from fastapi import HTTPException
 
-from app.config import AZURE_OPENAI_CHAT_API_VERSION
 from app.models.chat import ChatCompletionRequest, ChatMessage
+from app.services.azure_urls import resolve_azure_url
 
 logger = logging.getLogger("chat_service")
 
@@ -63,20 +63,14 @@ class ChatService:
         return coerced
 
     @staticmethod
-    def _azure_chat_url(endpoint: str, deployment: str) -> str:
-        """Build the Azure Chat Completions URL.
+    def _azure_chat_url(endpoint: str) -> str:
+        """Resolve the Azure Chat Completions URL (v1 / OpenAI-compatible surface).
 
-        ``{endpoint}/openai/deployments/{deployment}/chat/completions
-          ?api-version={AZURE_OPENAI_CHAT_API_VERSION}``
-
-        The api-version comes from configuration rather than a hardcoded value
-        (Requirement 9.4).
+        Handles a plain base host, a v1 base, and full v1 operation URLs (see
+        ``resolve_azure_url``). ``stream_chat`` always includes ``model`` in the
+        body, which is what the v1 surface expects.
         """
-        base = endpoint.rstrip("/")
-        return (
-            f"{base}/openai/deployments/{deployment}/chat/completions"
-            f"?api-version={AZURE_OPENAI_CHAT_API_VERSION}"
-        )
+        return resolve_azure_url(endpoint, "chat/completions")
 
     # ------------------------------------------------------------------
     # SSE helpers
@@ -250,7 +244,7 @@ class ChatService:
             yield self._sse({"type": "session", "session_id": session_id})
 
         # 3) Build the Azure request.
-        url = self._azure_chat_url(instance["endpoint"], instance["deployment"])
+        url = self._azure_chat_url(instance["endpoint"])
         body: dict = {
             "model": instance["deployment"],
             "messages": self._build_messages(request),
@@ -267,6 +261,10 @@ class ChatService:
             "Content-Type": "application/json",
         }
 
+        # Log the exact outgoing request URL so users can see the real path in
+        # `docker compose logs backend` (never log the api-key or headers).
+        logger.info("Azure chat request -> POST %s", url)
+
         assistant_content = ""
         input_tokens = 0
         output_tokens = 0
@@ -278,8 +276,9 @@ class ChatService:
                     if resp.status != 200:
                         error_text = await resp.text()
                         logger.error(
-                            "Azure chat completion failed (status=%s) for instance %s",
+                            "Azure chat completion failed (status=%s url=%s) for instance %s",
                             resp.status,
+                            url,
                             request.instance_id,
                         )
                         yield self._sse(
@@ -320,8 +319,9 @@ class ChatService:
                             output_tokens = usage.get("completion_tokens", 0) or 0
         except aiohttp.ClientError as exc:
             logger.error(
-                "Azure chat completion connection error for instance %s: %s",
+                "Azure chat completion connection error for instance %s (url=%s): %s",
                 request.instance_id,
+                url,
                 exc,
             )
             yield self._sse({"type": "error", "message": f"Failed to reach Azure: {exc}"})

@@ -33,7 +33,6 @@ from fastapi import HTTPException, UploadFile
 from starlette.datastructures import UploadFile as StarletteUploadFile
 
 from app.config import (
-    AZURE_OPENAI_IMAGE_API_VERSION,
     IMAGES_DIR,
     MAX_REFERENCE_IMAGE_BYTES,
 )
@@ -42,6 +41,7 @@ from app.models.image import (
     ImageGenerationResponse,
     ImageParams,
 )
+from app.services.azure_urls import resolve_azure_url
 
 logger = logging.getLogger("azure_openai_admin")
 
@@ -70,22 +70,22 @@ class ImageService:
         return max(0, min(100, int(value)))
 
     @staticmethod
-    def _azure_generations_url(endpoint: str, deployment: str) -> str:
-        """Build the Azure Images *generations* URL with the configured api-version."""
-        base = endpoint.rstrip("/")
-        return (
-            f"{base}/openai/deployments/{deployment}/images/generations"
-            f"?api-version={AZURE_OPENAI_IMAGE_API_VERSION}"
-        )
+    def _azure_generations_url(endpoint: str) -> str:
+        """Resolve the Azure Images *generations* URL (v1 surface).
+
+        See ``resolve_azure_url``.
+        """
+        return resolve_azure_url(endpoint, "images/generations")
 
     @staticmethod
-    def _azure_edits_url(endpoint: str, deployment: str) -> str:
-        """Build the Azure Images *edits* URL with the configured api-version."""
-        base = endpoint.rstrip("/")
-        return (
-            f"{base}/openai/deployments/{deployment}/images/edits"
-            f"?api-version={AZURE_OPENAI_IMAGE_API_VERSION}"
-        )
+    def _azure_edits_url(endpoint: str) -> str:
+        """Resolve the Azure Images *edits* URL (v1 surface).
+
+        The edits operation is derived even when the configured endpoint is a
+        full URL that ends in a different verb (e.g. ``…/images/generations``).
+        See ``resolve_azure_url``.
+        """
+        return resolve_azure_url(endpoint, "images/edits")
 
     @classmethod
     def _media_type_for(cls, output_format: str) -> str:
@@ -153,8 +153,9 @@ class ImageService:
         params: ImageParams,
     ) -> dict:
         """Call Azure Images ``generations`` with a JSON body (no reference image)."""
-        url = self._azure_generations_url(endpoint, deployment)
+        url = self._azure_generations_url(endpoint)
         body = {
+            "model": deployment,
             "prompt": prompt,
             "size": params.size,
             "quality": params.quality,
@@ -175,8 +176,9 @@ class ImageService:
         reference_bytes: bytes,
     ) -> dict:
         """Call Azure Images ``edits`` with multipart form-data (with reference image)."""
-        url = self._azure_edits_url(endpoint, deployment)
+        url = self._azure_edits_url(endpoint)
         form = aiohttp.FormData()
+        form.add_field("model", deployment)
         form.add_field(
             "image",
             reference_bytes,
@@ -206,14 +208,18 @@ class ImageService:
         HTTPException (Requirement 9.2). The ``api-key`` header is never logged
         (Requirement 9.3).
         """
+        # Log the exact outgoing request URL so users can see the real path in
+        # `docker compose logs backend` (never log the api-key or headers).
+        logger.info("Azure image request -> POST %s", url)
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(url, headers=headers, json=json_body, data=data) as resp:
                     text = await resp.text()
                     if resp.status < 200 or resp.status >= 300:
                         logger.error(
-                            "Azure Images call failed: status=%s body=%s",
+                            "Azure Images call failed: status=%s url=%s body=%s",
                             resp.status,
+                            url,
                             text[:1000],
                         )
                         raise HTTPException(
@@ -231,7 +237,7 @@ class ImageService:
                             detail="Azure image API returned a non-JSON response",
                         ) from exc
         except aiohttp.ClientError as exc:
-            logger.error("Azure Images request error: %s", exc)
+            logger.error("Azure Images request error (url=%s): %s", url, exc)
             raise HTTPException(
                 status_code=502,
                 detail=f"Failed to reach Azure image API: {exc}",
