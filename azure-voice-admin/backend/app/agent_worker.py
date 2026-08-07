@@ -283,8 +283,9 @@ async def entrypoint(ctx: JobContext) -> None:
         @session.on("conversation_item_added")
         def _on_conversation_item(ev) -> None:
             """Capture conversation transcripts (user input and AI responses)."""
-            role = getattr(ev, "role", None)
-            text = getattr(ev, "text", None)
+            item = getattr(ev, "item", None)
+            role = getattr(item, "role", None) if item else None
+            text = getattr(item, "text_content", None) if item else None
             if role and text:
                 emit_event(
                     "message.added",
