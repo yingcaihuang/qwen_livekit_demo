@@ -5,6 +5,7 @@ import { ImagePromptBar } from '@/components/image/ImagePromptBar'
 import { ImageParamsPanel } from '@/components/image/ImageParamsPanel'
 import { ImageResultGrid } from '@/components/image/ImageResultGrid'
 import { ImageEmptyState } from '@/components/image/ImageEmptyState'
+import { ImageMetrics } from '@/components/image/ImageMetrics'
 import type { ImageGeneration, ImageParams, Instance } from '@/types'
 
 const DEFAULT_PARAMS: ImageParams = {
@@ -141,7 +142,15 @@ export function ImagePlaygroundPage() {
             )}
 
             {result ? (
-              <ImageResultGrid result={result} />
+              <>
+                <ImageResultGrid result={result} />
+                <ImageMetrics
+                  startedAt={result.started_at}
+                  endedAt={result.ended_at}
+                  durationMs={result.duration_ms}
+                  ttfbMs={result.ttfb_ms}
+                />
+              </>
             ) : (
               <ImageEmptyState />
             )}

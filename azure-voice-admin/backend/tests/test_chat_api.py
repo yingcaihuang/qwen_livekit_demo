@@ -205,6 +205,13 @@ class TestChatCompletions:
         done = events[-1]
         assert done["type"] == "done"
         assert done["usage"] == {"input_tokens": 7, "output_tokens": 3}
+        # The done event carries (non-persisted) performance timing.
+        timing = done["timing"]
+        assert isinstance(timing["total_ms"], int) and timing["total_ms"] >= 0
+        # Two content deltas were streamed, so ttfb was recorded.
+        assert isinstance(timing["ttfb_ms"], int) and timing["ttfb_ms"] >= 0
+        assert timing["started_at"]
+        assert timing["ended_at"]
 
         # Verify persistence: messages + cumulative usage on the session.
         msgs_resp = await client.get(f"/api/sessions/{session_id}/messages")

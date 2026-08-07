@@ -3,6 +3,7 @@ import type {
   ChatMessage,
   ChatParams,
   ChatStreamEvent,
+  ChatTiming,
   TokenUsage,
 } from '@/types'
 
@@ -14,6 +15,8 @@ export interface UseChatStreamResult {
   streaming: boolean
   /** 最近一次 done 事件返回的用量 */
   usage: TokenUsage | null
+  /** 最近一次 done 事件返回的性能计时（可能为 null） */
+  timing: ChatTiming | null
   /** 由 session 事件设置，跨轮次保留并在后续发送时复用 */
   sessionId: string | null
   /** error 事件或网络失败时设置（需求 9.2，不崩溃） */
@@ -42,6 +45,7 @@ export function useChatStream(instanceId: string): UseChatStreamResult {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [streaming, setStreaming] = useState(false)
   const [usage, setUsage] = useState<TokenUsage | null>(null)
+  const [timing, setTiming] = useState<ChatTiming | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -66,6 +70,7 @@ export function useChatStream(instanceId: string): UseChatStreamResult {
     setMessages([])
     setSessionId(null)
     setUsage(null)
+    setTiming(null)
     setError(null)
     setStreaming(false)
   }, [])
@@ -84,6 +89,7 @@ export function useChatStream(instanceId: string): UseChatStreamResult {
       setStreaming(true)
       setError(null)
       setUsage(null)
+      setTiming(null)
 
       const controller = new AbortController()
       abortRef.current = controller
@@ -110,6 +116,7 @@ export function useChatStream(instanceId: string): UseChatStreamResult {
             break
           case 'done':
             setUsage(event.usage)
+            if (event.timing) setTiming(event.timing)
             break
           case 'error':
             setError(event.message)
@@ -206,6 +213,7 @@ export function useChatStream(instanceId: string): UseChatStreamResult {
     messages,
     streaming,
     usage,
+    timing,
     sessionId,
     error,
     sendMessage,

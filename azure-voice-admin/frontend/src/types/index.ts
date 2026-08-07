@@ -135,13 +135,26 @@ export interface TokenUsage {
 }
 
 /**
+ * Chat 性能计时（后端 done 事件的 timing 字段）。
+ * - ttfb_ms：首字节耗时（可能为 null）
+ * - total_ms：总耗时
+ * - started_at / ended_at：ISO 时间字符串
+ */
+export interface ChatTiming {
+  ttfb_ms: number | null;
+  total_ms: number;
+  started_at: string;
+  ended_at: string;
+}
+
+/**
  * Chat SSE 事件（判别联合），对应后端 /api/chat/completions 下发的
  * text/event-stream 数据行的 `type` 字段。
  */
 export type ChatStreamEvent =
   | { type: 'session'; session_id: string }
   | { type: 'delta'; content: string }
-  | { type: 'done'; usage: TokenUsage }
+  | { type: 'done'; usage: TokenUsage; timing?: ChatTiming }
   | { type: 'error'; message: string };
 
 // ---------------------------------------------------------------------------
@@ -178,6 +191,11 @@ export interface ImageGeneration {
   output_tokens: number;
   has_reference: boolean;
   created_at: string;
+  // 性能计时字段（生成响应与历史/详情行字典均包含，旧记录可能为 null）
+  started_at?: string | null;
+  ended_at?: string | null;
+  duration_ms?: number | null;
+  ttfb_ms?: number | null;
   // 列表/详情行字典附带字段（响应形态不同，标记为可选）
   id?: string;
   session_id?: string | null;

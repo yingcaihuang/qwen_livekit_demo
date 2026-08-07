@@ -49,7 +49,7 @@ interface ChatPlaygroundProps {
 function ChatPlayground({ instanceId }: ChatPlaygroundProps) {
   const [params, setParams] = useState<ChatParams>(DEFAULT_PARAMS)
   const { data: instance } = useApi<InstanceDetail>(`/api/instances/${instanceId}`)
-  const { messages, streaming, usage, error, sendMessage, newConversation } =
+  const { messages, streaming, usage, timing, error, sendMessage, newConversation } =
     useChatStream(instanceId)
 
   return (
@@ -114,7 +114,7 @@ function ChatPlayground({ instanceId }: ChatPlaygroundProps) {
 
         {/* Params panel */}
         <aside className="min-h-0 rounded-xl border bg-card shadow-sm">
-          <ChatParamsPanel params={params} onChange={setParams} usage={usage} />
+          <ChatParamsPanel params={params} onChange={setParams} usage={usage} timing={timing} />
         </aside>
       </div>
     </div>

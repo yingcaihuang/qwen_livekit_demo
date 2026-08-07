@@ -17,6 +17,7 @@ last 4 characters are ever referenced (Requirements 9.3).
 
 import json
 import logging
+import time
 import uuid
 from collections.abc import AsyncGenerator
 from datetime import UTC, datetime
@@ -269,6 +270,14 @@ class ChatService:
         input_tokens = 0
         output_tokens = 0
 
+        # Timing: measure with perf_counter for durations and wall-clock for
+        # start/end timestamps. ttfb marks the FIRST delta/token yielded; total
+        # marks the end of the stream (just before the done event). Chat timing
+        # is reported in the done event but NOT persisted.
+        t0 = time.perf_counter()
+        started_at = self._now()
+        ttfb_ms: int | None = None
+
         # 4) Stream from Azure, forwarding deltas and capturing usage.
         try:
             async with aiohttp.ClientSession() as http:
@@ -309,6 +318,9 @@ class ChatService:
                             delta = choice.get("delta") or {}
                             piece = delta.get("content")
                             if piece:
+                                # Record TTFB at the first token/delta yielded.
+                                if ttfb_ms is None:
+                                    ttfb_ms = round((time.perf_counter() - t0) * 1000)
                                 assistant_content += piece
                                 yield self._sse({"type": "delta", "content": piece})
 
@@ -349,13 +361,23 @@ class ChatService:
         except Exception as exc:  # noqa: BLE001 - persistence failure shouldn't crash the response
             logger.error("Failed to persist chat turn for session %s: %s", session_id, exc)
 
-        # 6) Final event with normalized usage.
+        # 6) Final event with normalized usage and (non-persisted) timing.
+        #    total_ms = start -> done; ttfb_ms = start -> first token (None if no
+        #    tokens were streamed). started_at/ended_at are wall-clock stamps.
+        total_ms = round((time.perf_counter() - t0) * 1000)
+        ended_at = self._now()
         yield self._sse(
             {
                 "type": "done",
                 "usage": {
                     "input_tokens": input_tokens,
                     "output_tokens": output_tokens,
+                },
+                "timing": {
+                    "ttfb_ms": ttfb_ms,
+                    "total_ms": total_ms,
+                    "started_at": started_at,
+                    "ended_at": ended_at,
                 },
             }
         )

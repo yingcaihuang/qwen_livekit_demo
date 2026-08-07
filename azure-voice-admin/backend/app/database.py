@@ -36,8 +36,27 @@ async def _migrate(db: aiosqlite.Connection) -> None:
         # NOT NULL + DEFAULT 'voice' backfills every pre-existing row to 'voice'.
         await db.execute("ALTER TABLE instances ADD COLUMN type TEXT NOT NULL DEFAULT 'voice'")
 
-    # 2) image_generations and other new tables are created via IF NOT EXISTS
-    #    in schema.sql (already idempotent), so no extra work is needed here.
+    # 2) image_generations timing columns — databases created before per-image
+    #    performance timing was added lack these columns. SQLite has no
+    #    "ADD COLUMN IF NOT EXISTS", so check the existing columns first and add
+    #    only the missing ones. All are nullable so pre-existing rows keep NULL
+    #    (old records have no timing). Mirrors the instances.type pattern above.
+    cursor = await db.execute("PRAGMA table_info(image_generations)")
+    image_columns = {row[1] for row in await cursor.fetchall()}
+    timing_columns = {
+        "started_at": "TEXT",
+        "ended_at": "TEXT",
+        "duration_ms": "INTEGER",
+        "ttfb_ms": "INTEGER",
+    }
+    for column_name, column_type in timing_columns.items():
+        if column_name not in image_columns:
+            await db.execute(
+                f"ALTER TABLE image_generations ADD COLUMN {column_name} {column_type}"
+            )
+
+    # 3) other new tables are created via IF NOT EXISTS in schema.sql (already
+    #    idempotent), so no extra work is needed here.
 
     await db.commit()
 

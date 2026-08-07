@@ -65,7 +65,11 @@ CREATE TABLE IF NOT EXISTS image_generations (
     image_paths TEXT NOT NULL DEFAULT '[]',
     status TEXT NOT NULL DEFAULT 'completed',
     error_message TEXT,
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    started_at TEXT,
+    ended_at TEXT,
+    duration_ms INTEGER,
+    ttfb_ms INTEGER
 );
 
 CREATE INDEX IF NOT EXISTS idx_image_generations_instance_id ON image_generations(instance_id);

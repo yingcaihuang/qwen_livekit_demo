@@ -39,3 +39,7 @@ class ImageGenerationResponse(BaseModel):
     output_tokens: int  # 输出 token 用量（Azure usage.output_tokens）
     has_reference: bool  # 是否为参考图编辑（edits 分支）
     created_at: str  # 创建时间戳
+    started_at: str | None = None  # Azure 请求开始的墙钟时间（UTC）
+    ended_at: str | None = None  # Azure 请求结束的墙钟时间（UTC）
+    duration_ms: int | None = None  # Azure 请求总耗时（毫秒），不含本地写文件
+    ttfb_ms: int | None = None  # 首字节耗时（毫秒），从发起请求到收到响应头

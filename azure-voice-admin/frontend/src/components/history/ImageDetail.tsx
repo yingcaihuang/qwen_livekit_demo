@@ -1,6 +1,7 @@
 import { ArrowDown, ArrowUp, Calendar, ImageIcon, Layers } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TypeBadge } from '@/components/instances/TypeBadge'
+import { ImageMetrics } from '@/components/image/ImageMetrics'
 
 /**
  * 图像生成详情数据形态，对应后端 `GET /api/images/{generation_id}` 的行字典：
@@ -16,6 +17,10 @@ export interface ImageDetailData {
   output_tokens: number
   has_reference: boolean
   created_at: string
+  started_at?: string | null
+  ended_at?: string | null
+  duration_ms?: number | null
+  ttfb_ms?: number | null
   status?: string
   error_message?: string | null
   size?: string
@@ -118,6 +123,14 @@ export function ImageDetail({ data }: ImageDetailProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Performance metrics（旧记录无计时字段时自动隐藏） */}
+      <ImageMetrics
+        startedAt={data.started_at}
+        endedAt={data.ended_at}
+        durationMs={data.duration_ms}
+        ttfbMs={data.ttfb_ms}
+      />
 
       {/* Error (if any) */}
       {data.error_message && (

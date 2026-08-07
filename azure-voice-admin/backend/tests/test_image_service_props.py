@@ -303,6 +303,17 @@ class TestProperty12MetadataIntegrity:
         for rel in row["image_paths"]:
             assert (image_svc.IMAGES_DIR / rel).is_file()
 
+        # Performance timing is captured and persisted (numeric, non-negative,
+        # with non-empty wall-clock start/end stamps).
+        assert isinstance(response.duration_ms, int) and response.duration_ms >= 0
+        assert isinstance(response.ttfb_ms, int) and response.ttfb_ms >= 0
+        assert response.started_at
+        assert response.ended_at
+        assert isinstance(row["duration_ms"], int) and row["duration_ms"] >= 0
+        assert isinstance(row["ttfb_ms"], int) and row["ttfb_ms"] >= 0
+        assert row["started_at"]
+        assert row["ended_at"]
+
     @_io_settings
     @given(n=st.integers(min_value=1, max_value=4))
     async def test_property12_write_failure_persists_no_metadata_or_partial_dir(

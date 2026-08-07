@@ -23,6 +23,7 @@ import binascii
 import json
 import logging
 import shutil
+import time
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
@@ -151,8 +152,11 @@ class ImageService:
         deployment: str,
         prompt: str,
         params: ImageParams,
-    ) -> dict:
-        """Call Azure Images ``generations`` with a JSON body (no reference image)."""
+    ) -> tuple[dict, int, int]:
+        """Call Azure Images ``generations`` with a JSON body (no reference image).
+
+        Returns ``(data, ttfb_ms, total_ms)`` (see ``_post``).
+        """
         url = self._azure_generations_url(endpoint)
         body = {
             "model": deployment,
@@ -174,8 +178,11 @@ class ImageService:
         prompt: str,
         params: ImageParams,
         reference_bytes: bytes,
-    ) -> dict:
-        """Call Azure Images ``edits`` with multipart form-data (with reference image)."""
+    ) -> tuple[dict, int, int]:
+        """Call Azure Images ``edits`` with multipart form-data (with reference image).
+
+        Returns ``(data, ttfb_ms, total_ms)`` (see ``_post``).
+        """
         url = self._azure_edits_url(endpoint)
         form = aiohttp.FormData()
         form.add_field("model", deployment)
@@ -201,8 +208,15 @@ class ImageService:
         headers: dict,
         json_body: dict | None = None,
         data: aiohttp.FormData | None = None,
-    ) -> dict:
-        """Execute a POST to Azure and return the parsed JSON body.
+    ) -> tuple[dict, int, int]:
+        """Execute a POST to Azure and return ``(data, ttfb_ms, total_ms)``.
+
+        Measures request timing with ``time.perf_counter()``:
+          - ``ttfb_ms``: ms from just before sending the request to when the
+            response headers / first byte are received (the ``async with
+            session.post(...)`` context is entered).
+          - ``total_ms``: ms from just before the request to after the response
+            body has been fully read (``await resp.text()`` completes).
 
         Converts network errors and non-2xx responses into a readable
         HTTPException (Requirement 9.2). The ``api-key`` header is never logged
@@ -213,8 +227,15 @@ class ImageService:
         logger.info("Azure image request -> POST %s", url)
         try:
             async with aiohttp.ClientSession() as session:
+                t0 = time.perf_counter()
                 async with session.post(url, headers=headers, json=json_body, data=data) as resp:
+                    # Response headers / first byte received -> TTFB.
+                    t_headers = time.perf_counter()
                     text = await resp.text()
+                    # Body fully read -> total request time.
+                    t1 = time.perf_counter()
+                    ttfb_ms = round((t_headers - t0) * 1000)
+                    total_ms = round((t1 - t0) * 1000)
                     if resp.status < 200 or resp.status >= 300:
                         logger.error(
                             "Azure Images call failed: status=%s url=%s body=%s",
@@ -230,7 +251,7 @@ class ImageService:
                             ),
                         )
                     try:
-                        return json.loads(text)
+                        return json.loads(text), ttfb_ms, total_ms
                     except json.JSONDecodeError as exc:
                         raise HTTPException(
                             status_code=502,
@@ -275,14 +296,19 @@ class ImageService:
         has_reference = reference_bytes is not None
 
         # 3) Call Azure (edits when a reference image is present, else generations).
+        #    Record wall-clock start/end around the Azure call; the ttfb/total
+        #    durations come from the HTTP layer (_post) and cover only the Azure
+        #    request time — NOT the local file writes that happen afterwards.
+        started_at = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
         if has_reference:
-            payload = await self._call_edits(
+            payload, ttfb_ms, duration_ms = await self._call_edits(
                 endpoint, api_key, deployment, request.prompt, params, reference_bytes
             )
         else:
-            payload = await self._call_generations(
+            payload, ttfb_ms, duration_ms = await self._call_generations(
                 endpoint, api_key, deployment, request.prompt, params
             )
+        ended_at = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
 
         # 4) Extract the base64 image variations.
         data_items = payload.get("data") or []
@@ -336,8 +362,9 @@ class ImageService:
                 INSERT INTO image_generations (
                     id, instance_id, session_id, prompt, params, size, quality,
                     output_format, compression, n, has_reference,
-                    input_tokens, output_tokens, image_paths, status, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    input_tokens, output_tokens, image_paths, status, created_at,
+                    started_at, ended_at, duration_ms, ttfb_ms
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     generation_id,
@@ -356,6 +383,10 @@ class ImageService:
                     image_paths_json,
                     "completed",
                     created_at,
+                    started_at,
+                    ended_at,
+                    duration_ms,
+                    ttfb_ms,
                 ),
             )
             await db.commit()
@@ -387,6 +418,10 @@ class ImageService:
             output_tokens=output_tokens,
             has_reference=has_reference,
             created_at=created_at,
+            started_at=started_at,
+            ended_at=ended_at,
+            duration_ms=duration_ms,
+            ttfb_ms=ttfb_ms,
         )
 
     # ------------------------------------------------------------------

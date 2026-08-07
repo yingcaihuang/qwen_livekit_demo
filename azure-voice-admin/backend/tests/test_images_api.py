@@ -217,7 +217,21 @@ class TestImageGeneration:
         assert len(body["images"]) == 2
         assert body["input_tokens"] == 11
         assert body["output_tokens"] == 22
+        # Performance timing is captured and persisted for each generation.
+        assert isinstance(body["duration_ms"], int) and body["duration_ms"] >= 0
+        assert isinstance(body["ttfb_ms"], int) and body["ttfb_ms"] >= 0
+        assert body["started_at"]
+        assert body["ended_at"]
         gen_id = body["generation_id"]
+
+        # Timing is also persisted and returned by the detail endpoint.
+        detail = await client.get(f"/api/images/{gen_id}")
+        assert detail.status_code == 200
+        detail_body = detail.json()
+        assert isinstance(detail_body["duration_ms"], int) and detail_body["duration_ms"] >= 0
+        assert isinstance(detail_body["ttfb_ms"], int) and detail_body["ttfb_ms"] >= 0
+        assert detail_body["started_at"]
+        assert detail_body["ended_at"]
 
         # The served file matches the bytes we "generated".
         file_resp = await client.get(f"/api/images/{gen_id}/0")

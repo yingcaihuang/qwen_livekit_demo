@@ -50,7 +50,33 @@ CREATE TABLE IF NOT EXISTS sessions (
     output_tokens INTEGER DEFAULT 0,
     error_message TEXT
 );
+
+-- An early image_generations table WITHOUT the performance timing columns
+-- (started_at / ended_at / duration_ms / ttfb_ms). The migration must add
+-- these idempotently to pre-existing databases.
+CREATE TABLE IF NOT EXISTS image_generations (
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    instance_id TEXT NOT NULL,
+    session_id TEXT,
+    prompt TEXT NOT NULL,
+    params TEXT NOT NULL DEFAULT '{}',
+    size TEXT,
+    quality TEXT,
+    output_format TEXT,
+    compression INTEGER,
+    n INTEGER DEFAULT 1,
+    has_reference INTEGER DEFAULT 0,
+    input_tokens INTEGER DEFAULT 0,
+    output_tokens INTEGER DEFAULT 0,
+    image_paths TEXT NOT NULL DEFAULT '[]',
+    status TEXT NOT NULL DEFAULT 'completed',
+    error_message TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 """
+
+# Performance timing columns added to image_generations by the migration.
+_TIMING_COLUMNS = {"started_at", "ended_at", "duration_ms", "ttfb_ms"}
 
 
 async def _build_old_db(db_path: str, legacy_rows: list[dict]) -> None:
@@ -121,10 +147,12 @@ class TestMigrationIntegration:
         ]
         await _build_old_db(test_db, legacy_rows)
 
-        # Sanity: the old DB really lacks the new column/table.
+        # Sanity: the old DB really lacks the new column and the timing columns.
         async with aiosqlite.connect(test_db) as db:
             assert "type" not in await _column_names(db, "instances")
-            assert not await _table_exists(db, "image_generations")
+            # The old image_generations table exists but WITHOUT timing columns.
+            assert await _table_exists(db, "image_generations")
+            assert not (_TIMING_COLUMNS & await _column_names(db, "image_generations"))
 
         db_mod.DB_PATH = test_db
 
@@ -141,6 +169,10 @@ class TestMigrationIntegration:
 
             # 8.3: image_generations table now exists.
             assert await _table_exists(db, "image_generations")
+
+            # Performance timing columns were added to the pre-existing
+            # image_generations table (idempotent ALTER TABLE migration).
+            assert _TIMING_COLUMNS <= await _column_names(db, "image_generations")
 
             cursor = await db.execute(
                 "SELECT id, name, endpoint, api_key, deployment, description, type "
@@ -175,6 +207,7 @@ class TestMigrationIntegration:
         async with aiosqlite.connect(test_db) as db:
             assert "type" in await _column_names(db, "instances")
             assert await _table_exists(db, "image_generations")
+            assert _TIMING_COLUMNS <= await _column_names(db, "image_generations")
             cursor = await db.execute("SELECT COUNT(*) FROM instances")
             assert (await cursor.fetchone())[0] == 0
 

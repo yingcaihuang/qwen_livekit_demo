@@ -1,13 +1,16 @@
-import { Settings2, Thermometer, Hash, Gauge } from 'lucide-react'
+import { Settings2, Thermometer, Hash, Gauge, Timer, Zap } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
-import type { ChatParams, TokenUsage } from '@/types'
+import { formatDuration } from '@/lib/format'
+import type { ChatParams, ChatTiming, TokenUsage } from '@/types'
 
 interface ChatParamsPanelProps {
   params: ChatParams
   onChange: (params: ChatParams) => void
   /** 最近一次响应的用量（可用时展示） */
   usage?: TokenUsage | null
+  /** 最近一次响应的性能计时（可用时展示） */
+  timing?: ChatTiming | null
 }
 
 /** 将 temperature 约束到 [0, 2]（需求 2.5）。 */
@@ -20,7 +23,7 @@ function clampTemperature(value: number): number {
  * 参数面板：system prompt / temperature(0-2) / max_tokens(正整数或留空)。
  * 状态由上层页面持有并通过 onChange 回传（需求 2.4/2.5/2.6）。
  */
-export function ChatParamsPanel({ params, onChange, usage }: ChatParamsPanelProps) {
+export function ChatParamsPanel({ params, onChange, usage, timing }: ChatParamsPanelProps) {
   const handleSystemPrompt = (system_prompt: string) => {
     onChange({ ...params, system_prompt })
   }
@@ -113,27 +116,56 @@ export function ChatParamsPanel({ params, onChange, usage }: ChatParamsPanelProp
         <p className="text-[10px] text-muted-foreground">正整数；留空则由模型默认决定。</p>
       </div>
 
-      {/* Token usage */}
-      {usage && (
-        <div className="mt-auto rounded-lg border bg-muted/40 p-3">
-          <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-            <Gauge className="h-3.5 w-3.5" aria-hidden="true" />
-            Token 用量
-          </div>
-          <div className="grid grid-cols-2 gap-2 text-center">
-            <div className="rounded-md bg-background px-2 py-1.5 shadow-sm">
-              <div className="font-mono text-sm font-semibold text-indigo-600">
-                {usage.input_tokens}
+      {/* Token usage & timing */}
+      {(usage || timing) && (
+        <div className="mt-auto space-y-3">
+          {usage && (
+            <div className="rounded-lg border bg-muted/40 p-3">
+              <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                <Gauge className="h-3.5 w-3.5" aria-hidden="true" />
+                Token 用量
               </div>
-              <div className="text-[10px] text-muted-foreground">输入</div>
-            </div>
-            <div className="rounded-md bg-background px-2 py-1.5 shadow-sm">
-              <div className="font-mono text-sm font-semibold text-violet-600">
-                {usage.output_tokens}
+              <div className="grid grid-cols-2 gap-2 text-center">
+                <div className="rounded-md bg-background px-2 py-1.5 shadow-sm">
+                  <div className="font-mono text-sm font-semibold text-indigo-600">
+                    {usage.input_tokens}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">输入</div>
+                </div>
+                <div className="rounded-md bg-background px-2 py-1.5 shadow-sm">
+                  <div className="font-mono text-sm font-semibold text-violet-600">
+                    {usage.output_tokens}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">输出</div>
+                </div>
               </div>
-              <div className="text-[10px] text-muted-foreground">输出</div>
             </div>
-          </div>
+          )}
+
+          {timing && (
+            <div className="rounded-lg border bg-muted/40 p-3">
+              <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                <Timer className="h-3.5 w-3.5" aria-hidden="true" />
+                性能指标
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-center">
+                <div className="rounded-md bg-background px-2 py-1.5 shadow-sm">
+                  <div className="flex items-center justify-center gap-1 font-mono text-sm font-semibold text-sky-600">
+                    <Zap className="h-3 w-3" aria-hidden="true" />
+                    {formatDuration(timing.ttfb_ms)}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">首字响应</div>
+                </div>
+                <div className="rounded-md bg-background px-2 py-1.5 shadow-sm">
+                  <div className="flex items-center justify-center gap-1 font-mono text-sm font-semibold text-amber-600">
+                    <Timer className="h-3 w-3" aria-hidden="true" />
+                    {formatDuration(timing.total_ms)}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground">总耗时</div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
