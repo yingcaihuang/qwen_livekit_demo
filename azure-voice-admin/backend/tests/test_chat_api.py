@@ -159,20 +159,21 @@ def _capture(monkeypatch, session: _CapturingSession) -> _CapturingSession:
 
 
 def _sse_chunks() -> list[bytes]:
-    """Two content deltas followed by a usage-only chunk and [DONE]."""
+    """Two Responses text deltas, a completed event with usage, then [DONE]."""
     return [
-        b'data: {"choices":[{"delta":{"content":"Hello"}}]}\n',
-        b'data: {"choices":[{"delta":{"content":" world"}}]}\n',
-        b'data: {"choices":[],"usage":{"prompt_tokens":7,"completion_tokens":3}}\n',
+        b'data: {"type":"response.output_text.delta","delta":"Hello"}\n',
+        b'data: {"type":"response.output_text.delta","delta":" world"}\n',
+        b'data: {"type":"response.completed","response":{"usage":'
+        b'{"input_tokens":7,"output_tokens":3}}}\n',
         b"data: [DONE]\n",
     ]
 
 
 def _sse_chunks_no_usage() -> list[bytes]:
-    """Content deltas followed by [DONE] but no usage chunk (Req 3.6)."""
+    """Two Responses text deltas followed by [DONE] but no completed/usage (Req 3.6)."""
     return [
-        b'data: {"choices":[{"delta":{"content":"Hi"}}]}\n',
-        b'data: {"choices":[{"delta":{"content":" there"}}]}\n',
+        b'data: {"type":"response.output_text.delta","delta":"Hi"}\n',
+        b'data: {"type":"response.output_text.delta","delta":" there"}\n',
         b"data: [DONE]\n",
     ]
 
@@ -334,8 +335,8 @@ class TestChatRequestForwarding:
     ):
         """Accumulated history + system_prompt are forwarded to Azure (Req 2.1/2.2/3.3).
 
-        The outgoing body's messages array MUST contain the system prompt as
-        the first message, followed by every prior turn in order.
+        The system prompt MUST travel in the Responses ``instructions`` field,
+        and ``input`` MUST contain every prior turn in order.
         """
         session = _capture(monkeypatch, _CapturingSession(_sse_chunks()))
 
@@ -356,14 +357,14 @@ class TestChatRequestForwarding:
 
         assert len(session.calls) == 1
         body = session.calls[0]["json"]
-        forwarded = body["messages"]
-        # System prompt prepended as the first system message.
-        assert forwarded[0] == {"role": "system", "content": "You are a math tutor."}
-        # Full multi-turn context preserved in order after the system message.
-        assert forwarded[1:] == history
-        # Streaming with usage requested so token totals can be captured.
+        # System prompt travels in `instructions`, NOT as a message in `input`.
+        assert body["instructions"] == "You are a math tutor."
+        # Full multi-turn context preserved in order in `input` (no system msg).
+        assert body["input"] == history
+        # Streaming is requested; no chat-completions-only keys are present.
         assert body["stream"] is True
-        assert body["stream_options"] == {"include_usage": True}
+        assert "messages" not in body
+        assert "stream_options" not in body
         # api-key travels in the header, never in the forwarded body.
         assert session.calls[0]["headers"]["api-key"] == "sk-test-key-12345"
         assert "api_key" not in body and "api-key" not in body
@@ -382,9 +383,10 @@ class TestChatRequestForwarding:
             },
         )
         assert resp.status_code == 200
-        forwarded = session.calls[0]["json"]["messages"]
-        assert all(m["role"] != "system" for m in forwarded)
-        assert forwarded == [{"role": "user", "content": "hi"}]
+        body = session.calls[0]["json"]
+        # No system_prompt => `instructions` is absent and `input` is verbatim.
+        assert "instructions" not in body
+        assert body["input"] == [{"role": "user", "content": "hi"}]
 
     async def test_reuse_existing_session_appends_no_duplicate_session(
         self, client, chat_instance_id, monkeypatch
@@ -491,7 +493,9 @@ class TestChatRequestForwarding:
         assert resp.status_code == 200
         body = session.calls[0]["json"]
         assert body["temperature"] == 2.0
-        assert body["max_tokens"] == 1
+        # Responses uses `max_output_tokens`; chat-completions `max_tokens` is absent.
+        assert body["max_output_tokens"] == 1
+        assert "max_tokens" not in body
 
     async def test_temperature_below_range_clamped_to_zero(
         self, client, chat_instance_id, monkeypatch
@@ -510,7 +514,8 @@ class TestChatRequestForwarding:
         assert resp.status_code == 200
         body = session.calls[0]["json"]
         assert body["temperature"] == 0.0
-        # max_tokens omitted from the request => absent from the body (pass-through None).
+        # max_tokens omitted from the request => no max_output_tokens in the body.
+        assert "max_output_tokens" not in body
         assert "max_tokens" not in body
 
 

@@ -1,10 +1,10 @@
-"""Service layer for LLM Chat (Chat Completions) streaming proxy.
+"""Service layer for LLM Chat (v1 Responses API) streaming proxy.
 
 Responsibilities:
 - Lazily create / reuse a ``chat`` session record (reusing the existing
   ``sessions`` + ``session_messages`` tables).
-- Proxy Azure OpenAI Chat Completions with ``stream=true`` via aiohttp,
-  normalizing Azure's SSE chunks into the platform's own SSE event contract.
+- Proxy the Azure OpenAI v1 Responses API with ``stream=true`` via aiohttp,
+  normalizing Azure's SSE events into the platform's own SSE event contract.
 - Constrain request parameters server-side (``temperature`` clamped to
   ``[0, 2]``; ``max_tokens`` coerced to a positive integer or passed through
   when ``None``).
@@ -84,13 +84,15 @@ class ChatService:
 
     @staticmethod
     def _azure_chat_url(endpoint: str) -> str:
-        """Resolve the Azure Chat Completions URL (v1 / OpenAI-compatible surface).
+        """Resolve the Azure v1 Responses URL (OpenAI-compatible surface).
 
-        Handles a plain base host, a v1 base, and full v1 operation URLs (see
+        Chat/conversation models are served by the v1 Responses API at
+        ``{endpoint}/openai/v1/responses`` (NOT ``/chat/completions``). Handles a
+        plain base host, a v1 base, and full v1 operation URLs (see
         ``resolve_azure_url``). ``stream_chat`` always includes ``model`` in the
         body, which is what the v1 surface expects.
         """
-        return resolve_azure_url(endpoint, "chat/completions")
+        return resolve_azure_url(endpoint, "responses")
 
     # ------------------------------------------------------------------
     # SSE helpers
@@ -204,18 +206,15 @@ class ChatService:
     # Request body construction
     # ------------------------------------------------------------------
     @staticmethod
-    def _build_messages(request: ChatCompletionRequest) -> list[dict]:
-        """Build the Azure messages array.
+    def _build_input(request: ChatCompletionRequest) -> list[dict]:
+        """Build the Responses API ``input`` array.
 
-        Prepends the system prompt (if provided and non-empty) as the first
-        ``system`` message, then appends the accumulated conversation context
-        from ``request.messages`` (Requirement 2.3).
+        The Responses API carries the system/developer prompt in ``instructions``
+        (see ``stream_chat``), NOT as a message. ``input`` is therefore just the
+        accumulated conversation context from ``request.messages`` in order,
+        preserving the user/assistant roles (Requirement 2.3).
         """
-        messages: list[dict] = []
-        if request.system_prompt and request.system_prompt.strip():
-            messages.append({"role": "system", "content": request.system_prompt})
-        messages.extend({"role": m.role, "content": m.content} for m in request.messages)
-        return messages
+        return [{"role": m.role, "content": m.content} for m in request.messages]
 
     @staticmethod
     def _last_user_content(messages: list[ChatMessage]) -> str | None:
@@ -278,14 +277,18 @@ class ChatService:
             chosen_model = instance["deployment"]
         body: dict = {
             "model": chosen_model,
-            "messages": self._build_messages(request),
+            "input": self._build_input(request),
             "temperature": self._clamp_temperature(request.temperature),
             "stream": True,
-            "stream_options": {"include_usage": True},
         }
+        # The Responses API carries the system/developer prompt in `instructions`
+        # (omit entirely when empty), NOT as a system message inside `input`.
+        if request.system_prompt and request.system_prompt.strip():
+            body["instructions"] = request.system_prompt
+        # Responses uses `max_output_tokens` (NOT `max_tokens`); omit when None.
         sanitized_max = self._sanitize_max_tokens(request.max_tokens)
         if sanitized_max is not None:
-            body["max_tokens"] = sanitized_max
+            body["max_output_tokens"] = sanitized_max
 
         headers = {
             "api-key": instance["api_key"],
@@ -332,33 +335,51 @@ class ChatService:
 
                     async for raw_line in resp.content:
                         line = raw_line.decode("utf-8", errors="replace").strip()
+                        # Only parse `data:` payloads; ignore `event:` and blanks.
                         if not line or not line.startswith("data:"):
                             continue
                         data_str = line[len("data:") :].strip()
                         if data_str == "[DONE]":
                             break
                         try:
-                            chunk = json.loads(data_str)
+                            obj = json.loads(data_str)
                         except json.JSONDecodeError:
                             logger.warning("Malformed SSE chunk from Azure: %s", data_str[:200])
                             continue
 
-                        # Accumulate assistant content from choices[].delta.content.
-                        for choice in chunk.get("choices", []) or []:
-                            delta = choice.get("delta") or {}
-                            piece = delta.get("content")
+                        event_type = obj.get("type")
+
+                        # Incremental assistant text.
+                        if event_type == "response.output_text.delta":
+                            piece = obj.get("delta")
                             if piece:
                                 # Record TTFB at the first token/delta yielded.
                                 if ttfb_ms is None:
                                     ttfb_ms = round((time.perf_counter() - t0) * 1000)
                                 assistant_content += piece
                                 yield self._sse({"type": "delta", "content": piece})
+                            continue
 
-                        # Usage arrives in a final chunk when include_usage=True.
-                        usage = chunk.get("usage")
-                        if usage:
-                            input_tokens = usage.get("prompt_tokens", 0) or 0
-                            output_tokens = usage.get("completion_tokens", 0) or 0
+                        # Terminal success event carries the final usage totals.
+                        if event_type == "response.completed":
+                            usage = (obj.get("response") or {}).get("usage") or {}
+                            input_tokens = usage.get("input_tokens", 0) or 0
+                            output_tokens = usage.get("output_tokens", 0) or 0
+                            continue
+
+                        # Terminal failure events -> surface an error frame and stop.
+                        if event_type in ("response.failed", "error", "response.error"):
+                            message = (
+                                (obj.get("response") or {}).get("error", {}).get("message")
+                                or (obj.get("error") or {}).get("message")
+                                or obj.get("message")
+                                or "Azure Responses stream reported an error"
+                            )
+                            yield self._sse({"type": "error", "message": message})
+                            return
+
+                        # Ignore other events (response.created, response.in_progress,
+                        # response.output_text.done, etc.).
         except aiohttp.ClientError as exc:
             logger.error(
                 "Azure chat completion connection error for instance %s (url=%s): %s",
