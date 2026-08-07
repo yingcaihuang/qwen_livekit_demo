@@ -316,3 +316,122 @@ class TestPersistLogs:
             cursor = await db.execute("SELECT COUNT(*) FROM session_logs")
             count = (await cursor.fetchone())[0]
             assert count == 0
+
+
+class TestPersistMessages:
+    @staticmethod
+    async def _create_messages_table(db: aiosqlite.Connection) -> None:
+        await db.execute("""
+            CREATE TABLE session_messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                session_id TEXT NOT NULL,
+                role TEXT NOT NULL,
+                content TEXT NOT NULL,
+                timestamp TEXT NOT NULL
+            )
+        """)
+        await db.commit()
+
+    @pytest.mark.asyncio
+    async def test_single_encoded_payload_persists_message(self, broadcaster, tmp_path):
+        """A message.added event emitted by the agent worker (payload is an
+        already-serialized JSON string) should persist exactly one message."""
+        # The agent worker emits: emit_event(..., payload=json.dumps({...}))
+        # so the stdout line is a JSON object whose "payload" is a JSON string.
+        line = (
+            json.dumps(
+                {
+                    "timestamp": "2024-01-01T00:00:00",
+                    "direction": "internal",
+                    "event_type": "message.added",
+                    "payload": json.dumps({"role": "user", "text": "hi"}),
+                }
+            ).encode()
+            + b"\n"
+        )
+
+        reader = asyncio.StreamReader()
+        reader.feed_data(line)
+        reader.feed_eof()
+
+        await broadcaster.start_reading("session-1", reader)
+        await broadcaster._reader_tasks["session-1"]
+
+        # The normalized payload must NOT be double-encoded: decoding once
+        # should yield a dict, not a str.
+        buffer = broadcaster.get_buffer("session-1")
+        assert len(buffer) == 1
+        decoded = json.loads(buffer[0]["payload"])
+        assert isinstance(decoded, dict)
+        assert decoded == {"role": "user", "text": "hi"}
+
+        db_path = str(tmp_path / "test.db")
+        async with aiosqlite.connect(db_path) as db:
+            await self._create_messages_table(db)
+            await broadcaster.persist_messages("session-1", db)
+
+            cursor = await db.execute("SELECT session_id, role, content FROM session_messages")
+            rows = await cursor.fetchall()
+            assert len(rows) == 1
+            assert rows[0][1] == "user"
+            assert rows[0][2] == "hi"
+
+    @pytest.mark.asyncio
+    async def test_double_encoded_payload_is_skipped_without_error(self, broadcaster, tmp_path):
+        """A legacy double-encoded payload must be skipped gracefully rather
+        than raising AttributeError (which previously aborted persistence)."""
+        # Directly inject a buffer entry with a double-encoded payload, as the
+        # old double-encoding bug produced.
+        broadcaster._log_buffers["session-1"] = [
+            {
+                "session_id": "session-1",
+                "timestamp": "2024-01-01T00:00:00",
+                "direction": "internal",
+                "event_type": "message.added",
+                "payload": json.dumps(json.dumps({"role": "user", "text": "hi"})),
+            }
+        ]
+
+        db_path = str(tmp_path / "test.db")
+        async with aiosqlite.connect(db_path) as db:
+            await self._create_messages_table(db)
+            # Must not raise AttributeError.
+            await broadcaster.persist_messages("session-1", db)
+
+            cursor = await db.execute("SELECT COUNT(*) FROM session_messages")
+            count = (await cursor.fetchone())[0]
+            # Double-encoded entry decodes to a str, so it is skipped.
+            assert count == 0
+
+    @pytest.mark.asyncio
+    async def test_mixed_payloads_persist_only_valid_message(self, broadcaster, tmp_path):
+        """With both a single-encoded (valid) and a double-encoded (legacy)
+        message.added entry in the buffer, exactly one message row is produced
+        and no exception is raised."""
+        broadcaster._log_buffers["session-1"] = [
+            {
+                "session_id": "session-1",
+                "timestamp": "2024-01-01T00:00:00",
+                "direction": "internal",
+                "event_type": "message.added",
+                "payload": json.dumps({"role": "user", "text": "hi"}),
+            },
+            {
+                "session_id": "session-1",
+                "timestamp": "2024-01-01T00:00:01",
+                "direction": "internal",
+                "event_type": "message.added",
+                "payload": json.dumps(json.dumps({"role": "user", "text": "hi"})),
+            },
+        ]
+
+        db_path = str(tmp_path / "test.db")
+        async with aiosqlite.connect(db_path) as db:
+            await self._create_messages_table(db)
+            await broadcaster.persist_messages("session-1", db)
+
+            cursor = await db.execute("SELECT session_id, role, content FROM session_messages")
+            rows = await cursor.fetchall()
+            assert len(rows) == 1
+            assert rows[0][1] == "user"
+            assert rows[0][2] == "hi"

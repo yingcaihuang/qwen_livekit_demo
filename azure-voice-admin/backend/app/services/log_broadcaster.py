@@ -116,7 +116,13 @@ class LogBroadcaster:
                 # Skip if parsed JSON is not a dict (e.g., a bare string)
                 if not isinstance(data, dict):
                     continue
-                # Build a normalized log entry
+                # Build a normalized log entry.
+                # If the payload is already a JSON string (as emitted by the
+                # agent worker), store it as-is to avoid double-encoding.
+                raw_payload = data.get("payload", data)
+                payload_str = (
+                    raw_payload if isinstance(raw_payload, str) else json.dumps(raw_payload)
+                )
                 log_entry = {
                     "session_id": session_id,
                     "timestamp": data.get(
@@ -125,7 +131,7 @@ class LogBroadcaster:
                     ),
                     "direction": data.get("direction", "internal"),
                     "event_type": data.get("event_type", data.get("type", "unknown")),
-                    "payload": json.dumps(data.get("payload", data)),
+                    "payload": payload_str,
                 }
                 await self.broadcast(session_id, log_entry)
         except asyncio.CancelledError:
@@ -180,6 +186,10 @@ class LogBroadcaster:
             if entry.get("event_type") == "message.added":
                 try:
                     payload = json.loads(entry.get("payload", "{}"))
+                    # A double-encoded payload decodes to a str (not a dict);
+                    # skip such entries rather than raising AttributeError.
+                    if not isinstance(payload, dict):
+                        continue
                     role = payload.get("role")
                     text = payload.get("text")
                     if role and text:
@@ -191,7 +201,7 @@ class LogBroadcaster:
                                 entry.get("timestamp", ""),
                             )
                         )
-                except (json.JSONDecodeError, TypeError):
+                except (json.JSONDecodeError, TypeError, AttributeError):
                     pass
 
         if messages:
