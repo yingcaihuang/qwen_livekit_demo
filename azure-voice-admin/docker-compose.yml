@@ -1,0 +1,51 @@
+services:
+  caddy:
+    build:
+      context: .
+      dockerfile: Dockerfile.caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      backend:
+        condition: service_started
+      livekit:
+        condition: service_started
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    expose:
+      - "8090"
+    env_file:
+      - .env.production
+    environment:
+      - LIVEKIT_URL=ws://livekit:7880
+      - LIVEKIT_PUBLIC_URL=ws://localhost:7880
+      - DB_PATH=/app/data/voice_admin.db
+      - PORT=8090
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - livekit
+
+  livekit:
+    image: livekit/livekit-server:latest
+    restart: unless-stopped
+    command: --config /etc/livekit.yaml
+    volumes:
+      - ./livekit.yaml:/etc/livekit.yaml:ro
+    ports:
+      - "7880:7880"
+      - "7881:7881"
+      - "7882:7882/udp"
+
+volumes:
+  caddy_data:
+  caddy_config:

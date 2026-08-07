@@ -1,0 +1,51 @@
+"""Pydantic models for Voice Session management."""
+
+from typing import List, Optional
+
+from pydantic import BaseModel
+
+
+class SessionCreate(BaseModel):
+    """Request model for creating a new Voice Session."""
+
+    instance_id: str
+
+
+class SessionResponse(BaseModel):
+    """Response model returned after session creation with LiveKit join info."""
+
+    session_id: str
+    room_name: str
+    livekit_token: str  # 用户加入房间的 token
+    livekit_url: str
+
+
+class SessionDetail(BaseModel):
+    """Response model for session detail view."""
+
+    id: str
+    instance_id: str
+    instance_name: str
+    room_name: str
+    status: str
+    start_time: str
+    end_time: Optional[str] = None
+    input_tokens: int
+    output_tokens: int
+    error_message: Optional[str] = None
+
+
+class PaginatedSessions(BaseModel):
+    """Response model for paginated session list."""
+
+    items: List[SessionDetail]
+    total: int
+    page: int
+    page_size: int
+
+
+class TokenUsageReport(BaseModel):
+    """Request model for Agent Worker to report token usage."""
+
+    input_tokens: int
+    output_tokens: int

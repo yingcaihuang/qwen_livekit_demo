@@ -1,0 +1,7 @@
+data/
+backend/.venv/
+backend/.pytest_cache/
+backend/azure_voice_admin.egg-info/
+frontend/node_modules/
+frontend/dist/
+.git

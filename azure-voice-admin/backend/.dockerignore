@@ -1,0 +1,10 @@
+.venv
+.pytest_cache
+__pycache__
+*.pyc
+*.egg-info
+azure_voice_admin.egg-info
+static
+data
+.env
+.git

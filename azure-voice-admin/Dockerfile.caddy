@@ -1,0 +1,21 @@
+# Stage 1: Build frontend with pnpm
+FROM node:22-alpine AS frontend-builder
+WORKDIR /app
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@9 --activate
+
+# Copy package.json
+COPY frontend/package.json ./
+
+# Install dependencies
+RUN pnpm install
+
+# Copy source and build
+COPY frontend/ .
+RUN pnpm exec tsc -b && pnpm exec vite build --outDir /build
+
+# Stage 2: Caddy with pre-built frontend
+FROM caddy:2-alpine
+COPY --from=frontend-builder /build /srv/frontend
+COPY Caddyfile /etc/caddy/Caddyfile
