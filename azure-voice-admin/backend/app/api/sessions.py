@@ -65,6 +65,49 @@ async def get_session(
     return await _session_service.get_session(db, session_id)
 
 
+@router.get("/{session_id}/logs")
+async def get_session_logs(
+    session_id: str, db: aiosqlite.Connection = Depends(get_db)
+):
+    """Get saved debug logs for a completed session.
+
+    Returns an array of log entries from the session_logs table.
+    Returns 404 if session doesn't exist.
+    """
+    from fastapi import HTTPException
+
+    # Verify session exists
+    cursor = await db.execute(
+        "SELECT id FROM sessions WHERE id = ?", (session_id,)
+    )
+    if not await cursor.fetchone():
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    # Fetch logs
+    cursor = await db.execute(
+        """
+        SELECT id, session_id, timestamp, direction, event_type, payload
+        FROM session_logs
+        WHERE session_id = ?
+        ORDER BY id ASC
+        """,
+        (session_id,),
+    )
+    rows = await cursor.fetchall()
+
+    return [
+        {
+            "id": row[0],
+            "session_id": row[1],
+            "timestamp": row[2],
+            "direction": row[3],
+            "event_type": row[4],
+            "payload": row[5],
+        }
+        for row in rows
+    ]
+
+
 @router.post("/{session_id}/stop")
 async def stop_session(
     session_id: str, db: aiosqlite.Connection = Depends(get_db)

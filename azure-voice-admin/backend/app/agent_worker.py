@@ -20,6 +20,7 @@ Environment variables (all required):
                           (e.g. http://localhost:8090/internal/sessions/{id}/usage)
 """
 
+import asyncio
 import json
 import os
 import sys
@@ -88,7 +89,7 @@ _total_output_tokens: int = 0
 
 
 async def report_usage() -> None:
-    """POST accumulated token usage to the management server."""
+    """POST accumulated token usage to the management server (safety net)."""
     report_url = os.environ.get("REPORT_URL", "")
     if not report_url:
         emit_error("REPORT_URL not set, skipping usage report")
@@ -122,6 +123,23 @@ async def report_usage() -> None:
                     emit_event("usage.reported", direction="outbound")
     except Exception as exc:
         emit_error("Usage report request failed", details=str(exc))
+
+
+async def _report_usage_delta(input_tokens: int, output_tokens: int) -> None:
+    """POST incremental token usage to the management server."""
+    report_url = os.environ.get("REPORT_URL", "")
+    if not report_url:
+        return
+    try:
+        async with aiohttp.ClientSession() as http_session:
+            async with http_session.post(
+                report_url,
+                json={"input_tokens": input_tokens, "output_tokens": output_tokens},
+                timeout=aiohttp.ClientTimeout(total=5),
+            ) as resp:
+                pass  # Fire and forget
+    except Exception:
+        pass  # Non-critical, don't crash the agent
 
 
 # ---------------------------------------------------------------------------
@@ -193,27 +211,36 @@ async def entrypoint(ctx: JobContext) -> None:
         # Subscribe to session_usage_updated for token tracking
         @session.on("session_usage_updated")
         def _on_usage_updated(ev) -> None:
-            """Capture cumulative token usage from session_usage_updated events."""
+            """Report token usage on each update (incremental)."""
             global _total_input_tokens, _total_output_tokens
 
-            # ev.usage is AgentSessionUsage with model_usage list
-            total_in = 0
-            total_out = 0
+            new_input = 0
+            new_output = 0
             for model_usage in ev.usage.model_usage:
                 if hasattr(model_usage, "input_tokens"):
-                    total_in += model_usage.input_tokens
+                    new_input += model_usage.input_tokens
                 if hasattr(model_usage, "output_tokens"):
-                    total_out += model_usage.output_tokens
+                    new_output += model_usage.output_tokens
 
-            _total_input_tokens = total_in
-            _total_output_tokens = total_out
+            # Calculate delta (new tokens since last report)
+            delta_input = new_input - _total_input_tokens
+            delta_output = new_output - _total_output_tokens
+
+            _total_input_tokens = new_input
+            _total_output_tokens = new_output
+
+            # Report delta immediately (non-blocking)
+            if delta_input > 0 or delta_output > 0:
+                asyncio.get_event_loop().create_task(
+                    _report_usage_delta(delta_input, delta_output)
+                )
 
             emit_event(
                 "response.done",
                 direction="inbound",
                 payload=json.dumps({
-                    "input_tokens": total_in,
-                    "output_tokens": total_out,
+                    "input_tokens": new_input,
+                    "output_tokens": new_output,
                 }),
             )
 

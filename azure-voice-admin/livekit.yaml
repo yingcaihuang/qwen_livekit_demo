@@ -7,5 +7,8 @@ rtc:
 keys:
   APIKeyForVoiceAdmin: ThisIsASecretThatIsAtLeast32CharsLong!
 
+room:
+  auto_create: true
+
 logging:
   level: info

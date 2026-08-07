@@ -1,5 +1,6 @@
 """Service layer for Voice Session lifecycle management."""
 
+import logging
 import os
 import time
 import uuid
@@ -108,6 +109,13 @@ class SessionService:
                     instance_config=instance_config,
                     room_name=room_name,
                 )
+
+                # Start reading agent stdout for debug logging
+                from app.services.log_broadcaster import get_log_broadcaster
+                stdout_reader = process_manager.get_stdout_reader(session_id)
+                if stdout_reader:
+                    broadcaster = get_log_broadcaster()
+                    await broadcaster.start_reading(session_id, stdout_reader)
         except Exception as e:
             logging.getLogger("session_service").error(
                 f"Failed to spawn agent for session {session_id}: {e}"
@@ -145,6 +153,18 @@ class SessionService:
         except (ImportError, Exception):
             # ProcessManager not yet implemented (task 3.4) — skip gracefully
             pass
+
+        # Persist debug logs to database
+        try:
+            from app.services.log_broadcaster import get_log_broadcaster
+
+            broadcaster = get_log_broadcaster()
+            broadcaster.stop_reading(session_id)
+            await broadcaster.persist_logs(session_id, db)
+        except Exception as e:
+            logging.getLogger("session_service").error(
+                f"Failed to persist logs for session {session_id}: {e}"
+            )
 
         now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
         await db.execute(

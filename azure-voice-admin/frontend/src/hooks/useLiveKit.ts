@@ -63,14 +63,15 @@ export function useLiveKit({ token, url, autoConnect = false }: UseLiveKitParams
     })
 
     room.on(RoomEvent.ActiveSpeakersChanged, (speakers: Participant[]) => {
-      if (room.state !== ConnectionState.Connected) return
+      const currentRoom = roomRef.current
+      if (!currentRoom || currentRoom.state !== ConnectionState.Connected) return
 
-      const localParticipant = room.localParticipant
+      const localIdentity = currentRoom.localParticipant.identity
       const localIsSpeaking = speakers.some(
-        (s) => s.identity === localParticipant.identity
+        (s) => s.identity === localIdentity
       )
       const remoteIsSpeaking = speakers.some(
-        (s) => s.identity !== localParticipant.identity
+        (s) => s.identity !== localIdentity
       )
 
       if (remoteIsSpeaking) {
