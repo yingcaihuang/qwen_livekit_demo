@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useApi } from '@/hooks/useApi'
+import { MarkdownMessage } from '@/components/chat/MarkdownMessage'
 import type { Session, LogEntry, Message } from '@/types'
 
 const statusConfig: Record<string, { label: string; className: string }> = {
@@ -246,7 +247,11 @@ export function SessionDetailPage() {
                       : 'bg-gray-100 text-gray-900'
                   }`}
                 >
-                  <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                  {msg.role === 'user' ? (
+                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                  ) : (
+                    <MarkdownMessage content={msg.content} />
+                  )}
                   <p
                     className={`text-xs mt-1 ${
                       msg.role === 'user' ? 'text-blue-100' : 'text-gray-400'

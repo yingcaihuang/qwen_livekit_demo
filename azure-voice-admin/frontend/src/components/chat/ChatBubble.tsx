@@ -1,6 +1,7 @@
 import { Bot, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { ChatMessage } from '@/types'
+import { MarkdownMessage } from './MarkdownMessage'
 
 interface ChatBubbleProps {
   message: ChatMessage
@@ -52,16 +53,17 @@ export function ChatBubble({ message, isStreaming = false }: ChatBubbleProps) {
           <Bot className="h-4 w-4" />
         </div>
       )}
-      <div
-        className={cn(
-          'max-w-[75%] whitespace-pre-wrap break-words rounded-2xl px-4 py-2.5 text-sm shadow-sm',
-          isUser
-            ? 'rounded-br-sm bg-gradient-to-br from-indigo-600 to-violet-600 text-white'
-            : 'rounded-bl-sm border bg-card text-card-foreground'
-        )}
-      >
-        {showTyping ? <TypingIndicator /> : message.content}
-      </div>
+      {isUser ? (
+        // user：右对齐紧凑气泡，靛紫渐变白字
+        <div className="max-w-[75%] break-words whitespace-pre-wrap rounded-2xl rounded-br-sm bg-gradient-to-br from-indigo-600 to-violet-600 px-4 py-2.5 text-sm text-white shadow-sm">
+          {message.content}
+        </div>
+      ) : (
+        // assistant：占满会话列剩余宽度，富文本可用整宽（公式/图/表/图片有空间）
+        <div className="min-w-0 flex-1 break-words rounded-2xl rounded-bl-sm border bg-card px-4 py-2.5 text-sm text-card-foreground shadow-sm">
+          {showTyping ? <TypingIndicator /> : <MarkdownMessage content={message.content} />}
+        </div>
+      )}
       {isUser && (
         <div
           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-sm"
