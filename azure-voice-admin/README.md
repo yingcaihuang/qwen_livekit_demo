@@ -1,76 +1,67 @@
 # Azure Voice Testing Admin
 
-Azure OpenAI Realtime 语音测试管理面板 - 本地部署的 Web 管理工具，帮助开发者管理多个 Azure OpenAI Realtime API 实例配置、发起实时语音对话测试、追踪 Token 消耗和费用、查看调试日志。
+Azure OpenAI Realtime 语音测试管理面板 — 本地部署的 Web 管理工具。
 
-## 快速开始
+## Docker 部署（推荐）
 
-### 1. 安装后端依赖
+```bash
+# 配置
+cp .env.production.example .env.production
+# 编辑 .env.production（默认 HTTP 模式，内网即可使用）
+
+# 构建 & 启动
+./build.sh
+docker compose up -d
+
+# 停止
+./stop.sh
+```
+
+访问 `http://localhost` 即可使用。
+
+### 服务架构
+
+| 服务 | 端口 | 说明 |
+|------|------|------|
+| Caddy | :80/:443 | 反向代理 + 前端静态文件 |
+| Backend | :8090 (内部) | FastAPI API + WebSocket |
+| LiveKit | :7880/:7882/udp | 信令 + 音频媒体 |
+
+### 环境变量
+
+参见 `.env.production.example`，支持两种模式：
+- **内网模式** — `SITE_DOMAIN=:80`（默认，纯 HTTP）
+- **公网模式** — `SITE_DOMAIN=your-domain.com`（Caddy 自动签发 HTTPS）
+
+## 功能
+
+- 多 Azure 实例管理（不同 endpoint/key/model）
+- 实时语音对话（8 种音色可选）
+- Token 用量实时追踪
+- Debug Console 实时日志
+- 会话历史管理
+
+## 本地开发
+
+### 后端
 
 ```bash
 cd backend
 python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
+source .venv/bin/activate
 pip install -e .
+uvicorn app.main:app --reload --port 8090
 ```
 
-### 2. 安装前端依赖
+### 前端
 
 ```bash
 cd frontend
 pnpm install
-```
-
-### 3. 配置环境变量
-
-复制后端环境变量模板并填写配置：
-
-```bash
-cd backend
-cp .env.example .env
-```
-
-编辑 `.env` 文件，设置以下变量：
-
-- `LIVEKIT_URL` - LiveKit 服务器 WebSocket 地址（默认 `ws://localhost:7880`）
-- `LIVEKIT_API_KEY` - LiveKit API Key
-- `LIVEKIT_API_SECRET` - LiveKit API Secret
-- `DB_PATH` - SQLite 数据库文件路径（默认 `./data.db`）
-- `PORT` - 服务端口（默认 `8090`）
-
-### 4. 构建前端
-
-```bash
-cd frontend
-pnpm build
-```
-
-构建产物会输出到 `backend/static/` 目录，由 FastAPI 在生产模式下直接托管。
-
-### 5. 启动系统
-
-```bash
-cd backend
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8090
-```
-
-启动后访问 http://localhost:8090 即可使用管理面板。
-
-## 开发模式
-
-前后端分别启动，前端开发服务器会自动代理 API 请求到后端：
-
-```bash
-# 终端 1: 启动后端
-cd backend
-source .venv/bin/activate
-uvicorn app.main:app --reload --port 8090
-
-# 终端 2: 启动前端开发服务器
-cd frontend
 pnpm dev
 ```
 
-前端开发服务器默认运行在 http://localhost:5173，API 请求会代理到 http://localhost:8090。
+前端开发服务器 http://localhost:5173，API 代理到 http://localhost:8090。
 
 ## 项目结构
 
@@ -78,22 +69,35 @@ pnpm dev
 azure-voice-admin/
 ├── backend/
 │   ├── app/
-│   │   ├── api/          # FastAPI 路由
-│   │   ├── models/       # Pydantic 数据模型
-│   │   ├── services/     # 业务逻辑层
-│   │   ├── main.py       # 应用入口
-│   │   ├── database.py   # 数据库管理
-│   │   └── schema.sql    # 数据库 Schema
-│   ├── tests/            # 后端测试
-│   ├── static/           # 前端构建产物（自动生成）
-│   └── pyproject.toml    # 后端项目配置
-└── frontend/
-    ├── src/
-    │   ├── components/   # React 组件
-    │   ├── pages/        # 页面组件
-    │   ├── hooks/        # 自定义 Hooks
-    │   ├── lib/          # 工具函数
-    │   └── types/        # TypeScript 类型定义
-    ├── package.json
-    └── vite.config.ts
+│   │   ├── api/              # REST API + WebSocket 端点
+│   │   ├── models/           # Pydantic 数据模型
+│   │   ├── services/         # 业务逻辑（Session, Instance, ProcessManager, LogBroadcaster）
+│   │   ├── agent_worker.py   # LiveKit Agent Worker（Azure OpenAI Realtime）
+│   │   ├── main.py           # FastAPI 应用入口
+│   │   ├── database.py       # SQLite 异步连接管理
+│   │   └── schema.sql        # 数据库 Schema
+│   ├── tests/                # 107 个测试
+│   └── pyproject.toml
+├── frontend/
+│   ├── src/
+│   │   ├── pages/            # Dashboard, Instances, VoiceSession, History
+│   │   ├── components/       # UI 组件（shadcn/ui）
+│   │   ├── hooks/            # useLiveKit, useSessionLogs, useApi
+│   │   └── types/            # TypeScript 类型定义
+│   └── package.json
+├── docker-compose.yml        # 3 服务编排
+├── Dockerfile.caddy          # Multi-stage: pnpm build + Caddy
+├── Caddyfile                 # 反向代理规则
+├── livekit.yaml              # LiveKit Server 配置
+├── build.sh / deploy.sh / stop.sh
+└── .env.production.example
+```
+
+## 运行测试
+
+```bash
+cd backend
+source .venv/bin/activate
+pip install -e ".[dev]"
+pytest
 ```
