@@ -1,5 +1,6 @@
 """FastAPI application entry point for Azure Voice Testing Admin."""
 
+import asyncio
 import logging
 import os
 import socket
@@ -12,6 +13,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
 logger = logging.getLogger("azure_voice_admin")
+
+SESSION_TIMEOUT_MINUTES = 5
+CLEANUP_INTERVAL_SECONDS = 60
 
 
 def _check_livekit_reachable(livekit_url: str, timeout: float = 3.0) -> bool:
@@ -34,6 +38,56 @@ def _check_livekit_reachable(livekit_url: str, timeout: float = 3.0) -> bool:
     except Exception as e:
         logger.warning(f"LiveKit reachability check error: {e}")
         return False
+
+
+async def _session_cleanup_loop():
+    """Background task: periodically mark stale sessions as cancelled."""
+    import aiosqlite
+
+    from app.database import DB_PATH
+
+    while True:
+        try:
+            await asyncio.sleep(CLEANUP_INTERVAL_SECONDS)
+
+            async with aiosqlite.connect(DB_PATH) as db:
+                await db.execute("PRAGMA foreign_keys = ON")
+
+                # Find stale sessions (active for more than SESSION_TIMEOUT_MINUTES)
+                cursor = await db.execute(
+                    """
+                    SELECT id FROM sessions
+                    WHERE status IN ('connecting', 'connected')
+                    AND start_time < datetime('now', ? || ' minutes')
+                    """,
+                    (f"-{SESSION_TIMEOUT_MINUTES}",),
+                )
+                stale_sessions = await cursor.fetchall()
+
+                if stale_sessions:
+                    for (session_id,) in stale_sessions:
+                        await db.execute(
+                            "UPDATE sessions SET status = 'cancelled', end_time = datetime('now') WHERE id = ?",
+                            (session_id,),
+                        )
+                        logger.info(f"Auto-cancelled stale session: {session_id[:8]}...")
+
+                    await db.commit()
+                    logger.info(f"Cleaned up {len(stale_sessions)} stale session(s)")
+
+                    # Also terminate any running agent processes
+                    try:
+                        from app.services.process_manager import process_manager
+
+                        for (session_id,) in stale_sessions:
+                            await process_manager.terminate_agent(session_id)
+                    except Exception:
+                        pass
+
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            logger.error(f"Session cleanup error: {e}")
 
 
 @asynccontextmanager
@@ -61,9 +115,17 @@ async def lifespan(app: FastAPI):
     app.state.livekit_reachable = livekit_reachable
     app.state.livekit_url = livekit_url
 
+    # Start session cleanup background task
+    cleanup_task = asyncio.create_task(_session_cleanup_loop())
+
     yield
 
-    # Shutdown
+    # Shutdown: cancel cleanup task
+    cleanup_task.cancel()
+    try:
+        await cleanup_task
+    except asyncio.CancelledError:
+        pass
     logger.info("Application shutting down.")
 
 
