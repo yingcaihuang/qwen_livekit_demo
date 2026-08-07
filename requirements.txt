@@ -1,0 +1,5 @@
+# LiveKit Agents + OpenAI Realtime 插件（Qwen 复用）+ Silero 本地 VAD
+livekit-agents[openai,silero]~=1.5
+
+# 读取 .env 配置
+python-dotenv>=1.0

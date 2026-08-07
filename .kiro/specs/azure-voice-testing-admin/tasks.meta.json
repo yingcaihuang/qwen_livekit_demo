@@ -1,0 +1,445 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 初始化后端项目结构 (FastAPI + 依赖)": [
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786011401735
+      },
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786011416073
+      },
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786011669436
+      }
+    ],
+    "1.2 初始化前端项目结构 (React + Vite + Tailwind + shadcn/ui)": [
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786011401778
+      },
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786011417035
+      },
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786011670519
+      }
+    ],
+    "1.3 创建 SQLite 数据库 Schema 和初始化": [
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786011401799
+      },
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786011677645
+      },
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786012016686
+      }
+    ],
+    "1.4 创建 Pydantic 数据模型": [
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786011401817
+      },
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786011678400
+      },
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786012017365
+      }
+    ],
+    "2.1 实现后端 Instance 服务层": [
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786011401840
+      },
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786012026071
+      },
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786012291809
+      }
+    ],
+    "2.2 实现后端 Instance REST API": [
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786011401862
+      },
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786012299607
+      },
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786012432765
+      }
+    ],
+    "2.4 实现前端 Instance 列表页面": [
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786011401883
+      },
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786012026960
+      },
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786012291911
+      }
+    ],
+    "2.5 实现前端 Instance 创建/编辑表单": [
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786011401898
+      },
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786012300465
+      },
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786012433428
+      }
+    ],
+    "3.1 实现后端 Session REST API": [
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786011401920
+      },
+      {
+        "executionId": "c13967a1-a529-4ba4-868e-5d46bf80e4eb",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786012509143
+      },
+      {
+        "executionId": "c13967a1-a529-4ba4-868e-5d46bf80e4eb",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786013045270
+      }
+    ],
+    "3.2 实现 Session 服务层": [
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786011401938
+      },
+      {
+        "executionId": "c13967a1-a529-4ba4-868e-5d46bf80e4eb",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786013074221
+      },
+      {
+        "executionId": "c13967a1-a529-4ba4-868e-5d46bf80e4eb",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786013302982
+      }
+    ],
+    "3.3 实现 Agent Worker 脚本": [
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786011401954
+      },
+      {
+        "executionId": "c13967a1-a529-4ba4-868e-5d46bf80e4eb",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786012510062
+      },
+      {
+        "executionId": "c13967a1-a529-4ba4-868e-5d46bf80e4eb",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786013045995
+      }
+    ],
+    "3.4 实现 Process Manager": [
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786011401972
+      },
+      {
+        "executionId": "c13967a1-a529-4ba4-868e-5d46bf80e4eb",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786013075059
+      },
+      {
+        "executionId": "c13967a1-a529-4ba4-868e-5d46bf80e4eb",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786013303775
+      }
+    ],
+    "4.1 实现后端 Log Broadcaster": [
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786011401987
+      },
+      {
+        "executionId": "c13967a1-a529-4ba4-868e-5d46bf80e4eb",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786013075796
+      },
+      {
+        "executionId": "c13967a1-a529-4ba4-868e-5d46bf80e4eb",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786013304566
+      }
+    ],
+    "4.2 实现后端 WebSocket 日志端点": [
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786011402003
+      },
+      {
+        "executionId": "c13967a1-a529-4ba4-868e-5d46bf80e4eb",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786013076603
+      },
+      {
+        "executionId": "c13967a1-a529-4ba4-868e-5d46bf80e4eb",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786013305361
+      }
+    ],
+    "4.3 实现前端 Debug Console 组件": [
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786011402022
+      },
+      {
+        "executionId": "c13967a1-a529-4ba4-868e-5d46bf80e4eb",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786013077296
+      },
+      {
+        "executionId": "c13967a1-a529-4ba4-868e-5d46bf80e4eb",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786013306083
+      }
+    ],
+    "5. Checkpoint - 核心功能验证": [
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786011402037
+      },
+      {
+        "executionId": "c13967a1-a529-4ba4-868e-5d46bf80e4eb",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786013711513
+      }
+    ],
+    "6.1 实现后端 Dashboard API": [
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786011402054
+      },
+      {
+        "executionId": "c13967a1-a529-4ba4-868e-5d46bf80e4eb",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786013313919
+      },
+      {
+        "executionId": "c13967a1-a529-4ba4-868e-5d46bf80e4eb",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786013533476
+      }
+    ],
+    "6.2 实现前端 Dashboard 页面": [
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786011402071
+      },
+      {
+        "executionId": "c13967a1-a529-4ba4-868e-5d46bf80e4eb",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786013314864
+      },
+      {
+        "executionId": "c13967a1-a529-4ba4-868e-5d46bf80e4eb",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786013534013
+      }
+    ],
+    "6.3 实现前端 Session History 页面": [
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786011402088
+      },
+      {
+        "executionId": "c13967a1-a529-4ba4-868e-5d46bf80e4eb",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786013315844
+      },
+      {
+        "executionId": "c13967a1-a529-4ba4-868e-5d46bf80e4eb",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786013534999
+      }
+    ],
+    "7.1 实现前端 Voice Session 页面": [
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786011402107
+      },
+      {
+        "executionId": "c13967a1-a529-4ba4-868e-5d46bf80e4eb",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786013316610
+      },
+      {
+        "executionId": "c13967a1-a529-4ba4-868e-5d46bf80e4eb",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786013535850
+      }
+    ],
+    "7.2 实现前端布局（AppShell + Sidebar + 路由）": [
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786011402125
+      },
+      {
+        "executionId": "c13967a1-a529-4ba4-868e-5d46bf80e4eb",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786013318015
+      },
+      {
+        "executionId": "c13967a1-a529-4ba4-868e-5d46bf80e4eb",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786013536684
+      }
+    ],
+    "7.3 实现系统启动脚本": [
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786011402150
+      },
+      {
+        "executionId": "c13967a1-a529-4ba4-868e-5d46bf80e4eb",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786013545404
+      },
+      {
+        "executionId": "c13967a1-a529-4ba4-868e-5d46bf80e4eb",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786013709374
+      }
+    ],
+    "7.4 配置生产构建（前端静态文件由 FastAPI 托管）": [
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786011402169
+      },
+      {
+        "executionId": "c13967a1-a529-4ba4-868e-5d46bf80e4eb",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786013546398
+      },
+      {
+        "executionId": "c13967a1-a529-4ba4-868e-5d46bf80e4eb",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786013710274
+      }
+    ],
+    "8. Final Checkpoint - 全功能验证": [
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786011402193
+      },
+      {
+        "executionId": "c13967a1-a529-4ba4-868e-5d46bf80e4eb",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786013712148
+      }
+    ],
+    "1. Phase 1: 项目脚手架与后端基础": [
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786012017387
+      }
+    ],
+    "2. Phase 2: 实例管理 (后端 + 前端)": [
+      {
+        "executionId": "07009cf1-2982-4012-b9ac-3d380a8e1554",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786012433449
+      }
+    ],
+    "3. Phase 3: 会话管理与 Agent Worker": [
+      {
+        "executionId": "c13967a1-a529-4ba4-868e-5d46bf80e4eb",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786013303801
+      }
+    ],
+    "4. Phase 4: 调试控制台与实时日志": [
+      {
+        "executionId": "c13967a1-a529-4ba4-868e-5d46bf80e4eb",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786013306110
+      }
+    ],
+    "6. Phase 5: Dashboard 与会话历史": [
+      {
+        "executionId": "c13967a1-a529-4ba4-868e-5d46bf80e4eb",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786013535032
+      }
+    ],
+    "7. Phase 6: 集成与系统打磨": [
+      {
+        "executionId": "c13967a1-a529-4ba4-868e-5d46bf80e4eb",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786013710311
+      }
+    ]
+  }
+}

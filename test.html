@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LiveKit + AI 语音助手测试</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    h1 { margin-bottom: 1.5rem; font-size: 1.5rem; }
+    .card {
+      background: #16213e;
+      border-radius: 12px;
+      padding: 2rem;
+      width: 100%;
+      max-width: 500px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    .info {
+      font-size: 0.8rem;
+      color: #888;
+      margin-bottom: 1rem;
+      padding: 0.5rem;
+      background: #0f3460;
+      border-radius: 6px;
+    }
+    .info span { color: #81d4fa; }
+    button {
+      width: 100%;
+      padding: 0.8rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    #connectBtn { background: #4caf50; color: #fff; }
+    #connectBtn:hover { background: #66bb6a; }
+    #connectBtn.connected { background: #e53935; }
+    #connectBtn.connected:hover { background: #ef5350; }
+    #connectBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .status {
+      margin-top: 1rem;
+      padding: 0.6rem;
+      border-radius: 6px;
+      background: #0f3460;
+      font-size: 0.85rem;
+      min-height: 2.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: #666;
+      flex-shrink: 0;
+    }
+    .dot.connected { background: #4caf50; animation: pulse 1.5s infinite; }
+    .dot.speaking { background: #ff9800; animation: pulse 0.4s infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+    #log {
+      margin-top: 1rem;
+      padding: 0.8rem;
+      border-radius: 6px;
+      background: #000;
+      font-family: monospace;
+      font-size: 0.75rem;
+      max-height: 200px;
+      overflow-y: auto;
+      line-height: 1.4;
+    }
+    #log p { margin: 0.2rem 0; }
+    .log-info { color: #81d4fa; }
+    .log-warn { color: #ffcc02; }
+    .log-error { color: #ef5350; }
+    #audioContainer { display: none; }
+  </style>
+</head>
+<body>
+  <h1>LiveKit + AI 语音助手</h1>
+  <div class="card">
+    <div class="info" id="roomInfo">点击连接自动创建新房间</div>
+
+    <button id="connectBtn" onclick="toggleConnection()">连接并开始对话</button>
+
+    <div class="status">
+      <div class="dot" id="statusDot"></div>
+      <span id="statusText">未连接</span>
+    </div>
+
+    <div id="log"></div>
+  </div>
+
+  <div id="audioContainer"></div>
+
+  <script src="livekit-client.umd.js"></script>
+  <script>
+    const { Room, RoomEvent, Track, createLocalTracks } = LivekitClient;
+    const WS_URL = 'ws://localhost:7880';
+
+    let room = null;
+    let connected = false;
+
+    function log(msg, level = 'info') {
+      const el = document.getElementById('log');
+      const p = document.createElement('p');
+      p.className = `log-${level}`;
+      p.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      el.appendChild(p);
+      el.scrollTop = el.scrollHeight;
+    }
+
+    function setStatus(text, dotClass = '') {
+      document.getElementById('statusText').textContent = text;
+      document.getElementById('statusDot').className = 'dot ' + dotClass;
+    }
+
+    async function toggleConnection() {
+      if (connected) {
+        await disconnect();
+      } else {
+        await connect();
+      }
+    }
+
+    async function connect() {
+      const btn = document.getElementById('connectBtn');
+      btn.disabled = true;
+      btn.textContent = '获取 Token...';
+      setStatus('正在准备...');
+
+      try {
+        // 从服务器获取新 token (每次新房间)
+        const resp = await fetch('/api/token');
+        const data = await resp.json();
+        const token = data.token;
+        const roomName = data.room;
+
+        document.getElementById('roomInfo').innerHTML =
+          `房间: <span>${roomName}</span> | 身份: <span>${data.identity}</span>`;
+
+        log(`获取到 Token, 房间: ${roomName}`);
+        btn.textContent = '连接中...';
+        setStatus('正在连接...');
+
+        room = new Room({ adaptiveStream: true, dynacast: true });
+
+        room.on(RoomEvent.Connected, () => {
+          log('已连接到房间: ' + room.name);
+          setStatus('已连接 - 等待 Agent', 'connected');
+        });
+
+        room.on(RoomEvent.ParticipantConnected, (participant) => {
+          log(`参与者加入: ${participant.identity}`);
+          setStatus('Agent 已连接 - 可以对话', 'connected');
+        });
+
+        room.on(RoomEvent.ParticipantDisconnected, (participant) => {
+          log(`参与者离开: ${participant.identity}`, 'warn');
+        });
+
+        room.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
+          log(`收到音轨: ${track.kind} 来自 ${participant.identity}`);
+          if (track.kind === Track.Kind.Audio) {
+            const audioEl = track.attach();
+            document.getElementById('audioContainer').appendChild(audioEl);
+          }
+        });
+
+        room.on(RoomEvent.TrackUnsubscribed, (track) => {
+          track.detach().forEach(el => el.remove());
+        });
+
+        room.on(RoomEvent.ActiveSpeakersChanged, (speakers) => {
+          const agentSpeaking = speakers.some(
+            s => s.identity !== room.localParticipant.identity
+          );
+          if (agentSpeaking) {
+            setStatus('Agent 正在说话...', 'speaking');
+          } else if (connected) {
+            setStatus('对话中 - 请说话', 'connected');
+          }
+        });
+
+        room.on(RoomEvent.Disconnected, () => {
+          log('已断开连接', 'warn');
+          handleDisconnect();
+        });
+
+        await room.connect(WS_URL, token);
+        connected = true;
+
+        // 发布麦克风
+        const tracks = await createLocalTracks({ audio: true, video: false });
+        for (const track of tracks) {
+          await room.localParticipant.publishTrack(track);
+          log('麦克风已发布');
+        }
+
+        btn.textContent = '断开连接';
+        btn.classList.add('connected');
+        btn.disabled = false;
+
+      } catch (err) {
+        log(`连接失败: ${err.message}`, 'error');
+        setStatus('连接失败');
+        btn.textContent = '连接并开始对话';
+        btn.disabled = false;
+        room = null;
+      }
+    }
+
+    async function disconnect() {
+      if (room) await room.disconnect();
+      handleDisconnect();
+    }
+
+    function handleDisconnect() {
+      connected = false;
+      room = null;
+      const btn = document.getElementById('connectBtn');
+      btn.textContent = '连接并开始对话';
+      btn.classList.remove('connected');
+      btn.disabled = false;
+      setStatus('未连接');
+      document.getElementById('audioContainer').innerHTML = '';
+    }
+  </script>
+</body>
+</html>
