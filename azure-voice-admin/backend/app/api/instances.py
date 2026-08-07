@@ -1,9 +1,8 @@
 """REST API routes for Instance configuration management."""
 
+import aiosqlite
 from fastapi import APIRouter, Depends, Response
 from starlette.status import HTTP_201_CREATED, HTTP_204_NO_CONTENT
-
-import aiosqlite
 
 from app.database import get_db
 from app.models.instance import (
@@ -26,9 +25,7 @@ async def list_instances(db: aiosqlite.Connection = Depends(get_db)):
 
 
 @router.post("", status_code=HTTP_201_CREATED)
-async def create_instance(
-    data: InstanceCreate, db: aiosqlite.Connection = Depends(get_db)
-):
+async def create_instance(data: InstanceCreate, db: aiosqlite.Connection = Depends(get_db)):
     """Create a new instance configuration.
 
     Returns 422 if validation fails (empty fields).
@@ -38,9 +35,7 @@ async def create_instance(
 
 
 @router.get("/{instance_id}", response_model=InstanceDetail)
-async def get_instance(
-    instance_id: str, db: aiosqlite.Connection = Depends(get_db)
-):
+async def get_instance(instance_id: str, db: aiosqlite.Connection = Depends(get_db)):
     """Get instance detail including masked API key and token usage statistics.
 
     Returns 404 if not found.
@@ -64,9 +59,7 @@ async def update_instance(
 
 
 @router.delete("/{instance_id}", status_code=HTTP_204_NO_CONTENT)
-async def delete_instance(
-    instance_id: str, db: aiosqlite.Connection = Depends(get_db)
-):
+async def delete_instance(instance_id: str, db: aiosqlite.Connection = Depends(get_db)):
     """Delete an instance configuration.
 
     Returns 404 if not found.

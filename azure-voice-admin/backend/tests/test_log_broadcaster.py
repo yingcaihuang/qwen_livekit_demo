@@ -140,18 +140,24 @@ class TestStartReading:
 
         # Simulate stdout with JSON lines
         lines = [
-            json.dumps({
-                "timestamp": "2024-01-01T00:00:00",
-                "direction": "inbound",
-                "event_type": "session.created",
-                "payload": {"id": "test"},
-            }).encode() + b"\n",
-            json.dumps({
-                "timestamp": "2024-01-01T00:00:01",
-                "direction": "outbound",
-                "event_type": "response.done",
-                "payload": {"usage": {"input_tokens": 10}},
-            }).encode() + b"\n",
+            json.dumps(
+                {
+                    "timestamp": "2024-01-01T00:00:00",
+                    "direction": "inbound",
+                    "event_type": "session.created",
+                    "payload": {"id": "test"},
+                }
+            ).encode()
+            + b"\n",
+            json.dumps(
+                {
+                    "timestamp": "2024-01-01T00:00:01",
+                    "direction": "outbound",
+                    "event_type": "response.done",
+                    "payload": {"usage": {"input_tokens": 10}},
+                }
+            ).encode()
+            + b"\n",
         ]
 
         reader = asyncio.StreamReader()
@@ -175,12 +181,15 @@ class TestStartReading:
         """Malformed JSON lines should be skipped, not crash the reader."""
         lines = [
             b"not valid json\n",
-            json.dumps({
-                "timestamp": "2024-01-01T00:00:00",
-                "direction": "internal",
-                "event_type": "info",
-                "payload": {},
-            }).encode() + b"\n",
+            json.dumps(
+                {
+                    "timestamp": "2024-01-01T00:00:00",
+                    "direction": "internal",
+                    "event_type": "info",
+                    "payload": {},
+                }
+            ).encode()
+            + b"\n",
             b"another broken line {{\n",
         ]
 

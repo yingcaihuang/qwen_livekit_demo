@@ -4,12 +4,10 @@ import logging
 import os
 import time
 import uuid
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 import aiosqlite
 from fastapi import HTTPException
-
 from livekit.api import AccessToken, VideoGrants
 
 from app.models.session import (
@@ -46,7 +44,7 @@ class SessionService:
         return token.to_jwt()
 
     async def create_session(
-        self, db: aiosqlite.Connection, instance_id: str
+        self, db: aiosqlite.Connection, instance_id: str, voice: str = "alloy"
     ) -> SessionResponse:
         """Create a new voice session.
 
@@ -56,9 +54,7 @@ class SessionService:
         Raises HTTPException 404 if the instance does not exist.
         """
         # Verify instance exists
-        cursor = await db.execute(
-            "SELECT id FROM instances WHERE id = ?", (instance_id,)
-        )
+        cursor = await db.execute("SELECT id FROM instances WHERE id = ?", (instance_id,))
         instance = await cursor.fetchone()
         if not instance:
             raise HTTPException(status_code=404, detail="Instance not found")
@@ -66,7 +62,7 @@ class SessionService:
         # Generate room name and session ID
         session_id = uuid.uuid4().hex
         room_name = self._generate_room_name()
-        now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+        now = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
 
         # Generate LiveKit token
         livekit_token = self._generate_livekit_token(room_name)
@@ -89,8 +85,9 @@ class SessionService:
 
         # Spawn Agent Worker
         try:
-            from app.services.process_manager import process_manager
             import logging
+
+            from app.services.process_manager import process_manager
 
             # Fetch instance credentials for the agent
             cred_cursor = await db.execute(
@@ -108,10 +105,12 @@ class SessionService:
                     session_id=session_id,
                     instance_config=instance_config,
                     room_name=room_name,
+                    voice=voice,
                 )
 
                 # Start reading agent stdout for debug logging
                 from app.services.log_broadcaster import get_log_broadcaster
+
                 stdout_reader = process_manager.get_stdout_reader(session_id)
                 if stdout_reader:
                     broadcaster = get_log_broadcaster()
@@ -128,9 +127,7 @@ class SessionService:
             livekit_url=livekit_url,
         )
 
-    async def stop_session(
-        self, db: aiosqlite.Connection, session_id: str
-    ) -> dict:
+    async def stop_session(self, db: aiosqlite.Connection, session_id: str) -> dict:
         """Stop an active session.
 
         Updates status to 'cancelled' and sets end_time.
@@ -138,9 +135,7 @@ class SessionService:
         Raises HTTPException 404 if the session does not exist.
         """
         # Check session exists
-        cursor = await db.execute(
-            "SELECT id, status FROM sessions WHERE id = ?", (session_id,)
-        )
+        cursor = await db.execute("SELECT id, status FROM sessions WHERE id = ?", (session_id,))
         row = await cursor.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Session not found")
@@ -166,7 +161,7 @@ class SessionService:
                 f"Failed to persist logs for session {session_id}: {e}"
             )
 
-        now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+        now = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
         await db.execute(
             "UPDATE sessions SET status = ?, end_time = ? WHERE id = ?",
             ("cancelled", now, session_id),
@@ -187,9 +182,7 @@ class SessionService:
         Raises HTTPException 404 if the session does not exist.
         """
         # Check session exists
-        cursor = await db.execute(
-            "SELECT id FROM sessions WHERE id = ?", (session_id,)
-        )
+        cursor = await db.execute("SELECT id FROM sessions WHERE id = ?", (session_id,))
         row = await cursor.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Session not found")
@@ -213,7 +206,7 @@ class SessionService:
         db: aiosqlite.Connection,
         page: int = 1,
         page_size: int = 20,
-        instance_id: Optional[str] = None,
+        instance_id: str | None = None,
     ) -> PaginatedSessions:
         """List sessions with pagination and optional instance filter."""
         # Build WHERE clause
@@ -271,9 +264,7 @@ class SessionService:
             page_size=page_size,
         )
 
-    async def get_session(
-        self, db: aiosqlite.Connection, session_id: str
-    ) -> SessionDetail:
+    async def get_session(self, db: aiosqlite.Connection, session_id: str) -> SessionDetail:
         """Get session detail by ID.
 
         Raises HTTPException 404 if not found.
@@ -306,24 +297,18 @@ class SessionService:
             error_message=row[9],
         )
 
-    async def delete_session(
-        self, db: aiosqlite.Connection, session_id: str
-    ) -> None:
+    async def delete_session(self, db: aiosqlite.Connection, session_id: str) -> None:
         """Delete a session record and its associated logs.
 
         Raises HTTPException 404 if the session does not exist.
         """
         # Check session exists
-        cursor = await db.execute(
-            "SELECT id FROM sessions WHERE id = ?", (session_id,)
-        )
+        cursor = await db.execute("SELECT id FROM sessions WHERE id = ?", (session_id,))
         row = await cursor.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Session not found")
 
         # Delete logs first (FK constraint), then the session
-        await db.execute(
-            "DELETE FROM session_logs WHERE session_id = ?", (session_id,)
-        )
+        await db.execute("DELETE FROM session_logs WHERE session_id = ?", (session_id,))
         await db.execute("DELETE FROM sessions WHERE id = ?", (session_id,))
         await db.commit()

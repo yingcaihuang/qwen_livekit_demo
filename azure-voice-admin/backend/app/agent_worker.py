@@ -24,7 +24,7 @@ import asyncio
 import json
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import aiohttp
 from livekit.agents import (
@@ -36,7 +36,6 @@ from livekit.agents import (
 )
 from livekit.plugins import openai, silero
 
-
 # ---------------------------------------------------------------------------
 # Structured stdout logging helpers
 # ---------------------------------------------------------------------------
@@ -44,7 +43,7 @@ from livekit.plugins import openai, silero
 
 def _now_iso() -> str:
     """Return current UTC timestamp in ISO 8601 format."""
-    return datetime.now(timezone.utc).isoformat(timespec="milliseconds")
+    return datetime.now(UTC).isoformat(timespec="milliseconds")
 
 
 def emit_event(
@@ -136,7 +135,7 @@ async def _report_usage_delta(input_tokens: int, output_tokens: int) -> None:
                 report_url,
                 json={"input_tokens": input_tokens, "output_tokens": output_tokens},
                 timeout=aiohttp.ClientTimeout(total=5),
-            ) as resp:
+            ):
                 pass  # Fire and forget
     except Exception:
         pass  # Non-critical, don't crash the agent
@@ -152,10 +151,7 @@ class VoiceAssistant(Agent):
 
     def __init__(self) -> None:
         super().__init__(
-            instructions=(
-                "You are a helpful voice assistant. "
-                "Answer concisely and naturally."
-            )
+            instructions=("You are a helpful voice assistant. Answer concisely and naturally.")
         )
 
 
@@ -180,26 +176,39 @@ async def entrypoint(ctx: JobContext) -> None:
         )
         return
 
-    emit_event("session.starting", payload=json.dumps({
-        "room": ctx.room.name if ctx.room else "unknown",
-        "azure_endpoint": azure_endpoint,
-        "azure_deployment": azure_deployment,
-    }))
+    emit_event(
+        "session.starting",
+        payload=json.dumps(
+            {
+                "room": ctx.room.name if ctx.room else "unknown",
+                "azure_endpoint": azure_endpoint,
+                "azure_deployment": azure_deployment,
+            }
+        ),
+    )
+
+    # Read voice selection from environment
+    voice = os.environ.get("VOICE", "alloy")
 
     try:
         # Connect to the LiveKit room
         await ctx.connect()
 
-        emit_event("room.connected", payload=json.dumps({
-            "room_name": ctx.room.name,
-        }))
+        emit_event(
+            "room.connected",
+            payload=json.dumps(
+                {
+                    "room_name": ctx.room.name,
+                }
+            ),
+        )
 
         # Create the Azure OpenAI Realtime model
         realtime_llm = openai.realtime.RealtimeModel.with_azure(
             azure_deployment=azure_deployment,
             azure_endpoint=azure_endpoint,
             api_key=azure_api_key,
-            voice="alloy",
+            voice=voice,
         )
 
         # Create the agent session with VAD for voice activity detection
@@ -231,17 +240,17 @@ async def entrypoint(ctx: JobContext) -> None:
 
             # Report delta immediately (non-blocking)
             if delta_input > 0 or delta_output > 0:
-                asyncio.get_event_loop().create_task(
-                    _report_usage_delta(delta_input, delta_output)
-                )
+                asyncio.get_event_loop().create_task(_report_usage_delta(delta_input, delta_output))
 
             emit_event(
                 "response.done",
                 direction="inbound",
-                payload=json.dumps({
-                    "input_tokens": new_input,
-                    "output_tokens": new_output,
-                }),
+                payload=json.dumps(
+                    {
+                        "input_tokens": new_input,
+                        "output_tokens": new_output,
+                    }
+                ),
             )
 
         # Subscribe to user and agent state changes for debug logging
@@ -250,10 +259,12 @@ async def entrypoint(ctx: JobContext) -> None:
             emit_event(
                 f"user.{ev.new_state}",
                 direction="inbound",
-                payload=json.dumps({
-                    "old_state": ev.old_state,
-                    "new_state": ev.new_state,
-                }),
+                payload=json.dumps(
+                    {
+                        "old_state": ev.old_state,
+                        "new_state": ev.new_state,
+                    }
+                ),
             )
 
         @session.on("agent_state_changed")
@@ -261,10 +272,12 @@ async def entrypoint(ctx: JobContext) -> None:
             emit_event(
                 f"agent.{ev.new_state}",
                 direction="internal",
-                payload=json.dumps({
-                    "old_state": ev.old_state,
-                    "new_state": ev.new_state,
-                }),
+                payload=json.dumps(
+                    {
+                        "old_state": ev.old_state,
+                        "new_state": ev.new_state,
+                    }
+                ),
             )
 
         # Subscribe to errors
@@ -280,9 +293,14 @@ async def entrypoint(ctx: JobContext) -> None:
         # Start the agent session - this blocks until the session ends
         await session.start(agent=VoiceAssistant(), room=ctx.room)
 
-        emit_event("agent.started", payload=json.dumps({
-            "room_name": ctx.room.name,
-        }))
+        emit_event(
+            "agent.started",
+            payload=json.dumps(
+                {
+                    "room_name": ctx.room.name,
+                }
+            ),
+        )
 
     except Exception as exc:
         emit_error("Agent session error", details=str(exc))

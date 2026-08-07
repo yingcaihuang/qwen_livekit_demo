@@ -1,7 +1,5 @@
 """REST API routes for Voice Session management."""
 
-from typing import Optional
-
 import aiosqlite
 from fastapi import APIRouter, Depends, Response
 from starlette.status import HTTP_201_CREATED, HTTP_204_NO_CONTENT
@@ -24,9 +22,7 @@ _session_service = SessionService()
 
 
 @router.post("", status_code=HTTP_201_CREATED, response_model=SessionResponse)
-async def create_session(
-    data: SessionCreate, db: aiosqlite.Connection = Depends(get_db)
-):
+async def create_session(data: SessionCreate, db: aiosqlite.Connection = Depends(get_db)):
     """Create a new voice session.
 
     Validates that the instance exists, generates a unique room name and
@@ -34,14 +30,14 @@ async def create_session(
 
     Returns 404 if the instance does not exist.
     """
-    return await _session_service.create_session(db, data.instance_id)
+    return await _session_service.create_session(db, data.instance_id, data.voice)
 
 
 @router.get("", response_model=PaginatedSessions)
 async def list_sessions(
     page: int = 1,
     page_size: int = 20,
-    instance_id: Optional[str] = None,
+    instance_id: str | None = None,
     db: aiosqlite.Connection = Depends(get_db),
 ):
     """List sessions with pagination and optional instance filter.
@@ -55,9 +51,7 @@ async def list_sessions(
 
 
 @router.get("/{session_id}", response_model=SessionDetail)
-async def get_session(
-    session_id: str, db: aiosqlite.Connection = Depends(get_db)
-):
+async def get_session(session_id: str, db: aiosqlite.Connection = Depends(get_db)):
     """Get session detail by ID.
 
     Returns 404 if not found.
@@ -66,9 +60,7 @@ async def get_session(
 
 
 @router.get("/{session_id}/logs")
-async def get_session_logs(
-    session_id: str, db: aiosqlite.Connection = Depends(get_db)
-):
+async def get_session_logs(session_id: str, db: aiosqlite.Connection = Depends(get_db)):
     """Get saved debug logs for a completed session.
 
     Returns an array of log entries from the session_logs table.
@@ -77,9 +69,7 @@ async def get_session_logs(
     from fastapi import HTTPException
 
     # Verify session exists
-    cursor = await db.execute(
-        "SELECT id FROM sessions WHERE id = ?", (session_id,)
-    )
+    cursor = await db.execute("SELECT id FROM sessions WHERE id = ?", (session_id,))
     if not await cursor.fetchone():
         raise HTTPException(status_code=404, detail="Session not found")
 
@@ -109,9 +99,7 @@ async def get_session_logs(
 
 
 @router.post("/{session_id}/stop")
-async def stop_session(
-    session_id: str, db: aiosqlite.Connection = Depends(get_db)
-):
+async def stop_session(session_id: str, db: aiosqlite.Connection = Depends(get_db)):
     """Stop an active session.
 
     Updates status to 'cancelled' and sets end_time.
@@ -121,9 +109,7 @@ async def stop_session(
 
 
 @router.delete("/{session_id}", status_code=HTTP_204_NO_CONTENT)
-async def delete_session(
-    session_id: str, db: aiosqlite.Connection = Depends(get_db)
-):
+async def delete_session(session_id: str, db: aiosqlite.Connection = Depends(get_db)):
     """Delete a session record and its associated logs.
 
     Returns 404 if the session does not exist.

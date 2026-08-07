@@ -12,8 +12,8 @@ from fastapi import HTTPException
 _tmpdir = tempfile.mkdtemp()
 os.environ["DB_PATH"] = os.path.join(_tmpdir, "test.db")
 
-from app.database import init_db  # noqa: E402
 import app.database as db_mod  # noqa: E402
+from app.database import init_db  # noqa: E402
 from app.models.instance import InstanceCreate, InstanceUpdate  # noqa: E402
 from app.services.instance_service import InstanceService  # noqa: E402
 
@@ -109,36 +109,28 @@ class TestCreateInstance:
 
     async def test_reject_empty_endpoint(self, db, service):
         """Rejects instance creation with empty endpoint."""
-        data = InstanceCreate(
-            name="test", endpoint="", api_key="key", deployment="dep"
-        )
+        data = InstanceCreate(name="test", endpoint="", api_key="key", deployment="dep")
         with pytest.raises(HTTPException) as exc_info:
             await service.create_instance(db, data)
         assert exc_info.value.status_code == 422
 
     async def test_reject_whitespace_endpoint(self, db, service):
         """Rejects instance creation with whitespace-only endpoint."""
-        data = InstanceCreate(
-            name="test", endpoint="   ", api_key="key", deployment="dep"
-        )
+        data = InstanceCreate(name="test", endpoint="   ", api_key="key", deployment="dep")
         with pytest.raises(HTTPException) as exc_info:
             await service.create_instance(db, data)
         assert exc_info.value.status_code == 422
 
     async def test_reject_empty_api_key(self, db, service):
         """Rejects instance creation with empty API key."""
-        data = InstanceCreate(
-            name="test", endpoint="https://ep.com", api_key="", deployment="dep"
-        )
+        data = InstanceCreate(name="test", endpoint="https://ep.com", api_key="", deployment="dep")
         with pytest.raises(HTTPException) as exc_info:
             await service.create_instance(db, data)
         assert exc_info.value.status_code == 422
 
     async def test_reject_empty_name(self, db, service):
         """Rejects instance creation with empty name."""
-        data = InstanceCreate(
-            name="", endpoint="https://ep.com", api_key="key", deployment="dep"
-        )
+        data = InstanceCreate(name="", endpoint="https://ep.com", api_key="key", deployment="dep")
         with pytest.raises(HTTPException) as exc_info:
             await service.create_instance(db, data)
         assert exc_info.value.status_code == 422
@@ -341,9 +333,7 @@ class TestDeleteInstance:
         await service.delete_instance(db, created["id"])
 
         # Verify deleted
-        cursor = await db.execute(
-            "SELECT id FROM instances WHERE id = ?", (created["id"],)
-        )
+        cursor = await db.execute("SELECT id FROM instances WHERE id = ?", (created["id"],))
         assert await cursor.fetchone() is None
 
     async def test_delete_nonexistent_raises_404(self, db, service):

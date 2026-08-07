@@ -10,7 +10,6 @@ from urllib.parse import urlparse
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
 
 logger = logging.getLogger("azure_voice_admin")
 
@@ -89,14 +88,14 @@ static_dir = Path(__file__).parent.parent / "static"
 
 
 # Register API routers
-from app.api.instances import router as instances_router
+from app.api.instances import router as instances_router  # noqa: E402
 
 app.include_router(instances_router)
 
 # Conditionally import session and dashboard routers if they exist
 try:
-    from app.api.sessions import router as sessions_router
     from app.api.sessions import internal_router as sessions_internal_router
+    from app.api.sessions import router as sessions_router
 
     app.include_router(sessions_router)
     app.include_router(sessions_internal_router)

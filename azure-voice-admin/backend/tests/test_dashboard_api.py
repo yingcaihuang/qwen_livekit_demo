@@ -4,17 +4,15 @@ import os
 import tempfile
 from pathlib import Path
 
+import aiosqlite
 import pytest
 from httpx import ASGITransport, AsyncClient
-
-import aiosqlite
 
 # Set temp DB path before imports
 _tmpdir = tempfile.mkdtemp()
 os.environ["DB_PATH"] = os.path.join(_tmpdir, "test.db")
 
 import app.database as db_mod  # noqa: E402
-
 from app.main import app  # noqa: E402
 
 

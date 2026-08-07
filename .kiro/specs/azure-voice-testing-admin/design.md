@@ -127,7 +127,7 @@ class InstanceService:
     async def get_instance(self, id: str) -> Instance
     async def update_instance(self, id: str, data: InstanceUpdate) -> Instance
     async def delete_instance(self, id: str) -> None  # raises if active session
-    
+
     @staticmethod
     def mask_api_key(api_key: str) -> str:
         """将 API key 脱敏，仅保留最后 4 位"""

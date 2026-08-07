@@ -11,6 +11,7 @@ interface VoiceRoomProps {
   onEndSession: () => void
   onToggleMic: () => void
   isStarting: boolean
+  voiceName?: string
 }
 
 export function VoiceRoom({
@@ -21,6 +22,7 @@ export function VoiceRoom({
   onEndSession,
   onToggleMic,
   isStarting,
+  voiceName,
 }: VoiceRoomProps) {
   const isConnected =
     connectionState === 'connected' ||
@@ -35,6 +37,11 @@ export function VoiceRoom({
       <div className="px-4 py-3 border-b bg-muted/30">
         <h3 className="text-sm font-medium mb-2">Voice Room</h3>
         <ConnectionStatus state={connectionState} instanceName={instanceName} />
+        {voiceName && isConnected && (
+          <p className="text-xs text-muted-foreground mt-1">
+            Voice: <span className="font-medium capitalize">{voiceName}</span>
+          </p>
+        )}
       </div>
 
       {/* Main area */}

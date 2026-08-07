@@ -7,7 +7,6 @@ subprocesses—one per active Voice Session.
 import asyncio
 import logging
 import os
-import signal
 import sys
 from pathlib import Path
 from typing import Optional
@@ -44,6 +43,7 @@ class ProcessManager:
         session_id: str,
         instance_config: dict,
         room_name: str,
+        voice: str = "alloy",
     ) -> None:
         """Spawn an Agent Worker subprocess for the given session.
 
@@ -82,6 +82,7 @@ class ProcessManager:
                 "ROOM_NAME": room_name,
                 "SESSION_ID": session_id,
                 "REPORT_URL": f"http://localhost:{port}/internal/sessions/{session_id}/usage",
+                "VOICE": voice,
             }
         )
 
@@ -108,9 +109,7 @@ class ProcessManager:
         )
 
         self._processes[session_id] = process
-        logger.info(
-            "Agent spawned for session %s (pid=%s)", session_id, process.pid
-        )
+        logger.info("Agent spawned for session %s (pid=%s)", session_id, process.pid)
 
     async def terminate_agent(self, session_id: str) -> None:
         """Terminate the Agent Worker subprocess for the given session.
@@ -123,9 +122,7 @@ class ProcessManager:
         """
         process = self._processes.get(session_id)
         if process is None:
-            logger.warning(
-                "No agent process found for session %s", session_id
-            )
+            logger.warning("No agent process found for session %s", session_id)
             return
 
         if process.returncode is not None:
@@ -158,7 +155,7 @@ class ProcessManager:
                 session_id,
                 process.returncode,
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             # Force kill
             logger.warning(
                 "Agent for session %s did not exit after SIGTERM, sending SIGKILL (pid=%s)",
@@ -185,15 +182,9 @@ class ProcessManager:
 
     def get_active_sessions(self) -> list[str]:
         """Return a list of session_ids whose agents are currently running."""
-        return [
-            sid
-            for sid, proc in self._processes.items()
-            if proc.returncode is None
-        ]
+        return [sid for sid, proc in self._processes.items() if proc.returncode is None]
 
-    def get_stdout_reader(
-        self, session_id: str
-    ) -> Optional[asyncio.StreamReader]:
+    def get_stdout_reader(self, session_id: str) -> asyncio.StreamReader | None:
         """Return the stdout StreamReader of the agent process for log broadcasting.
 
         Returns None if no process exists for the session or if stdout is unavailable.

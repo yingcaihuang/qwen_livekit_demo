@@ -5,6 +5,17 @@ import { DebugConsole } from '@/components/session/DebugConsole'
 import { useLiveKit } from '@/hooks/useLiveKit'
 import type { SessionResponse, Instance } from '@/types'
 
+const VOICE_OPTIONS = [
+  { value: 'alloy', label: 'Alloy - 中性平衡（默认）' },
+  { value: 'ash', label: 'Ash - 温暖男声' },
+  { value: 'ballad', label: 'Ballad - 柔和女声' },
+  { value: 'coral', label: 'Coral - 清晰女声' },
+  { value: 'echo', label: 'Echo - 深沉男声' },
+  { value: 'sage', label: 'Sage - 沉稳男声' },
+  { value: 'shimmer', label: 'Shimmer - 明亮女声' },
+  { value: 'verse', label: 'Verse - 活力男声' },
+] as const
+
 export function VoiceSessionPage() {
   const [searchParams] = useSearchParams()
   const instanceId = searchParams.get('instance') || ''
@@ -15,6 +26,7 @@ export function VoiceSessionPage() {
   const [livekitUrl, setLivekitUrl] = useState('')
   const [isStarting, setIsStarting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [selectedVoice, setSelectedVoice] = useState<string>('alloy')
 
   // Fetch instance info
   useEffect(() => {
@@ -51,7 +63,7 @@ export function VoiceSessionPage() {
       const response = await fetch('/api/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ instance_id: instanceId }),
+        body: JSON.stringify({ instance_id: instanceId, voice: selectedVoice }),
       })
 
       if (!response.ok) {
@@ -71,7 +83,7 @@ export function VoiceSessionPage() {
     } finally {
       setIsStarting(false)
     }
-  }, [instanceId])
+  }, [instanceId, selectedVoice])
 
   // Connect to LiveKit once we have token and url
   useEffect(() => {
@@ -117,6 +129,25 @@ export function VoiceSessionPage() {
             No instance selected. Navigate from the Instances page to start a session.
           </p>
         )}
+        {instanceId && connectionState === 'idle' && (
+          <div className="mt-3 flex items-center gap-3">
+            <label htmlFor="voice-select" className="text-sm font-medium text-muted-foreground">
+              Voice:
+            </label>
+            <select
+              id="voice-select"
+              value={selectedVoice}
+              onChange={(e) => setSelectedVoice(e.target.value)}
+              className="border rounded-md px-3 py-1.5 text-sm bg-background"
+            >
+              {VOICE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Two-column layout */}
@@ -131,6 +162,7 @@ export function VoiceSessionPage() {
             onEndSession={handleEndSession}
             onToggleMic={handleToggleMic}
             isStarting={isStarting}
+            voiceName={selectedVoice}
           />
         </div>
 

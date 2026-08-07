@@ -3,12 +3,14 @@
 用法: python generate_token.py [room_name] [identity]
 """
 
-import sys
 import os
+import sys
+
 from dotenv import load_dotenv
 from livekit.api import AccessToken, VideoGrants
 
 load_dotenv()
+
 
 def main():
     room = sys.argv[1] if len(sys.argv) > 1 else "test-room"

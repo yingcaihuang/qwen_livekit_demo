@@ -1,7 +1,5 @@
 """Pydantic models for Instance configuration management."""
 
-from typing import Optional
-
 from pydantic import BaseModel
 
 
@@ -18,11 +16,11 @@ class InstanceCreate(BaseModel):
 class InstanceUpdate(BaseModel):
     """Request model for updating an existing Instance (partial update)."""
 
-    name: Optional[str] = None
-    endpoint: Optional[str] = None
-    api_key: Optional[str] = None
-    deployment: Optional[str] = None
-    description: Optional[str] = None
+    name: str | None = None
+    endpoint: str | None = None
+    api_key: str | None = None
+    deployment: str | None = None
+    description: str | None = None
 
 
 class InstanceSummary(BaseModel):

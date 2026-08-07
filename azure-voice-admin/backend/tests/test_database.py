@@ -4,15 +4,15 @@ import os
 import tempfile
 from pathlib import Path
 
-import pytest
 import aiosqlite
+import pytest
 
 # Set a temp DB path before importing database module
 _tmpdir = tempfile.mkdtemp()
 os.environ["DB_PATH"] = os.path.join(_tmpdir, "test.db")
 
-from app.database import init_db, get_db, DB_PATH  # noqa: E402
 import app.database as db_mod  # noqa: E402
+from app.database import get_db, init_db  # noqa: E402
 
 # Override the module-level DB_PATH for tests
 db_mod.DB_PATH = os.environ["DB_PATH"]

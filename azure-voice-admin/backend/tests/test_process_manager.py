@@ -1,7 +1,6 @@
 """Tests for ProcessManager service."""
 
 import asyncio
-import os
 import sys
 from unittest.mock import patch
 
@@ -46,7 +45,9 @@ class TestIsAgentRunning:
     async def test_returns_true_for_running_process(self, pm):
         # Spawn a simple long-running subprocess
         proc = await asyncio.create_subprocess_exec(
-            sys.executable, "-c", "import time; time.sleep(60)",
+            sys.executable,
+            "-c",
+            "import time; time.sleep(60)",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
@@ -59,7 +60,9 @@ class TestIsAgentRunning:
     async def test_returns_false_for_exited_process(self, pm):
         # Spawn a subprocess that exits immediately
         proc = await asyncio.create_subprocess_exec(
-            sys.executable, "-c", "pass",
+            sys.executable,
+            "-c",
+            "pass",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
@@ -78,13 +81,17 @@ class TestGetActiveSessions:
     async def test_returns_only_running_sessions(self, pm):
         # One running
         running_proc = await asyncio.create_subprocess_exec(
-            sys.executable, "-c", "import time; time.sleep(60)",
+            sys.executable,
+            "-c",
+            "import time; time.sleep(60)",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
         # One exited
         exited_proc = await asyncio.create_subprocess_exec(
-            sys.executable, "-c", "pass",
+            sys.executable,
+            "-c",
+            "pass",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
@@ -112,7 +119,9 @@ class TestTerminateAgent:
     @pytest.mark.asyncio
     async def test_terminate_already_exited(self, pm):
         proc = await asyncio.create_subprocess_exec(
-            sys.executable, "-c", "pass",
+            sys.executable,
+            "-c",
+            "pass",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
@@ -125,7 +134,9 @@ class TestTerminateAgent:
     @pytest.mark.asyncio
     async def test_terminate_running_process_gracefully(self, pm):
         proc = await asyncio.create_subprocess_exec(
-            sys.executable, "-c", "import time; time.sleep(60)",
+            sys.executable,
+            "-c",
+            "import time; time.sleep(60)",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
@@ -150,7 +161,9 @@ class TestSpawnAgent:
 
         # We'll patch create_subprocess_exec to avoid actually running agent_worker.py
         mock_proc = await asyncio.create_subprocess_exec(
-            sys.executable, "-c", "import time; time.sleep(60)",
+            sys.executable,
+            "-c",
+            "import time; time.sleep(60)",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
@@ -169,7 +182,9 @@ class TestSpawnAgent:
     async def test_spawn_does_not_duplicate_running_agent(self, pm):
         """If an agent is already running for a session, spawn should not create a new one."""
         proc = await asyncio.create_subprocess_exec(
-            sys.executable, "-c", "import time; time.sleep(60)",
+            sys.executable,
+            "-c",
+            "import time; time.sleep(60)",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
@@ -199,7 +214,9 @@ class TestGetStdoutReader:
     @pytest.mark.asyncio
     async def test_returns_stdout_for_running_process(self, pm):
         proc = await asyncio.create_subprocess_exec(
-            sys.executable, "-c", "import time; time.sleep(60)",
+            sys.executable,
+            "-c",
+            "import time; time.sleep(60)",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )

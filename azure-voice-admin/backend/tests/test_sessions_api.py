@@ -3,7 +3,6 @@
 import os
 import tempfile
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -16,7 +15,6 @@ os.environ["LIVEKIT_API_SECRET"] = "secret-that-is-at-least-32-chars-long!"
 os.environ["LIVEKIT_URL"] = "ws://localhost:7880"
 
 import app.database as db_mod  # noqa: E402
-
 from app.main import app  # noqa: E402
 
 

@@ -12,7 +12,6 @@ _tmpdir = tempfile.mkdtemp()
 os.environ["DB_PATH"] = os.path.join(_tmpdir, "test.db")
 
 import app.database as db_mod  # noqa: E402
-
 from app.main import app  # noqa: E402
 
 
@@ -191,9 +190,7 @@ class TestUpdateInstance:
 
     async def test_update_nonexistent(self, client):
         """Returns 404 for non-existent instance."""
-        resp = await client.put(
-            "/api/instances/no-such-id", json={"name": "new"}
-        )
+        resp = await client.put("/api/instances/no-such-id", json={"name": "new"})
         assert resp.status_code == 404
 
     async def test_update_duplicate_name(self, client):
@@ -218,9 +215,7 @@ class TestUpdateInstance:
         )
         instance_id = create_resp.json()["id"]
 
-        resp = await client.put(
-            f"/api/instances/{instance_id}", json={"name": "name-a"}
-        )
+        resp = await client.put(f"/api/instances/{instance_id}", json={"name": "name-a"})
         assert resp.status_code == 409
 
 

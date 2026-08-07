@@ -9,8 +9,8 @@ LiveKit Agent × Azure OpenAI Realtime (gpt-realtime-2.1)
     python qwen_realtime_agent.py dev
 """
 
-import os
 import logging
+import os
 
 from dotenv import load_dotenv
 from livekit.agents import (
@@ -53,9 +53,7 @@ async def entrypoint(ctx: JobContext):
 
     await session.start(agent=Assistant(), room=ctx.room)
 
-    await session.generate_reply(
-        instructions="用中文向用户问好，并简短介绍你能做什么。"
-    )
+    await session.generate_reply(instructions="用中文向用户问好，并简短介绍你能做什么。")
 
 
 if __name__ == "__main__":

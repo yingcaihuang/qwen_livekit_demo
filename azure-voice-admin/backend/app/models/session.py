@@ -1,7 +1,5 @@
 """Pydantic models for Voice Session management."""
 
-from typing import List, Optional
-
 from pydantic import BaseModel
 
 
@@ -9,6 +7,7 @@ class SessionCreate(BaseModel):
     """Request model for creating a new Voice Session."""
 
     instance_id: str
+    voice: str = "alloy"  # Default voice
 
 
 class SessionResponse(BaseModel):
@@ -29,16 +28,16 @@ class SessionDetail(BaseModel):
     room_name: str
     status: str
     start_time: str
-    end_time: Optional[str] = None
+    end_time: str | None = None
     input_tokens: int
     output_tokens: int
-    error_message: Optional[str] = None
+    error_message: str | None = None
 
 
 class PaginatedSessions(BaseModel):
     """Response model for paginated session list."""
 
-    items: List[SessionDetail]
+    items: list[SessionDetail]
     total: int
     page: int
     page_size: int

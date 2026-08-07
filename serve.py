@@ -33,11 +33,13 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             )
             jwt_token = token.to_jwt()
 
-            response = json.dumps({
-                "token": jwt_token,
-                "room": room_name,
-                "identity": identity,
-            })
+            response = json.dumps(
+                {
+                    "token": jwt_token,
+                    "room": room_name,
+                    "identity": identity,
+                }
+            )
 
             self.send_response(200)
             self.send_header("Content-Type", "application/json")

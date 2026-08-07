@@ -9,7 +9,7 @@ Responsible for:
 import asyncio
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import aiosqlite
@@ -82,23 +82,17 @@ class LogBroadcaster:
             for ws in disconnected:
                 self._subscribers[session_id].discard(ws)
 
-    async def start_reading(
-        self, session_id: str, stdout_reader: asyncio.StreamReader
-    ) -> None:
+    async def start_reading(self, session_id: str, stdout_reader: asyncio.StreamReader) -> None:
         """Start an asyncio task that reads JSON lines from stdout and broadcasts them.
 
         Args:
             session_id: The session this reader is associated with.
             stdout_reader: The StreamReader connected to Agent Worker's stdout.
         """
-        task = asyncio.create_task(
-            self._read_stdout(session_id, stdout_reader)
-        )
+        task = asyncio.create_task(self._read_stdout(session_id, stdout_reader))
         self._reader_tasks[session_id] = task
 
-    async def _read_stdout(
-        self, session_id: str, reader: asyncio.StreamReader
-    ) -> None:
+    async def _read_stdout(self, session_id: str, reader: asyncio.StreamReader) -> None:
         """Internal coroutine that reads lines from stdout and broadcasts parsed entries."""
         try:
             while True:
@@ -124,7 +118,7 @@ class LogBroadcaster:
                     "session_id": session_id,
                     "timestamp": data.get(
                         "timestamp",
-                        datetime.now(timezone.utc).isoformat(),
+                        datetime.now(UTC).isoformat(),
                     ),
                     "direction": data.get("direction", "internal"),
                     "event_type": data.get("event_type", data.get("type", "unknown")),
@@ -134,9 +128,7 @@ class LogBroadcaster:
         except asyncio.CancelledError:
             logger.info("Reader task cancelled for session %s", session_id)
         except Exception as e:
-            logger.error(
-                "Error reading stdout for session %s: %s", session_id, e
-            )
+            logger.error("Error reading stdout for session %s: %s", session_id, e)
 
     def stop_reading(self, session_id: str) -> None:
         """Cancel the reading task for a session."""
@@ -172,9 +164,7 @@ class LogBroadcaster:
             ],
         )
         await db.commit()
-        logger.info(
-            "Persisted %d log entries for session %s", len(buffer), session_id
-        )
+        logger.info("Persisted %d log entries for session %s", len(buffer), session_id)
 
     def get_buffer(self, session_id: str) -> list[dict[str, Any]]:
         """Get the current log buffer for a session (for testing/inspection)."""

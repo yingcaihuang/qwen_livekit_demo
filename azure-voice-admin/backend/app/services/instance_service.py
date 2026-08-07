@@ -1,7 +1,7 @@
 """Service layer for Instance configuration management."""
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import aiosqlite
 from fastapi import HTTPException
@@ -28,9 +28,7 @@ class InstanceService:
             return "*" * (len(api_key) - 4) + api_key[-4:]
         return "****"
 
-    async def create_instance(
-        self, db: aiosqlite.Connection, data: InstanceCreate
-    ) -> dict:
+    async def create_instance(self, db: aiosqlite.Connection, data: InstanceCreate) -> dict:
         """Create a new Instance configuration.
 
         Validates:
@@ -48,14 +46,10 @@ class InstanceService:
         if not data.api_key or not data.api_key.strip():
             raise HTTPException(status_code=422, detail="API key cannot be empty")
         if not data.deployment or not data.deployment.strip():
-            raise HTTPException(
-                status_code=422, detail="Deployment name cannot be empty"
-            )
+            raise HTTPException(status_code=422, detail="Deployment name cannot be empty")
 
         # Check name uniqueness
-        cursor = await db.execute(
-            "SELECT id FROM instances WHERE name = ?", (data.name,)
-        )
+        cursor = await db.execute("SELECT id FROM instances WHERE name = ?", (data.name,))
         existing = await cursor.fetchone()
         if existing:
             raise HTTPException(
@@ -65,7 +59,7 @@ class InstanceService:
 
         # Generate ID and timestamps
         instance_id = uuid.uuid4().hex
-        now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+        now = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
 
         await db.execute(
             """
@@ -95,9 +89,7 @@ class InstanceService:
             "updated_at": now,
         }
 
-    async def list_instances(
-        self, db: aiosqlite.Connection
-    ) -> list[InstanceSummary]:
+    async def list_instances(self, db: aiosqlite.Connection) -> list[InstanceSummary]:
         """List all instances without exposing API keys."""
         cursor = await db.execute(
             "SELECT id, name, endpoint, deployment, description, created_at FROM instances ORDER BY created_at DESC"
@@ -115,9 +107,7 @@ class InstanceService:
             for row in rows
         ]
 
-    async def get_instance(
-        self, db: aiosqlite.Connection, instance_id: str
-    ) -> InstanceDetail:
+    async def get_instance(self, db: aiosqlite.Connection, instance_id: str) -> InstanceDetail:
         """Get instance detail including masked API key and token usage statistics.
 
         Raises HTTPException 404 if not found.
@@ -167,9 +157,7 @@ class InstanceService:
         Raises HTTPException 404 if not found, 422 for validation errors, 409 for name conflicts.
         """
         # Check instance exists
-        cursor = await db.execute(
-            "SELECT id FROM instances WHERE id = ?", (instance_id,)
-        )
+        cursor = await db.execute("SELECT id FROM instances WHERE id = ?", (instance_id,))
         existing = await cursor.fetchone()
         if not existing:
             raise HTTPException(status_code=404, detail="Instance not found")
@@ -178,9 +166,7 @@ class InstanceService:
         updates: dict[str, str] = {}
         if data.name is not None:
             if not data.name.strip():
-                raise HTTPException(
-                    status_code=422, detail="Instance name cannot be empty"
-                )
+                raise HTTPException(status_code=422, detail="Instance name cannot be empty")
             # Check name uniqueness (exclude current instance)
             cursor = await db.execute(
                 "SELECT id FROM instances WHERE name = ? AND id != ?",
@@ -195,23 +181,17 @@ class InstanceService:
 
         if data.endpoint is not None:
             if not data.endpoint.strip():
-                raise HTTPException(
-                    status_code=422, detail="Endpoint cannot be empty"
-                )
+                raise HTTPException(status_code=422, detail="Endpoint cannot be empty")
             updates["endpoint"] = data.endpoint
 
         if data.api_key is not None:
             if not data.api_key.strip():
-                raise HTTPException(
-                    status_code=422, detail="API key cannot be empty"
-                )
+                raise HTTPException(status_code=422, detail="API key cannot be empty")
             updates["api_key"] = data.api_key
 
         if data.deployment is not None:
             if not data.deployment.strip():
-                raise HTTPException(
-                    status_code=422, detail="Deployment name cannot be empty"
-                )
+                raise HTTPException(status_code=422, detail="Deployment name cannot be empty")
             updates["deployment"] = data.deployment
 
         if data.description is not None:
@@ -235,7 +215,7 @@ class InstanceService:
             }
 
         # Add updated_at timestamp
-        now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+        now = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
         updates["updated_at"] = now
 
         # Build and execute UPDATE query
@@ -264,18 +244,14 @@ class InstanceService:
             "updated_at": row[6],
         }
 
-    async def delete_instance(
-        self, db: aiosqlite.Connection, instance_id: str
-    ) -> None:
+    async def delete_instance(self, db: aiosqlite.Connection, instance_id: str) -> None:
         """Delete an instance configuration.
 
         Refuses deletion if the instance has active sessions (status IN ('connecting', 'connected')).
         Raises HTTPException 404 if not found, 409 if active sessions exist.
         """
         # Check instance exists
-        cursor = await db.execute(
-            "SELECT id FROM instances WHERE id = ?", (instance_id,)
-        )
+        cursor = await db.execute("SELECT id FROM instances WHERE id = ?", (instance_id,))
         existing = await cursor.fetchone()
         if not existing:
             raise HTTPException(status_code=404, detail="Instance not found")
@@ -297,8 +273,6 @@ class InstanceService:
             "DELETE FROM session_logs WHERE session_id IN (SELECT id FROM sessions WHERE instance_id = ?)",
             (instance_id,),
         )
-        await db.execute(
-            "DELETE FROM sessions WHERE instance_id = ?", (instance_id,)
-        )
+        await db.execute("DELETE FROM sessions WHERE instance_id = ?", (instance_id,))
         await db.execute("DELETE FROM instances WHERE id = ?", (instance_id,))
         await db.commit()
