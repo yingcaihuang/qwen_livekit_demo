@@ -1,6 +1,11 @@
 """Pydantic models for Instance configuration management."""
 
+from typing import Literal
+
 from pydantic import BaseModel
+
+# 实例测试类型：语音实时对话 / 大语言模型对话 / 图像生成
+InstanceType = Literal["voice", "chat", "image"]
 
 
 class InstanceCreate(BaseModel):
@@ -10,6 +15,7 @@ class InstanceCreate(BaseModel):
     endpoint: str  # 非空，Azure 端点 URL
     api_key: str  # 非空
     deployment: str  # 非空，部署名称
+    type: InstanceType  # 必填，测试类型（创建后不可变）
     description: str = ""
 
 
@@ -30,6 +36,7 @@ class InstanceSummary(BaseModel):
     name: str
     endpoint: str
     deployment: str
+    type: InstanceType  # 测试类型
     description: str
     created_at: str
 
@@ -42,6 +49,7 @@ class InstanceDetail(BaseModel):
     endpoint: str
     api_key_masked: str  # 脱敏后的 key
     deployment: str
+    type: InstanceType  # 测试类型
     description: str
     created_at: str
     updated_at: str

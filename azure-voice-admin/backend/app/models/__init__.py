@@ -1,6 +1,12 @@
 """Pydantic data models for the Azure Voice Testing Admin system."""
 
-from app.models.dashboard import DashboardStats, InstanceUsage
+from app.models.chat import (
+    ChatCompletionRequest,
+    ChatMessage,
+    ChatMessageRecord,
+)
+from app.models.dashboard import DashboardStats, InstanceUsage, TypeUsage
+from app.models.history import HistoryItem, PaginatedHistory
 from app.models.instance import (
     InstanceCreate,
     InstanceDetail,
@@ -22,6 +28,10 @@ __all__ = [
     "InstanceUpdate",
     "InstanceSummary",
     "InstanceDetail",
+    # Chat models
+    "ChatMessage",
+    "ChatCompletionRequest",
+    "ChatMessageRecord",
     # Session models
     "SessionCreate",
     "SessionResponse",
@@ -33,4 +43,8 @@ __all__ = [
     # Dashboard models
     "DashboardStats",
     "InstanceUsage",
+    "TypeUsage",
+    # History models
+    "HistoryItem",
+    "PaginatedHistory",
 ]

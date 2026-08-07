@@ -1,7 +1,7 @@
 """REST API routes for Instance configuration management."""
 
 import aiosqlite
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, Query, Response
 from starlette.status import HTTP_201_CREATED, HTTP_204_NO_CONTENT
 
 from app.database import get_db
@@ -19,9 +19,16 @@ _service = InstanceService()
 
 
 @router.get("", response_model=list[InstanceSummary])
-async def list_instances(db: aiosqlite.Connection = Depends(get_db)):
-    """List all instance configurations (API keys are not exposed)."""
-    return await _service.list_instances(db)
+async def list_instances(
+    type: str | None = Query(default=None),
+    db: aiosqlite.Connection = Depends(get_db),
+):
+    """List all instance configurations (API keys are not exposed).
+
+    An optional ``type`` query parameter filters the result to instances of the
+    given type (Requirement 1.8).
+    """
+    return await _service.list_instances(db, type_filter=type)
 
 
 @router.post("", status_code=HTTP_201_CREATED)

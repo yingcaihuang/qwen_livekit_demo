@@ -135,17 +135,19 @@ export function SessionDetailPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1">
-              <MessageSquare className="h-3.5 w-3.5" />
-              房间名称
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-lg font-semibold font-mono text-sm">{session.room_name}</p>
-          </CardContent>
-        </Card>
+        {session.room_name && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                <MessageSquare className="h-3.5 w-3.5" />
+                房间名称
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-lg font-semibold font-mono text-sm">{session.room_name}</p>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Error Message */}

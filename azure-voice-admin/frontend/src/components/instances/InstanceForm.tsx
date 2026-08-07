@@ -1,9 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Mic, MessageSquare, Image } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { cn } from '@/lib/utils'
+import type { InstanceType } from '@/types'
 
 interface InstanceFormData {
   name: string
@@ -11,6 +15,7 @@ interface InstanceFormData {
   api_key: string
   deployment: string
   description: string
+  type: InstanceType | ''
 }
 
 interface InstanceFormProps {
@@ -24,7 +29,19 @@ interface FieldErrors {
   endpoint?: string
   api_key?: string
   deployment?: string
+  type?: string
 }
+
+const TYPE_OPTIONS: ReadonlyArray<{
+  value: InstanceType
+  label: string
+  icon: LucideIcon
+  gradient: string
+}> = [
+  { value: 'voice', label: '语音', icon: Mic, gradient: 'from-indigo-500 to-violet-500' },
+  { value: 'chat', label: '对话', icon: MessageSquare, gradient: 'from-emerald-500 to-teal-500' },
+  { value: 'image', label: '图像', icon: Image, gradient: 'from-amber-500 to-orange-500' },
+]
 
 export function InstanceForm({ mode, instanceId, initialData }: InstanceFormProps) {
   const navigate = useNavigate()
@@ -34,6 +51,7 @@ export function InstanceForm({ mode, instanceId, initialData }: InstanceFormProp
     api_key: '',
     deployment: '',
     description: '',
+    type: '',
   })
   const [errors, setErrors] = useState<FieldErrors>({})
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -48,6 +66,7 @@ export function InstanceForm({ mode, instanceId, initialData }: InstanceFormProp
         api_key: initialData.api_key ?? '',
         deployment: initialData.deployment ?? '',
         description: initialData.description ?? '',
+        type: initialData.type ?? '',
       }))
     }
   }, [initialData])
@@ -66,6 +85,9 @@ export function InstanceForm({ mode, instanceId, initialData }: InstanceFormProp
     }
     if (!form.deployment.trim()) {
       newErrors.deployment = 'Deployment 不能为空'
+    }
+    if (mode === 'create' && !form.type) {
+      newErrors.type = '请选择实例类型'
     }
 
     setErrors(newErrors)
@@ -91,9 +113,13 @@ export function InstanceForm({ mode, instanceId, initialData }: InstanceFormProp
         description: form.description.trim(),
       }
 
-      // For create, always include api_key; for edit, only include if non-empty
+      // For create, always include api_key and type; for edit, only include
+      // api_key if non-empty and omit type entirely (type is immutable).
       if (mode === 'create') {
         body.api_key = form.api_key.trim()
+        if (form.type) {
+          body.type = form.type
+        }
       } else if (form.api_key.trim()) {
         body.api_key = form.api_key.trim()
       }
@@ -139,6 +165,46 @@ export function InstanceForm({ mode, instanceId, initialData }: InstanceFormProp
               {submitError}
             </div>
           )}
+
+          <div className="space-y-2">
+            <Label>类型 *</Label>
+            <div className="grid grid-cols-3 gap-3">
+              {TYPE_OPTIONS.map((option) => {
+                const Icon = option.icon
+                const selected = form.type === option.value
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    disabled={mode === 'edit'}
+                    aria-pressed={selected}
+                    onClick={() => {
+                      setForm((prev) => ({ ...prev, type: option.value }))
+                      if (errors.type) {
+                        setErrors((prev) => ({ ...prev, type: undefined }))
+                      }
+                    }}
+                    className={cn(
+                      'flex flex-col items-center gap-2 rounded-xl border-2 p-3 transition',
+                      selected
+                        ? 'border-transparent bg-gradient-to-br text-white shadow-sm ' + option.gradient
+                        : 'border-input bg-transparent text-muted-foreground hover:border-muted-foreground/40',
+                      mode === 'edit' && 'cursor-not-allowed opacity-60'
+                    )}
+                  >
+                    <Icon className="h-5 w-5" aria-hidden="true" />
+                    <span className="text-sm font-medium">{option.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+            {mode === 'edit' && (
+              <p className="text-xs text-muted-foreground">类型创建后不可修改</p>
+            )}
+            {errors.type && (
+              <p className="text-sm text-destructive">{errors.type}</p>
+            )}
+          </div>
 
           <div className="space-y-2">
             <Label htmlFor="name">名称 *</Label>

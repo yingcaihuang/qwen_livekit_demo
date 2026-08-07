@@ -54,6 +54,7 @@ class TestListInstances:
                 "endpoint": "https://ep.com",
                 "api_key": "key-123",
                 "deployment": "dep-1",
+                "type": "voice",
             },
         )
         resp = await client.get("/api/instances")
@@ -78,6 +79,7 @@ class TestCreateInstance:
                 "endpoint": "https://test.openai.azure.com",
                 "api_key": "sk-abc123",
                 "deployment": "gpt-4o-realtime",
+                "type": "voice",
                 "description": "My test instance",
             },
         )
@@ -99,6 +101,7 @@ class TestCreateInstance:
                 "endpoint": "",
                 "api_key": "key",
                 "deployment": "dep",
+                "type": "voice",
             },
         )
         assert resp.status_code == 422
@@ -112,6 +115,7 @@ class TestCreateInstance:
                 "endpoint": "https://ep.com",
                 "api_key": "  ",
                 "deployment": "dep",
+                "type": "voice",
             },
         )
         assert resp.status_code == 422
@@ -123,6 +127,7 @@ class TestCreateInstance:
             "endpoint": "https://ep.com",
             "api_key": "key",
             "deployment": "dep",
+            "type": "voice",
         }
         resp1 = await client.post("/api/instances", json=payload)
         assert resp1.status_code == 201
@@ -143,6 +148,7 @@ class TestGetInstance:
                 "endpoint": "https://ep.com",
                 "api_key": "sk-secret-key-12345",
                 "deployment": "dep",
+                "type": "voice",
             },
         )
         instance_id = create_resp.json()["id"]
@@ -175,6 +181,7 @@ class TestUpdateInstance:
                 "endpoint": "https://ep.com",
                 "api_key": "key",
                 "deployment": "dep",
+                "type": "voice",
             },
         )
         instance_id = create_resp.json()["id"]
@@ -202,6 +209,7 @@ class TestUpdateInstance:
                 "endpoint": "https://ep.com",
                 "api_key": "key",
                 "deployment": "dep",
+                "type": "voice",
             },
         )
         create_resp = await client.post(
@@ -211,6 +219,7 @@ class TestUpdateInstance:
                 "endpoint": "https://ep2.com",
                 "api_key": "key2",
                 "deployment": "dep2",
+                "type": "voice",
             },
         )
         instance_id = create_resp.json()["id"]
@@ -231,6 +240,7 @@ class TestDeleteInstance:
                 "endpoint": "https://ep.com",
                 "api_key": "key",
                 "deployment": "dep",
+                "type": "voice",
             },
         )
         instance_id = create_resp.json()["id"]
@@ -258,6 +268,7 @@ class TestDeleteInstance:
                 "endpoint": "https://ep.com",
                 "api_key": "key",
                 "deployment": "dep",
+                "type": "voice",
             },
         )
         instance_id = create_resp.json()["id"]

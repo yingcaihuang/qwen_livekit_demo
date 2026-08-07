@@ -48,6 +48,14 @@ class InstanceService:
         if not data.deployment or not data.deployment.strip():
             raise HTTPException(status_code=422, detail="Deployment name cannot be empty")
 
+        # Validate instance type (defensive service-level check; Pydantic already
+        # enforces the Literal, but Requirement 1.2 requires rejecting invalid/missing type)
+        if data.type not in ("voice", "chat", "image"):
+            raise HTTPException(
+                status_code=422,
+                detail="Instance type must be one of: voice, chat, image",
+            )
+
         # Check name uniqueness
         cursor = await db.execute("SELECT id FROM instances WHERE name = ?", (data.name,))
         existing = await cursor.fetchone()
@@ -63,8 +71,8 @@ class InstanceService:
 
         await db.execute(
             """
-            INSERT INTO instances (id, name, endpoint, api_key, deployment, description, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO instances (id, name, endpoint, api_key, deployment, type, description, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 instance_id,
@@ -72,6 +80,7 @@ class InstanceService:
                 data.endpoint,
                 data.api_key,
                 data.deployment,
+                data.type,
                 data.description,
                 now,
                 now,
@@ -84,16 +93,30 @@ class InstanceService:
             "name": data.name,
             "endpoint": data.endpoint,
             "deployment": data.deployment,
+            "type": data.type,
             "description": data.description,
             "created_at": now,
             "updated_at": now,
         }
 
-    async def list_instances(self, db: aiosqlite.Connection) -> list[InstanceSummary]:
-        """List all instances without exposing API keys."""
-        cursor = await db.execute(
-            "SELECT id, name, endpoint, deployment, description, created_at FROM instances ORDER BY created_at DESC"
+    async def list_instances(
+        self, db: aiosqlite.Connection, type_filter: str | None = None
+    ) -> list[InstanceSummary]:
+        """List all instances without exposing API keys.
+
+        When ``type_filter`` is provided, only instances whose ``type`` matches
+        the filter are returned (Requirement 1.8).
+        """
+        query = (
+            "SELECT id, name, endpoint, deployment, type, description, created_at FROM instances"
         )
+        params: tuple[str, ...] = ()
+        if type_filter is not None:
+            query += " WHERE type = ?"
+            params = (type_filter,)
+        query += " ORDER BY created_at DESC"
+
+        cursor = await db.execute(query, params)
         rows = await cursor.fetchall()
         return [
             InstanceSummary(
@@ -101,8 +124,9 @@ class InstanceService:
                 name=row[1],
                 endpoint=row[2],
                 deployment=row[3],
-                description=row[4] or "",
-                created_at=row[5],
+                type=row[4],
+                description=row[5] or "",
+                created_at=row[6],
             )
             for row in rows
         ]
@@ -113,7 +137,7 @@ class InstanceService:
         Raises HTTPException 404 if not found.
         """
         cursor = await db.execute(
-            "SELECT id, name, endpoint, api_key, deployment, description, created_at, updated_at FROM instances WHERE id = ?",
+            "SELECT id, name, endpoint, api_key, deployment, type, description, created_at, updated_at FROM instances WHERE id = ?",
             (instance_id,),
         )
         row = await cursor.fetchone()
@@ -140,9 +164,10 @@ class InstanceService:
             endpoint=row[2],
             api_key_masked=self.mask_api_key(row[3]),
             deployment=row[4],
-            description=row[5] or "",
-            created_at=row[6],
-            updated_at=row[7],
+            type=row[5],
+            description=row[6] or "",
+            created_at=row[7],
+            updated_at=row[8],
             total_sessions=stats_row[0],
             total_input_tokens=stats_row[1],
             total_output_tokens=stats_row[2],
@@ -200,7 +225,7 @@ class InstanceService:
         if not updates:
             # Nothing to update, return current state
             cursor = await db.execute(
-                "SELECT id, name, endpoint, deployment, description, created_at, updated_at FROM instances WHERE id = ?",
+                "SELECT id, name, endpoint, deployment, type, description, created_at, updated_at FROM instances WHERE id = ?",
                 (instance_id,),
             )
             row = await cursor.fetchone()
@@ -209,9 +234,10 @@ class InstanceService:
                 "name": row[1],
                 "endpoint": row[2],
                 "deployment": row[3],
-                "description": row[4] or "",
-                "created_at": row[5],
-                "updated_at": row[6],
+                "type": row[4],
+                "description": row[5] or "",
+                "created_at": row[6],
+                "updated_at": row[7],
             }
 
         # Add updated_at timestamp
@@ -230,7 +256,7 @@ class InstanceService:
 
         # Return updated instance
         cursor = await db.execute(
-            "SELECT id, name, endpoint, deployment, description, created_at, updated_at FROM instances WHERE id = ?",
+            "SELECT id, name, endpoint, deployment, type, description, created_at, updated_at FROM instances WHERE id = ?",
             (instance_id,),
         )
         row = await cursor.fetchone()
@@ -239,9 +265,10 @@ class InstanceService:
             "name": row[1],
             "endpoint": row[2],
             "deployment": row[3],
-            "description": row[4] or "",
-            "created_at": row[5],
-            "updated_at": row[6],
+            "type": row[4],
+            "description": row[5] or "",
+            "created_at": row[6],
+            "updated_at": row[7],
         }
 
     async def delete_instance(self, db: aiosqlite.Connection, instance_id: str) -> None:
@@ -267,6 +294,24 @@ class InstanceService:
                 status_code=409,
                 detail=f"Cannot delete instance: {active_count} active session(s) exist",
             )
+
+        # Clean up image generations for this instance: remove their on-disk
+        # directories (files are NOT covered by the DB ON DELETE CASCADE) and
+        # then the metadata rows (Requirements 5.4 / 9.5). Done before deleting
+        # the instance row so the cascade does not race the file cleanup.
+        cursor = await db.execute(
+            "SELECT id FROM image_generations WHERE instance_id = ?",
+            (instance_id,),
+        )
+        generation_ids = [row[0] for row in await cursor.fetchall()]
+        if generation_ids:
+            from app.services.image_service import ImageService
+
+            image_service = ImageService()
+            for generation_id in generation_ids:
+                # delete_generation removes the on-disk directory (path-guarded)
+                # then the metadata row, committing as it goes.
+                await image_service.delete_generation(db, generation_id)
 
         # Delete associated non-active sessions and their logs first (FK constraint)
         await db.execute(

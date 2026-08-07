@@ -1,14 +1,20 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { InstanceForm } from '@/components/instances/InstanceForm'
-import type { InstanceDetail } from '@/types'
+import type { InstanceDetail, InstanceType } from '@/types'
 
 export function InstanceFormPage() {
   const { id } = useParams<{ id: string }>()
   const isEdit = Boolean(id)
 
   const [initialData, setInitialData] = useState<
-    { name: string; endpoint: string; deployment: string; description: string } | undefined
+    {
+      name: string
+      endpoint: string
+      deployment: string
+      description: string
+      type: InstanceType
+    } | undefined
   >(undefined)
   const [loading, setLoading] = useState(isEdit)
   const [error, setError] = useState<string | null>(null)
@@ -28,6 +34,7 @@ export function InstanceFormPage() {
           endpoint: data.endpoint,
           deployment: data.deployment,
           description: data.description,
+          type: data.type,
         })
       } catch (err) {
         setError(err instanceof Error ? err.message : '加载失败')

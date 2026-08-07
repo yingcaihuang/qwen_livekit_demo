@@ -171,6 +171,27 @@ try:
 except (ImportError, ModuleNotFoundError):
     pass
 
+try:
+    from app.api.chat import router as chat_router
+
+    app.include_router(chat_router)
+except (ImportError, ModuleNotFoundError):
+    pass
+
+try:
+    from app.api.images import router as images_router
+
+    app.include_router(images_router)
+except (ImportError, ModuleNotFoundError):
+    pass
+
+try:
+    from app.api.history import router as history_router
+
+    app.include_router(history_router)
+except (ImportError, ModuleNotFoundError):
+    pass
+
 # Register WebSocket endpoints if available
 try:
     from app.api.websockets import ws_session_logs

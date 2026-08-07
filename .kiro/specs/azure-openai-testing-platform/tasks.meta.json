@@ -1,0 +1,747 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 扩展 Schema 定义（instances.type + image_generations 表）": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090463220
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090480992
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090574403
+      }
+    ],
+    "1.2 实现启动时幂等迁移逻辑": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090463247
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090581190
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090737190
+      }
+    ],
+    "2.1 新增 Azure OpenAI 配置模块": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090463270
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090482072
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090575432
+      }
+    ],
+    "3.1 扩展 Instance Pydantic 模型": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090463289
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090582171
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090738143
+      }
+    ],
+    "3.2 扩展 Instance 服务层": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090463314
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090744307
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090935019
+      }
+    ],
+    "3.3 扩展 Instance REST API": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090463343
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786091047442
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786091207791
+      }
+    ],
+    "4.1 新增 Chat Pydantic 模型": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090463366
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786091048810
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786091208785
+      }
+    ],
+    "4.2 实现 Chat 服务层（流式代理 + 参数约束 + 用量累加）": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090463386
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786091221975
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786091644457
+      }
+    ],
+    "4.3 实现 Chat SSE 端点与会话持久化": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090463406
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786091668874
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786091912817
+      }
+    ],
+    "5.1 新增 Image 模型与 multipart 依赖": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090463428
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786091050501
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786091209853
+      }
+    ],
+    "5.2 实现 Image 服务层（生成/编辑 + 落盘 + 路径防护 + 清理）": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090463450
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786091223416
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786091645964
+      }
+    ],
+    "5.3 实现 Image REST API": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090463477
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786091913865
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786092191720
+      }
+    ],
+    "6. Checkpoint - 后端核心链路验证": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090463503
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786092207754
+      }
+    ],
+    "7.1 新增统一历史模型": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090463526
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786092209023
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786092554536
+      }
+    ],
+    "7.2 实现统一历史 API": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090463547
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786092569275
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786092901572
+      }
+    ],
+    "8.1 扩展 Dashboard 模型与聚合服务": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090463568
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786092570281
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786092902955
+      }
+    ],
+    "8.2 扩展 Dashboard API": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090463590
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786092905325
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786093135204
+      }
+    ],
+    "9.1 扩展前端 TypeScript 类型": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090463621
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786092906611
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786093136272
+      }
+    ],
+    "9.2 扩展路由与实例打开逻辑": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090463645
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786093138678
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786093317848
+      }
+    ],
+    "9.3 实现实例表单类型选择器与类型徽章": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090463664
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786093319298
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786093577424
+      }
+    ],
+    "10.1 实现 useChatStream Hook": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090463685
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786093578323
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786093908777
+      }
+    ],
+    "10.2 实现 Chat Playground 页面与组件": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090463705
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786093910151
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786094199003
+      }
+    ],
+    "11.1 实现 Image Playground 页面与组件": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090463726
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786093911193
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786094200139
+      }
+    ],
+    "12.1 实现统一历史前端（类型筛选/徽章 + 分类型详情）": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090463747
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786094204278
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786094505575
+      }
+    ],
+    "12.2 实现仪表盘类型筛选前端": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090463771
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786094210565
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786094506575
+      }
+    ],
+    "13.1 验证后端测试与启动": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090463789
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786094515051
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786094632142
+      }
+    ],
+    "13.2 验证前端构建": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090463811
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786094515980
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786094632668
+      }
+    ],
+    "2. Phase 2: 配置模块": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090575464
+      }
+    ],
+    "1. Phase 1: 数据库 Schema 与幂等向后兼容迁移": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090737220
+      }
+    ],
+    "1.3 编写迁移幂等性属性/集成测试": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090974855
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786091046669
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786091206346
+      }
+    ],
+    "3.4 编写实例类型属性测试": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090995107
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786091224475
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786091647549
+      }
+    ],
+    "3.5 编写 Instance API 集成测试": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090996386
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786091225513
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786091648176
+      }
+    ],
+    "4.4 编写 Chat 参数与持久化属性测试": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090997645
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786092209992
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786092555870
+      }
+    ],
+    "4.5 编写 Chat API 集成测试": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786090998948
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786092211425
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786092556986
+      }
+    ],
+    "5.4 编写 Image 参数与存储属性测试": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786091000007
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786092212986
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786092558212
+      }
+    ],
+    "5.5 编写 Image API 集成测试": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786091001205
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786092213650
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786092559094
+      }
+    ],
+    "7.3 编写统一历史属性/集成测试": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786091002662
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786092904352
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786093133673
+      }
+    ],
+    "8.3 编写仪表盘聚合属性测试": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786091003752
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786093137470
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786093316881
+      }
+    ],
+    "9.4 编写前端类型/路由单元测试": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786091005248
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786093579390
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786093907872
+      }
+    ],
+    "10.3 编写 useChatStream 单元测试": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786091006396
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786094201412
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786094507548
+      }
+    ],
+    "11.2 编写 Image Playground 单元测试": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786091007345
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786094202789
+      },
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786094508666
+      }
+    ],
+    "3. Phase 3: 实例类型管理（后端）": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786091207817
+      }
+    ],
+    "4. Phase 4: Chat 对话后端": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786091912850
+      }
+    ],
+    "5. Phase 5: Image 图像生成后端": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786092191756
+      }
+    ],
+    "7. Phase 6: 统一历史 API": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786092901611
+      }
+    ],
+    "8. Phase 7: 统一仪表盘聚合": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786093135237
+      }
+    ],
+    "9. Phase 8: 前端基础（类型、路由、实例表单）": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786093577460
+      }
+    ],
+    "10. Phase 9: Chat Playground 前端": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786094199047
+      }
+    ],
+    "11. Phase 10: Image Playground 前端": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786094200171
+      }
+    ],
+    "12. Phase 11: 前端统一历史与仪表盘": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786094506606
+      }
+    ],
+    "13. Final Checkpoint - 构建与测试验证": [
+      {
+        "executionId": "1c7ac317-e134-44ba-9b13-7b9985388e9b",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786094632701
+      }
+    ]
+  }
+}

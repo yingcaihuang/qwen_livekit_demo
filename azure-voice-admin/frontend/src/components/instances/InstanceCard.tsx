@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { Play, Pencil, Trash2, Link, Boxes, Clock } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { TypeBadge } from './TypeBadge'
 import { cn } from '@/lib/utils'
 import type { Instance } from '@/types'
 
@@ -50,9 +51,23 @@ interface InstanceCardProps {
   onDelete: (id: string) => void
 }
 
+const START_ROUTE_BY_TYPE: Record<Instance['type'], string> = {
+  voice: '/sessions/new',
+  chat: '/chat/new',
+  image: '/images/new',
+}
+
+const START_LABEL_BY_TYPE: Record<Instance['type'], string> = {
+  voice: 'Start Session',
+  chat: '开始对话',
+  image: '生成图像',
+}
+
 export function InstanceCard({ instance, onDelete }: InstanceCardProps) {
   const navigate = useNavigate()
   const gradient = pickGradient(instance.id || instance.name)
+  const startRoute = START_ROUTE_BY_TYPE[instance.type] ?? '/sessions/new'
+  const startLabel = START_LABEL_BY_TYPE[instance.type] ?? 'Start Session'
 
   return (
     <Card className="relative overflow-hidden transition duration-200 hover:shadow-md hover:-translate-y-0.5">
@@ -69,9 +84,12 @@ export function InstanceCard({ instance, onDelete }: InstanceCardProps) {
           {getInitial(instance.name)}
         </div>
         <div className="min-w-0 flex-1 space-y-1">
-          <CardTitle className="truncate text-lg" title={instance.name}>
-            {instance.name}
-          </CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle className="truncate text-lg" title={instance.name}>
+              {instance.name}
+            </CardTitle>
+            <TypeBadge type={instance.type} className="shrink-0" />
+          </div>
           <CardDescription className="truncate">{instance.description || '无描述'}</CardDescription>
         </div>
       </CardHeader>
@@ -103,11 +121,11 @@ export function InstanceCard({ instance, onDelete }: InstanceCardProps) {
       <CardFooter className="gap-2">
         <Button
           size="sm"
-          onClick={() => navigate(`/sessions/new?instance=${instance.id}`)}
+          onClick={() => navigate(`${startRoute}?instance=${instance.id}`)}
           className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-sm transition hover:opacity-90"
         >
           <Play aria-hidden="true" />
-          Start Session
+          {startLabel}
         </Button>
         <Button
           size="sm"

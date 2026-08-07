@@ -66,3 +66,4 @@ Thumbs.db
 # ============================================================
 livekit-client.umd.js
 livekit-client.umd.js.map
+azure-voice-admin/frontend/tsconfig.tsbuildinfo

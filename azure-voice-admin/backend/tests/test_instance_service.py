@@ -87,6 +87,7 @@ class TestCreateInstance:
             endpoint="https://test.openai.azure.com",
             api_key="sk-test-key-123",
             deployment="gpt-4o-realtime",
+            type="voice",
         )
         result = await service.create_instance(db, data)
         assert result["name"] == "test-instance"
@@ -102,6 +103,7 @@ class TestCreateInstance:
             endpoint="https://test.openai.azure.com",
             api_key="sk-key",
             deployment="gpt-4o",
+            type="voice",
             description="Test description",
         )
         result = await service.create_instance(db, data)
@@ -109,28 +111,36 @@ class TestCreateInstance:
 
     async def test_reject_empty_endpoint(self, db, service):
         """Rejects instance creation with empty endpoint."""
-        data = InstanceCreate(name="test", endpoint="", api_key="key", deployment="dep")
+        data = InstanceCreate(
+            name="test", endpoint="", api_key="key", deployment="dep", type="voice"
+        )
         with pytest.raises(HTTPException) as exc_info:
             await service.create_instance(db, data)
         assert exc_info.value.status_code == 422
 
     async def test_reject_whitespace_endpoint(self, db, service):
         """Rejects instance creation with whitespace-only endpoint."""
-        data = InstanceCreate(name="test", endpoint="   ", api_key="key", deployment="dep")
+        data = InstanceCreate(
+            name="test", endpoint="   ", api_key="key", deployment="dep", type="voice"
+        )
         with pytest.raises(HTTPException) as exc_info:
             await service.create_instance(db, data)
         assert exc_info.value.status_code == 422
 
     async def test_reject_empty_api_key(self, db, service):
         """Rejects instance creation with empty API key."""
-        data = InstanceCreate(name="test", endpoint="https://ep.com", api_key="", deployment="dep")
+        data = InstanceCreate(
+            name="test", endpoint="https://ep.com", api_key="", deployment="dep", type="voice"
+        )
         with pytest.raises(HTTPException) as exc_info:
             await service.create_instance(db, data)
         assert exc_info.value.status_code == 422
 
     async def test_reject_empty_name(self, db, service):
         """Rejects instance creation with empty name."""
-        data = InstanceCreate(name="", endpoint="https://ep.com", api_key="key", deployment="dep")
+        data = InstanceCreate(
+            name="", endpoint="https://ep.com", api_key="key", deployment="dep", type="voice"
+        )
         with pytest.raises(HTTPException) as exc_info:
             await service.create_instance(db, data)
         assert exc_info.value.status_code == 422
@@ -142,6 +152,7 @@ class TestCreateInstance:
             endpoint="https://ep.com",
             api_key="key",
             deployment="dep",
+            type="voice",
         )
         await service.create_instance(db, data)
 
@@ -151,6 +162,7 @@ class TestCreateInstance:
             endpoint="https://ep2.com",
             api_key="key2",
             deployment="dep2",
+            type="voice",
         )
         with pytest.raises(HTTPException) as exc_info:
             await service.create_instance(db, data2)
@@ -173,6 +185,7 @@ class TestListInstances:
                 endpoint=f"https://ep{i}.com",
                 api_key=f"key-{i}",
                 deployment=f"dep-{i}",
+                type="voice",
             )
             await service.create_instance(db, data)
 
@@ -186,6 +199,7 @@ class TestListInstances:
             endpoint="https://ep.com",
             api_key="secret-key-12345",
             deployment="dep",
+            type="voice",
         )
         await service.create_instance(db, data)
 
@@ -206,6 +220,7 @@ class TestGetInstance:
             endpoint="https://ep.com",
             api_key="sk-abcdef123456",
             deployment="gpt-4o",
+            type="voice",
         )
         created = await service.create_instance(db, data)
 
@@ -230,6 +245,7 @@ class TestGetInstance:
             endpoint="https://ep.com",
             api_key="sk-key123",
             deployment="dep",
+            type="voice",
         )
         created = await service.create_instance(db, data)
 
@@ -266,6 +282,7 @@ class TestUpdateInstance:
             endpoint="https://ep.com",
             api_key="key",
             deployment="dep",
+            type="voice",
         )
         created = await service.create_instance(db, data)
 
@@ -287,12 +304,14 @@ class TestUpdateInstance:
             endpoint="https://ep.com",
             api_key="key",
             deployment="dep",
+            type="voice",
         )
         data2 = InstanceCreate(
             name="name-b",
             endpoint="https://ep2.com",
             api_key="key2",
             deployment="dep2",
+            type="voice",
         )
         await service.create_instance(db, data1)
         created2 = await service.create_instance(db, data2)
@@ -309,6 +328,7 @@ class TestUpdateInstance:
             endpoint="https://ep.com",
             api_key="key",
             deployment="dep",
+            type="voice",
         )
         created = await service.create_instance(db, data)
 
@@ -327,6 +347,7 @@ class TestDeleteInstance:
             endpoint="https://ep.com",
             api_key="key",
             deployment="dep",
+            type="voice",
         )
         created = await service.create_instance(db, data)
 
@@ -349,6 +370,7 @@ class TestDeleteInstance:
             endpoint="https://ep.com",
             api_key="key",
             deployment="dep",
+            type="voice",
         )
         created = await service.create_instance(db, data)
 
@@ -373,6 +395,7 @@ class TestDeleteInstance:
             endpoint="https://ep.com",
             api_key="key",
             deployment="dep",
+            type="voice",
         )
         created = await service.create_instance(db, data)
 

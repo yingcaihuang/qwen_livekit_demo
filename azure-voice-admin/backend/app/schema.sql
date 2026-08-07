@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS instances (
     endpoint TEXT NOT NULL,
     api_key TEXT NOT NULL,
     deployment TEXT NOT NULL,
+    type TEXT NOT NULL DEFAULT 'voice',
     description TEXT DEFAULT '',
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -46,3 +47,26 @@ CREATE TABLE IF NOT EXISTS session_messages (
 );
 
 CREATE INDEX IF NOT EXISTS idx_session_messages_session_id ON session_messages(session_id);
+
+CREATE TABLE IF NOT EXISTS image_generations (
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    instance_id TEXT NOT NULL REFERENCES instances(id) ON DELETE CASCADE,
+    session_id TEXT,
+    prompt TEXT NOT NULL,
+    params TEXT NOT NULL DEFAULT '{}',
+    size TEXT,
+    quality TEXT,
+    output_format TEXT,
+    compression INTEGER,
+    n INTEGER DEFAULT 1,
+    has_reference INTEGER DEFAULT 0,
+    input_tokens INTEGER DEFAULT 0,
+    output_tokens INTEGER DEFAULT 0,
+    image_paths TEXT NOT NULL DEFAULT '[]',
+    status TEXT NOT NULL DEFAULT 'completed',
+    error_message TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_image_generations_instance_id ON image_generations(instance_id);
+CREATE INDEX IF NOT EXISTS idx_image_generations_created_at ON image_generations(created_at DESC);

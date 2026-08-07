@@ -49,6 +49,7 @@ async def instance_id(client):
             "endpoint": "https://test.openai.azure.com",
             "api_key": "sk-test-key-12345",
             "deployment": "gpt-4o-realtime",
+            "type": "voice",
         },
     )
     assert resp.status_code == 201
@@ -164,6 +165,7 @@ class TestListSessions:
                 "endpoint": "https://other.openai.azure.com",
                 "api_key": "sk-other-key",
                 "deployment": "gpt-4o",
+                "type": "voice",
             },
         )
         other_id = resp.json()["id"]

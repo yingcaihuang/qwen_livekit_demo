@@ -309,7 +309,12 @@ class SessionService:
         if not row:
             raise HTTPException(status_code=404, detail="Session not found")
 
-        # Delete logs first (FK constraint), then the session
+        # Delete associated logs and messages first, then the session. Both
+        # child tables declare ON DELETE CASCADE, but we delete explicitly so
+        # cleanup is robust even if foreign-key enforcement is not enabled on
+        # the connection. This applies to both voice and chat sessions
+        # (chat sessions store their transcript in session_messages).
         await db.execute("DELETE FROM session_logs WHERE session_id = ?", (session_id,))
+        await db.execute("DELETE FROM session_messages WHERE session_id = ?", (session_id,))
         await db.execute("DELETE FROM sessions WHERE id = ?", (session_id,))
         await db.commit()

@@ -1,79 +1,61 @@
-"""REST API routes for dashboard statistics."""
+"""REST API routes for dashboard statistics.
+
+Delegates cross-type aggregation (sessions + image_generations) to
+``app.services.dashboard_service`` so voice/chat/image usage is combined
+consistently. All endpoints accept optional filters and return zero values /
+empty lists for empty match sets rather than errors (Requirement 7.5).
+"""
 
 import aiosqlite
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
 from app.database import get_db
-from app.models.dashboard import DashboardStats, InstanceUsage
+from app.models.dashboard import DashboardStats, InstanceUsage, TypeUsage
+from app.models.instance import InstanceType
+from app.services import dashboard_service
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
 
 @router.get("/stats", response_model=DashboardStats)
-async def get_dashboard_stats(db: aiosqlite.Connection = Depends(get_db)):
-    """Return overall system statistics.
+async def get_dashboard_stats(
+    type: InstanceType | None = Query(default=None),
+    instance_id: str | None = Query(default=None),
+    db: aiosqlite.Connection = Depends(get_db),
+):
+    """Return overall system statistics aggregated across all test types.
 
-    - total_instances: count of all instances
-    - total_sessions: count of all sessions
-    - active_sessions: count of sessions with status IN ('connecting', 'connected')
-    - total_input_tokens: sum of input_tokens across all sessions
-    - total_output_tokens: sum of output_tokens across all sessions
+    Combines the ``sessions`` table (voice/chat) with ``image_generations``
+    (image). ``total_tests`` is the combined count of sessions and image
+    generations; ``total_sessions`` is retained for backward compatibility.
+
+    - ``type``: optional filter restricting aggregation to a single test type.
+    - ``instance_id``: optional filter restricting aggregation to one instance.
     """
-    cursor = await db.execute("SELECT COUNT(*) FROM instances")
-    row = await cursor.fetchone()
-    total_instances = row[0]
-
-    cursor = await db.execute("SELECT COUNT(*) FROM sessions")
-    row = await cursor.fetchone()
-    total_sessions = row[0]
-
-    cursor = await db.execute(
-        "SELECT COUNT(*) FROM sessions WHERE status IN ('connecting', 'connected')"
-    )
-    row = await cursor.fetchone()
-    active_sessions = row[0]
-
-    cursor = await db.execute(
-        "SELECT COALESCE(SUM(input_tokens), 0), COALESCE(SUM(output_tokens), 0) FROM sessions"
-    )
-    row = await cursor.fetchone()
-    total_input_tokens = row[0]
-    total_output_tokens = row[1]
-
-    return DashboardStats(
-        total_instances=total_instances,
-        total_sessions=total_sessions,
-        active_sessions=active_sessions,
-        total_input_tokens=total_input_tokens,
-        total_output_tokens=total_output_tokens,
-    )
+    return await dashboard_service.compute_stats(db, type_filter=type, instance_id=instance_id)
 
 
 @router.get("/usage-by-instance", response_model=list[InstanceUsage])
-async def get_usage_by_instance(db: aiosqlite.Connection = Depends(get_db)):
-    """Return per-instance aggregation of session count and token usage."""
-    cursor = await db.execute(
-        """
-        SELECT
-            i.id AS instance_id,
-            i.name AS instance_name,
-            COUNT(s.id) AS session_count,
-            COALESCE(SUM(s.input_tokens), 0) AS total_input_tokens,
-            COALESCE(SUM(s.output_tokens), 0) AS total_output_tokens
-        FROM instances i
-        LEFT JOIN sessions s ON s.instance_id = i.id
-        GROUP BY i.id, i.name
-        ORDER BY i.name
-        """
-    )
-    rows = await cursor.fetchall()
-    return [
-        InstanceUsage(
-            instance_id=row[0],
-            instance_name=row[1],
-            session_count=row[2],
-            total_input_tokens=row[3],
-            total_output_tokens=row[4],
-        )
-        for row in rows
-    ]
+async def get_usage_by_instance(
+    type: InstanceType | None = Query(default=None),
+    db: aiosqlite.Connection = Depends(get_db),
+):
+    """Return per-instance aggregation of test count and token usage.
+
+    Each instance's count combines its sessions and image generations. An
+    optional ``type`` filter restricts to instances of a single test type.
+    """
+    return await dashboard_service.compute_usage_by_instance(db, type_filter=type)
+
+
+@router.get("/usage-by-type", response_model=list[TypeUsage])
+async def get_usage_by_type(
+    instance_id: str | None = Query(default=None),
+    db: aiosqlite.Connection = Depends(get_db),
+):
+    """Return usage aggregated by test type (``voice`` / ``chat`` / ``image``).
+
+    Always returns one entry per type; a type with no matching records yields
+    zero values. An optional ``instance_id`` filter restricts to one instance.
+    """
+    return await dashboard_service.compute_usage_by_type(db, instance_id=instance_id)

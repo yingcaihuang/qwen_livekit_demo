@@ -1,12 +1,13 @@
 import { useNavigate } from 'react-router-dom'
 import { Trash2, Coins } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { TypeBadge } from '@/components/instances/TypeBadge'
 import { cn } from '@/lib/utils'
-import type { Session } from '@/types'
+import type { HistoryItem } from '@/types'
 
-interface SessionRowProps {
-  session: Session
-  onDelete: (id: string) => void
+interface HistoryRowProps {
+  item: HistoryItem
+  onDelete: (item: HistoryItem) => void
 }
 
 interface StatusStyle {
@@ -15,7 +16,8 @@ interface StatusStyle {
   dot: string
 }
 
-const statusConfig: Record<Session['status'], StatusStyle> = {
+/** 状态样式表：涵盖 voice/chat 会话与 image 生成的常见状态值，未知状态回退到中性灰。 */
+const statusConfig: Record<string, StatusStyle> = {
   connecting: {
     label: '连接中',
     pill: 'bg-amber-100 text-amber-700 ring-1 ring-amber-200',
@@ -23,6 +25,11 @@ const statusConfig: Record<Session['status'], StatusStyle> = {
   },
   connected: {
     label: '已连接',
+    pill: 'bg-sky-100 text-sky-700 ring-1 ring-sky-200',
+    dot: 'bg-sky-500',
+  },
+  active: {
+    label: '进行中',
     pill: 'bg-sky-100 text-sky-700 ring-1 ring-sky-200',
     dot: 'bg-sky-500',
   },
@@ -43,26 +50,19 @@ const statusConfig: Record<Session['status'], StatusStyle> = {
   },
 }
 
-function formatDuration(startTime: string, endTime: string | null): string {
-  if (!endTime) return '进行中'
-  const start = new Date(startTime).getTime()
-  const end = new Date(endTime).getTime()
-  const diffMs = end - start
-  if (diffMs < 0) return '—'
-  const seconds = Math.floor(diffMs / 1000)
-  const minutes = Math.floor(seconds / 60)
-  const hours = Math.floor(minutes / 60)
-  if (hours > 0) {
-    return `${hours}h ${minutes % 60}m ${seconds % 60}s`
-  }
-  if (minutes > 0) {
-    return `${minutes}m ${seconds % 60}s`
-  }
-  return `${seconds}s`
+function getStatusStyle(status: string): StatusStyle {
+  return (
+    statusConfig[status] ?? {
+      label: status || '未知',
+      pill: 'bg-slate-100 text-slate-600 ring-1 ring-slate-200',
+      dot: 'bg-slate-400',
+    }
+  )
 }
 
 function formatTime(isoString: string): string {
   const date = new Date(isoString)
+  if (Number.isNaN(date.getTime())) return '—'
   return date.toLocaleString('zh-CN', {
     month: '2-digit',
     day: '2-digit',
@@ -72,29 +72,37 @@ function formatTime(isoString: string): string {
   })
 }
 
-export function SessionRow({ session, onDelete }: SessionRowProps) {
+/** 根据历史条目类型解析详情路由：image → 图像详情，其余 → 会话详情。 */
+function detailPath(item: HistoryItem): string {
+  return item.type === 'image' ? `/history/image/${item.id}` : `/history/${item.id}`
+}
+
+export function SessionRow({ item, onDelete }: HistoryRowProps) {
   const navigate = useNavigate()
-  const status = statusConfig[session.status]
-  const totalTokens = session.input_tokens + session.output_tokens
+  const status = getStatusStyle(item.status)
+  const totalTokens = item.input_tokens + item.output_tokens
 
   return (
     <tr
       className="cursor-pointer transition-colors hover:bg-muted/40"
-      onClick={() => navigate(`/history/${session.id}`)}
+      onClick={() => navigate(detailPath(item))}
     >
-      <td className="px-4 py-3 text-sm font-medium">{session.instance_name}</td>
-      <td className="px-4 py-3 text-sm text-muted-foreground">
-        {formatTime(session.start_time)}
+      <td className="px-4 py-3">
+        <TypeBadge type={item.type} />
       </td>
-      <td className="px-4 py-3 text-sm text-muted-foreground">
-        {formatDuration(session.start_time, session.end_time)}
+      <td className="max-w-[22rem] px-4 py-3 text-sm font-medium">
+        <span className="block truncate" title={item.title}>
+          {item.title || '—'}
+        </span>
       </td>
+      <td className="px-4 py-3 text-sm text-muted-foreground">{item.instance_name}</td>
+      <td className="px-4 py-3 text-sm text-muted-foreground">{formatTime(item.start_time)}</td>
       <td className="px-4 py-3 text-sm">
         <div className="flex items-center gap-1.5">
           <Coins className="h-3.5 w-3.5 text-amber-500" aria-hidden="true" />
           <span className="font-medium">{totalTokens.toLocaleString()}</span>
           <span className="text-xs text-muted-foreground">
-            ({session.input_tokens.toLocaleString()} / {session.output_tokens.toLocaleString()})
+            ({item.input_tokens.toLocaleString()} / {item.output_tokens.toLocaleString()})
           </span>
         </div>
       </td>
@@ -115,9 +123,9 @@ export function SessionRow({ session, onDelete }: SessionRowProps) {
           size="icon"
           onClick={(e) => {
             e.stopPropagation()
-            onDelete(session.id)
+            onDelete(item)
           }}
-          aria-label="删除会话"
+          aria-label="删除记录"
         >
           <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" aria-hidden="true" />
         </Button>

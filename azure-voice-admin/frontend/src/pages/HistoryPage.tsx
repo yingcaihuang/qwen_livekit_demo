@@ -2,19 +2,21 @@ import { useState, useEffect, useCallback } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SessionList } from '@/components/history/SessionList'
-import type { Instance, PaginatedSessions } from '@/types'
+import { HistoryFilter, type HistoryTypeFilter } from '@/components/history/HistoryFilter'
+import type { Instance, HistoryItem, PaginatedHistory } from '@/types'
 
 const PAGE_SIZE = 10
 
 export function HistoryPage() {
   const [page, setPage] = useState(1)
+  const [typeFilter, setTypeFilter] = useState<HistoryTypeFilter>('')
   const [instanceFilter, setInstanceFilter] = useState<string>('')
   const [instances, setInstances] = useState<Instance[]>([])
-  const [sessionsData, setSessionsData] = useState<PaginatedSessions | null>(null)
+  const [historyData, setHistoryData] = useState<PaginatedHistory | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Fetch instances for filter dropdown
+  // Fetch instances for the filter dropdown.
   useEffect(() => {
     fetch('/api/instances')
       .then((res) => res.json())
@@ -22,8 +24,8 @@ export function HistoryPage() {
       .catch(() => {})
   }, [])
 
-  // Fetch sessions with pagination and filter
-  const fetchSessions = useCallback(async () => {
+  // Fetch unified history with pagination + type/instance filters.
+  const fetchHistory = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
@@ -31,48 +33,59 @@ export function HistoryPage() {
         page: String(page),
         page_size: String(PAGE_SIZE),
       })
+      if (typeFilter) {
+        params.set('type', typeFilter)
+      }
       if (instanceFilter) {
         params.set('instance_id', instanceFilter)
       }
-      const response = await fetch(`/api/sessions?${params}`)
+      const response = await fetch(`/api/history?${params}`)
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`)
       }
-      const data = (await response.json()) as PaginatedSessions
-      setSessionsData(data)
+      const data = (await response.json()) as PaginatedHistory
+      setHistoryData(data)
     } catch (err) {
       setError(err instanceof Error ? err.message : '加载失败')
     } finally {
       setLoading(false)
     }
-  }, [page, instanceFilter])
+  }, [page, typeFilter, instanceFilter])
 
   useEffect(() => {
-    fetchSessions()
-  }, [fetchSessions])
+    fetchHistory()
+  }, [fetchHistory])
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('确定要删除此会话记录吗？此操作不可撤销。')) return
+  const handleDelete = async (item: HistoryItem) => {
+    if (!confirm('确定要删除此测试记录吗？此操作不可撤销。')) return
+    // Route the delete to the correct endpoint based on the record type.
+    const url =
+      item.type === 'image' ? `/api/images/${item.id}` : `/api/sessions/${item.id}`
     try {
-      const response = await fetch(`/api/sessions/${id}`, { method: 'DELETE' })
+      const response = await fetch(url, { method: 'DELETE' })
       if (!response.ok) {
         const body = await response.json().catch(() => null)
         const message = body?.detail || `删除失败 (${response.status})`
         alert(message)
         return
       }
-      fetchSessions()
+      fetchHistory()
     } catch {
       alert('删除请求失败，请检查网络连接')
     }
   }
 
-  const handleFilterChange = (value: string) => {
+  const handleTypeChange = (value: HistoryTypeFilter) => {
+    setTypeFilter(value)
+    setPage(1)
+  }
+
+  const handleInstanceChange = (value: string) => {
     setInstanceFilter(value)
     setPage(1)
   }
 
-  const totalPages = sessionsData ? Math.ceil(sessionsData.total / PAGE_SIZE) : 0
+  const totalPages = historyData ? Math.ceil(historyData.total / PAGE_SIZE) : 0
 
   if (error) {
     return (
@@ -89,32 +102,21 @@ export function HistoryPage() {
       {/* Header */}
       <div className="space-y-1">
         <h1 className="bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-3xl font-bold tracking-tight text-transparent">
-          会话历史
+          测试历史
         </h1>
-        <p className="text-sm text-muted-foreground">查看历史语音会话与用量</p>
+        <p className="text-sm text-muted-foreground">查看语音 / 对话 / 图像测试记录与用量</p>
       </div>
 
-      {/* Filter */}
-      <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-gradient-to-r from-muted/50 to-transparent px-4 py-3 shadow-sm">
-        <label htmlFor="instance-filter" className="text-sm font-medium text-muted-foreground">
-          按实例筛选:
-        </label>
-        <select
-          id="instance-filter"
-          value={instanceFilter}
-          onChange={(e) => handleFilterChange(e.target.value)}
-          className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/40 hover:border-indigo-400/60"
-        >
-          <option value="">全部实例</option>
-          {instances.map((instance) => (
-            <option key={instance.id} value={instance.id}>
-              {instance.name}
-            </option>
-          ))}
-        </select>
-      </div>
+      {/* Filters */}
+      <HistoryFilter
+        typeFilter={typeFilter}
+        instanceFilter={instanceFilter}
+        instances={instances}
+        onTypeChange={handleTypeChange}
+        onInstanceChange={handleInstanceChange}
+      />
 
-      {/* Session List */}
+      {/* History List */}
       {loading ? (
         <div className="flex items-center justify-center p-12">
           <div className="rounded-xl border bg-card px-8 py-6 text-center shadow-sm">
@@ -122,14 +124,14 @@ export function HistoryPage() {
           </div>
         </div>
       ) : (
-        <SessionList sessions={sessionsData?.items ?? []} onDelete={handleDelete} />
+        <SessionList items={historyData?.items ?? []} onDelete={handleDelete} />
       )}
 
       {/* Pagination Controls */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between rounded-xl border bg-card px-4 py-3 shadow-sm">
           <p className="text-sm text-muted-foreground">
-            共 <span className="font-semibold text-foreground">{sessionsData?.total ?? 0}</span> 条记录，第{' '}
+            共 <span className="font-semibold text-foreground">{historyData?.total ?? 0}</span> 条记录，第{' '}
             <span className="font-semibold text-foreground">{page}</span>/{totalPages} 页
           </p>
           <div className="flex items-center gap-2">
