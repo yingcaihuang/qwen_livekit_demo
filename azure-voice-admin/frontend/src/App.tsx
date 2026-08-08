@@ -1,4 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { AuthProvider } from '@/components/auth/AuthProvider'
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { AppShell } from '@/components/layout/AppShell'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { InstancesPage } from '@/pages/InstancesPage'
@@ -9,26 +11,41 @@ import { ImagePlaygroundPage } from '@/pages/ImagePlaygroundPage'
 import { HistoryPage } from '@/pages/HistoryPage'
 import { SessionDetailPage } from '@/pages/SessionDetailPage'
 import { ImageDetailPage } from '@/pages/ImageDetailPage'
+import { LoginPage } from '@/pages/LoginPage'
+import { ChangePasswordPage } from '@/pages/ChangePasswordPage'
+import { UsersPage } from '@/pages/admin/UsersPage'
+import { GroupMappingsPage } from '@/pages/admin/GroupMappingsPage'
+import { SsoConfigPage } from '@/pages/admin/SsoConfigPage'
 import { Toaster } from '@/components/ui/toast'
 
 function App() {
   return (
     <BrowserRouter>
-      <AppShell>
+      <AuthProvider>
         <Routes>
-          <Route path="/" element={<DashboardPage />} />
-          <Route path="/instances" element={<InstancesPage />} />
-          <Route path="/instances/new" element={<InstanceFormPage />} />
-          <Route path="/instances/:id" element={<InstanceFormPage />} />
-          <Route path="/sessions/new" element={<VoiceSessionPage />} />
-          <Route path="/chat/new" element={<ChatPlaygroundPage />} />
-          <Route path="/images/new" element={<ImagePlaygroundPage />} />
-          <Route path="/history" element={<HistoryPage />} />
-          <Route path="/history/:id" element={<SessionDetailPage />} />
-          <Route path="/history/image/:id" element={<ImageDetailPage />} />
+          {/* Public routes */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/change-password" element={<ChangePasswordPage />} />
+
+          {/* Protected routes */}
+          <Route path="/" element={<ProtectedRoute capability="dashboard:read"><AppShell><DashboardPage /></AppShell></ProtectedRoute>} />
+          <Route path="/instances" element={<ProtectedRoute capability="instance:read"><AppShell><InstancesPage /></AppShell></ProtectedRoute>} />
+          <Route path="/instances/new" element={<ProtectedRoute capability="instance:write"><AppShell><InstanceFormPage /></AppShell></ProtectedRoute>} />
+          <Route path="/instances/:id" element={<ProtectedRoute capability="instance:read"><AppShell><InstanceFormPage /></AppShell></ProtectedRoute>} />
+          <Route path="/sessions/new" element={<ProtectedRoute capability="session:run"><AppShell><VoiceSessionPage /></AppShell></ProtectedRoute>} />
+          <Route path="/chat/new" element={<ProtectedRoute capability="chat:use"><AppShell><ChatPlaygroundPage /></AppShell></ProtectedRoute>} />
+          <Route path="/images/new" element={<ProtectedRoute capability="image:use"><AppShell><ImagePlaygroundPage /></AppShell></ProtectedRoute>} />
+          <Route path="/history" element={<ProtectedRoute><AppShell><HistoryPage /></AppShell></ProtectedRoute>} />
+          <Route path="/history/:id" element={<ProtectedRoute><AppShell><SessionDetailPage /></AppShell></ProtectedRoute>} />
+          <Route path="/history/image/:id" element={<ProtectedRoute><AppShell><ImageDetailPage /></AppShell></ProtectedRoute>} />
+
+          {/* Admin routes */}
+          <Route path="/admin/users" element={<ProtectedRoute capability="user:manage"><AppShell><UsersPage /></AppShell></ProtectedRoute>} />
+          <Route path="/admin/group-mappings" element={<ProtectedRoute capability="role:manage"><AppShell><GroupMappingsPage /></AppShell></ProtectedRoute>} />
+          <Route path="/admin/sso" element={<ProtectedRoute capability="sso:manage"><AppShell><SsoConfigPage /></AppShell></ProtectedRoute>} />
         </Routes>
         <Toaster />
-      </AppShell>
+      </AuthProvider>
     </BrowserRouter>
   )
 }
