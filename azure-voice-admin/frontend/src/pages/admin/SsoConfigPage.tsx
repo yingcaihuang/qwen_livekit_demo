@@ -153,6 +153,20 @@ export function SsoConfigPage() {
           </label>
           <span className="text-sm text-gray-700">在登录页显示"统一认证入口"按钮</span>
         </div>
+        {/* Authentik 配置参考 — 方便用户复制到 Authentik */}
+        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-2">
+          <p className="text-xs font-medium text-blue-800">📋 以下 URI 需要在 Authentik 应用配置中填写：</p>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-blue-700 w-44 shrink-0">Redirect URI:</span>
+            <code className="flex-1 rounded bg-white px-2 py-1 text-xs text-gray-800 border">{`${window.location.origin}/api/auth/sso/callback`}</code>
+            <button type="button" onClick={() => navigator.clipboard.writeText(`${window.location.origin}/api/auth/sso/callback`)} className="text-xs text-blue-600 hover:underline shrink-0">复制</button>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-blue-700 w-44 shrink-0">Post Logout Redirect URI:</span>
+            <code className="flex-1 rounded bg-white px-2 py-1 text-xs text-gray-800 border">{`${window.location.origin}/login`}</code>
+            <button type="button" onClick={() => navigator.clipboard.writeText(`${window.location.origin}/login`)} className="text-xs text-blue-600 hover:underline shrink-0">复制</button>
+          </div>
+        </div>
         <div className="flex items-center gap-4 pt-4">
           <button onClick={handleSave} disabled={saving} className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
             {saving ? '保存中...' : '保存配置'}
