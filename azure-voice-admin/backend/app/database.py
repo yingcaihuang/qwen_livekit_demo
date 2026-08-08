@@ -78,12 +78,18 @@ async def _migrate(db: aiosqlite.Connection) -> None:
         if "created_by" not in cols:
             await db.execute(f"ALTER TABLE {table} ADD COLUMN created_by TEXT")
 
-    # 5) Seed sso_config singleton row (Req 9.6, 3.1). The table is created in
+    # 5) end_session_endpoint column for OIDC RP-Initiated Logout.
+    cursor = await db.execute("PRAGMA table_info(sso_config)")
+    sso_cols = {row[1] for row in await cursor.fetchall()}
+    if "end_session_endpoint" not in sso_cols:
+        await db.execute("ALTER TABLE sso_config ADD COLUMN end_session_endpoint TEXT")
+
+    # 6) Seed sso_config singleton row (Req 9.6, 3.1). The table is created in
     #    schema.sql; here we ensure the single-row configuration placeholder
     #    exists so that queries never fail on an empty table.
     await db.execute("INSERT OR IGNORE INTO sso_config (id, login_button_enabled) VALUES (1, 0)")
 
-    # 6) Seed super_admin account if none exists (Req 3.1, 3.2).
+    # 7) Seed super_admin account if none exists (Req 3.1, 3.2).
     #    Idempotent: only creates the account when no super_admin role exists
     #    in the database. If SEED_ADMIN_PASSWORD is not set, a random password
     #    is generated and logged once via warning so the deployer can use it

@@ -51,11 +51,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const logout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
+    const res = await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
+    const data = await res.json().catch(() => ({}))
     setUser(null)
     setRoles([])
     setCapabilities([])
     setCsrfToken(null)
+    // If SSO user, redirect to IdP end_session endpoint
+    if (data.end_session_url) {
+      window.location.href = data.end_session_url
+    } else {
+      window.location.href = '/login'
+    }
   }
 
   useEffect(() => { fetchMe() }, [])

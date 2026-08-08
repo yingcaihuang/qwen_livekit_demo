@@ -19,7 +19,7 @@ async def _load_sso_config(db: aiosqlite.Connection) -> dict | None:
     cursor = await db.execute(
         "SELECT issuer, discovery_url, client_id, client_secret_encrypted, "
         "authorization_endpoint, token_endpoint, userinfo_endpoint, jwks_uri, "
-        "redirect_uri, scopes, groups_claim, login_button_enabled "
+        "redirect_uri, scopes, groups_claim, end_session_endpoint, login_button_enabled "
         "FROM sso_config WHERE id = 1"
     )
     row = await cursor.fetchone()
@@ -37,7 +37,8 @@ async def _load_sso_config(db: aiosqlite.Connection) -> dict | None:
         "redirect_uri": row[8],
         "scopes": row[9],
         "groups_claim": row[10],
-        "login_button_enabled": bool(row[11]),
+        "end_session_endpoint": row[11],
+        "login_button_enabled": bool(row[12]),
     }
 
 

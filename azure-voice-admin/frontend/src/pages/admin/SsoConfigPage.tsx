@@ -13,6 +13,7 @@ export function SsoConfigPage() {
     token_endpoint: '',
     userinfo_endpoint: '',
     jwks_uri: '',
+    end_session_endpoint: '',
     redirect_uri: '',
     scopes: 'openid profile email groups',
     groups_claim: 'groups',
@@ -34,6 +35,7 @@ export function SsoConfigPage() {
           token_endpoint: d.token_endpoint || '',
           userinfo_endpoint: d.userinfo_endpoint || '',
           jwks_uri: d.jwks_uri || '',
+          end_session_endpoint: d.end_session_endpoint || '',
           redirect_uri: d.redirect_uri || '',
           scopes: d.scopes || 'openid profile email groups',
           groups_claim: d.groups_claim || 'groups',
@@ -65,6 +67,7 @@ export function SsoConfigPage() {
           token_endpoint: d.token_endpoint || f.token_endpoint,
           userinfo_endpoint: d.userinfo_endpoint || f.userinfo_endpoint,
           jwks_uri: d.jwks_uri || f.jwks_uri,
+          end_session_endpoint: d.end_session_endpoint || f.end_session_endpoint,
         }))
         setMessage('✅ 端点已自动填充，请检查后保存')
       } else {
@@ -131,7 +134,15 @@ export function SsoConfigPage() {
           <div><label className={labelCls}>Token Endpoint</label><input className={inputCls} value={form.token_endpoint} onChange={e => setForm(f => ({...f, token_endpoint: e.target.value}))} /></div>
           <div><label className={labelCls}>Userinfo Endpoint</label><input className={inputCls} value={form.userinfo_endpoint} onChange={e => setForm(f => ({...f, userinfo_endpoint: e.target.value}))} /></div>
           <div><label className={labelCls}>JWKS URI</label><input className={inputCls} value={form.jwks_uri} onChange={e => setForm(f => ({...f, jwks_uri: e.target.value}))} /></div>
-          <div><label className={labelCls}>Redirect URI</label><input className={inputCls} value={form.redirect_uri} onChange={e => setForm(f => ({...f, redirect_uri: e.target.value}))} placeholder="https://your-domain/api/auth/sso/callback" /></div>
+          <div><label className={labelCls}>End Session Endpoint</label><input className={inputCls} value={form.end_session_endpoint} onChange={e => setForm(f => ({...f, end_session_endpoint: e.target.value}))} placeholder="https://authentik.example.com/application/o/app/end-session/" /></div>
+          <div><label className={labelCls}>Redirect URI</label>
+            <div className="mt-1 flex gap-2">
+              <input className="block flex-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" value={form.redirect_uri} onChange={e => setForm(f => ({...f, redirect_uri: e.target.value}))} placeholder="例如: https://your-domain/api/auth/sso/callback" />
+              <button type="button" onClick={() => setForm(f => ({...f, redirect_uri: `${window.location.origin}/api/auth/sso/callback`}))} className="whitespace-nowrap rounded-md bg-gray-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-700">
+                自动填写
+              </button>
+            </div>
+          </div>
           <div><label className={labelCls}>Scopes</label><input className={inputCls} value={form.scopes} onChange={e => setForm(f => ({...f, scopes: e.target.value}))} /></div>
           <div><label className={labelCls}>Groups Claim 字段名</label><input className={inputCls} value={form.groups_claim} onChange={e => setForm(f => ({...f, groups_claim: e.target.value}))} /></div>
         </div>

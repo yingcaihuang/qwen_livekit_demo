@@ -96,10 +96,42 @@ async def logout(
     response: Response,
     db: aiosqlite.Connection = Depends(get_db),
 ):
-    """Invalidate current session and clear cookie."""
+    """Invalidate current session and clear cookie. For SSO users, return end_session_url."""
     token = request.cookies.get(auth_service.SESSION_COOKIE_NAME)
+    end_session_url = None
+
     if token:
+        # Load session to get user_id before invalidating
+        session = await auth_service.load_session(db, token)
+        if session:
+            user_id = session["user_id"]
+            # Check if user is SSO-sourced
+            cursor = await db.execute("SELECT auth_source FROM users WHERE id = ?", (user_id,))
+            user_row = await cursor.fetchone()
+            if user_row and user_row[0] == "sso":
+                # Look up end_session_endpoint from sso_config
+                cursor = await db.execute(
+                    "SELECT end_session_endpoint FROM sso_config WHERE id = 1"
+                )
+                sso_row = await cursor.fetchone()
+                if sso_row and sso_row[0]:
+                    # Derive post_logout_redirect_uri from request
+                    referer = request.headers.get("referer", "")
+                    if referer:
+                        from urllib.parse import urlparse
+
+                        parsed = urlparse(referer)
+                        origin = f"{parsed.scheme}://{parsed.netloc}"
+                    else:
+                        # Fallback to Host header
+                        host = request.headers.get("host", "localhost")
+                        scheme = request.headers.get("x-forwarded-proto", "https")
+                        origin = f"{scheme}://{host}"
+                    post_logout_uri = f"{origin}/login"
+                    end_session_url = f"{sso_row[0]}?post_logout_redirect_uri={post_logout_uri}"
+
         await auth_service.invalidate_session(db, token)
+
     response.delete_cookie(
         key=auth_service.SESSION_COOKIE_NAME,
         httponly=True,
@@ -107,7 +139,11 @@ async def logout(
         samesite="lax",
         path="/",
     )
-    return {"detail": "已退出登录"}
+
+    result: dict = {"detail": "已退出登录"}
+    if end_session_url:
+        result["end_session_url"] = end_session_url
+    return result
 
 
 @router.get("/me")

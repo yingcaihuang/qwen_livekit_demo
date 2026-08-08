@@ -23,6 +23,7 @@ class SsoConfigResponse(BaseModel):
     redirect_uri: str | None = None
     scopes: str = "openid profile email groups"
     groups_claim: str = "groups"
+    end_session_endpoint: str | None = None
     login_button_enabled: bool = False
 
 
@@ -38,6 +39,7 @@ class SsoConfigUpdate(BaseModel):
     redirect_uri: str | None = None
     scopes: str | None = None
     groups_claim: str | None = None
+    end_session_endpoint: str | None = None
     login_button_enabled: bool | None = None
 
 
@@ -50,7 +52,7 @@ async def get_sso_config(
     cursor = await db.execute(
         "SELECT issuer, discovery_url, client_id, client_secret_encrypted, "
         "authorization_endpoint, token_endpoint, userinfo_endpoint, jwks_uri, "
-        "redirect_uri, scopes, groups_claim, login_button_enabled "
+        "redirect_uri, scopes, groups_claim, end_session_endpoint, login_button_enabled "
         "FROM sso_config WHERE id = 1"
     )
     row = await cursor.fetchone()
@@ -68,7 +70,8 @@ async def get_sso_config(
         redirect_uri=row[8],
         scopes=row[9] or "openid profile email groups",
         groups_claim=row[10] or "groups",
-        login_button_enabled=bool(row[11]),
+        end_session_endpoint=row[11],
+        login_button_enabled=bool(row[12]),
     )
 
 
@@ -103,6 +106,8 @@ async def update_sso_config(
         fields["scopes"] = body.scopes
     if body.groups_claim is not None:
         fields["groups_claim"] = body.groups_claim
+    if body.end_session_endpoint is not None:
+        fields["end_session_endpoint"] = body.end_session_endpoint
     if body.login_button_enabled is not None:
         fields["login_button_enabled"] = int(body.login_button_enabled)
 
@@ -129,6 +134,7 @@ class DiscoverResponse(BaseModel):
     token_endpoint: str | None = None
     userinfo_endpoint: str | None = None
     jwks_uri: str | None = None
+    end_session_endpoint: str | None = None
 
 
 @router.post("/discover", response_model=DiscoverResponse)
@@ -150,4 +156,5 @@ async def discover_endpoints(
         token_endpoint=doc.get("token_endpoint"),
         userinfo_endpoint=doc.get("userinfo_endpoint"),
         jwks_uri=doc.get("jwks_uri"),
+        end_session_endpoint=doc.get("end_session_endpoint"),
     )

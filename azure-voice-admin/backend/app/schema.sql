@@ -124,6 +124,7 @@ CREATE TABLE IF NOT EXISTS sso_config (
     redirect_uri TEXT,
     scopes TEXT NOT NULL DEFAULT 'openid profile email groups',
     groups_claim TEXT NOT NULL DEFAULT 'groups',
+    end_session_endpoint TEXT,
     login_button_enabled INTEGER NOT NULL DEFAULT 0,  -- 首页统一认证入口开关
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
