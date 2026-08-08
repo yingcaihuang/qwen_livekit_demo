@@ -192,3 +192,63 @@ async def sso_callback(
         path="/",
     )
     return resp
+
+
+@router.post("/backchannel-logout")
+async def backchannel_logout(
+    request: Request,
+    db: aiosqlite.Connection = Depends(get_db),
+):
+    """OIDC Back-Channel Logout: Authentik POSTs a signed logout_token to invalidate user sessions.
+
+    This endpoint is called server-to-server by the IdP. No browser session required.
+    The request body is application/x-www-form-urlencoded with a single field: logout_token.
+    """
+    # Parse form body
+    form_data = await request.form()
+    logout_token = form_data.get("logout_token")
+    if not logout_token:
+        raise HTTPException(status_code=400, detail="Missing logout_token")
+
+    # Load SSO config to get JWKS for verification
+    config = await _load_sso_config(db)
+    if not config or not config["jwks_uri"]:
+        raise HTTPException(status_code=500, detail="SSO config incomplete")
+
+    # Fetch JWKS and verify the logout_token
+    try:
+        from jose import jwt as jose_jwt
+
+        jwks = await oidc_service.fetch_jwks(config["jwks_uri"])
+        # Decode without audience validation (logout_token may not have aud matching client_id in all IdPs)
+        payload = jose_jwt.decode(
+            logout_token,
+            jwks,
+            algorithms=["RS256", "ES256"],
+            options={"verify_aud": False},
+        )
+    except Exception as e:
+        logger.error("Back-channel logout token verification failed: %s", e)
+        raise HTTPException(status_code=400, detail="Invalid logout_token") from None
+
+    # Validate it's a logout token (has "events" claim with backchannel-logout event)
+    events = payload.get("events", {})
+    if "http://schemas.openid.net/event/backchannel-logout" not in events:
+        raise HTTPException(status_code=400, detail="Not a backchannel logout token")
+
+    # Get the subject (sub) from the token
+    sub = payload.get("sub")
+    if not sub:
+        # Some IdPs use sid (session id) instead — for now we require sub
+        raise HTTPException(status_code=400, detail="logout_token missing sub claim")
+
+    # Find the user by sso_subject and invalidate all their sessions
+    cursor = await db.execute("SELECT id FROM users WHERE sso_subject = ?", (sub,))
+    user_row = await cursor.fetchone()
+    if user_row:
+        user_id = user_row[0]
+        await auth_service.invalidate_user_sessions(db, user_id)
+        logger.info("Back-channel logout: invalidated sessions for user %s (sub=%s)", user_id, sub)
+
+    # OIDC spec requires 200 OK response on success
+    return Response(status_code=200)

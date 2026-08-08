@@ -345,7 +345,7 @@ export function SsoConfigPage() {
       <Card className="border-blue-200 bg-blue-50/50">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-semibold text-blue-800">
-            📋 以下 URI 需要在 Authentik 应用配置中填写
+            📋 以下 URI 需要在 Authentik 应用配置中填写（Provider 设置）
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
@@ -388,6 +388,31 @@ export function SsoConfigPage() {
               }
             >
               {copiedField === 'logout' ? (
+                <Check className="h-4 w-4" />
+              ) : (
+                <Copy className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="w-52 shrink-0 text-xs font-medium text-blue-700">
+              Back-Channel Logout URI:
+            </span>
+            <code className="flex-1 rounded-md border bg-white px-3 py-1.5 text-xs text-foreground">
+              {`${window.location.origin}/api/auth/sso/backchannel-logout`}
+            </code>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="shrink-0 text-blue-600"
+              onClick={() =>
+                copyToClipboard(
+                  `${window.location.origin}/api/auth/sso/backchannel-logout`,
+                  'backchannel'
+                )
+              }
+            >
+              {copiedField === 'backchannel' ? (
                 <Check className="h-4 w-4" />
               ) : (
                 <Copy className="h-4 w-4" />
