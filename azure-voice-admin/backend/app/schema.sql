@@ -76,3 +76,81 @@ CREATE TABLE IF NOT EXISTS image_generations (
 
 CREATE INDEX IF NOT EXISTS idx_image_generations_instance_id ON image_generations(instance_id);
 CREATE INDEX IF NOT EXISTS idx_image_generations_created_at ON image_generations(created_at DESC);
+
+-- ============================================================
+-- 鉴权系统表（user-auth-rbac-sso）
+-- ============================================================
+
+-- 用户（本地账号与 SSO 账号统一存储）
+CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    username TEXT NOT NULL UNIQUE,        -- 本地登录名 / SSO 稳定标识（sub 或 preferred_username）
+    email TEXT,
+    auth_source TEXT NOT NULL DEFAULT 'local',  -- 'local' | 'sso'
+    password_hash TEXT,                   -- 仅本地账号；SSO 账号为 NULL
+    sso_subject TEXT UNIQUE,              -- OIDC sub；本地账号为 NULL
+    is_active INTEGER NOT NULL DEFAULT 1, -- 0 表示禁用
+    must_change_password INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- 用户→角色（多对多；四级角色以字符串存储，取值受应用层校验约束）
+CREATE TABLE IF NOT EXISTS user_roles (
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    role TEXT NOT NULL,                   -- 'super_admin'|'admin'|'tester'|'viewer'
+    PRIMARY KEY (user_id, role)
+);
+
+-- Authentik 组名 → 平台角色 映射
+CREATE TABLE IF NOT EXISTS group_role_mappings (
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    group_name TEXT NOT NULL UNIQUE,
+    role TEXT NOT NULL,                   -- 四个合法角色之一（应用层校验）
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- SSO 配置（单行有效；client_secret 密文存储）
+CREATE TABLE IF NOT EXISTS sso_config (
+    id INTEGER PRIMARY KEY CHECK (id = 1),  -- 单例行
+    issuer TEXT,
+    discovery_url TEXT,
+    client_id TEXT,
+    client_secret_encrypted TEXT,         -- 对称加密后的密文，绝不明文
+    authorization_endpoint TEXT,
+    token_endpoint TEXT,
+    userinfo_endpoint TEXT,
+    jwks_uri TEXT,
+    redirect_uri TEXT,
+    scopes TEXT NOT NULL DEFAULT 'openid profile email groups',
+    groups_claim TEXT NOT NULL DEFAULT 'groups',
+    login_button_enabled INTEGER NOT NULL DEFAULT 0,  -- 首页统一认证入口开关
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- 服务端会话
+CREATE TABLE IF NOT EXISTS auth_sessions (
+    id TEXT PRIMARY KEY,                  -- session token（随机 256bit，存哈希更佳）
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    expires_at TEXT NOT NULL,
+    csrf_token TEXT NOT NULL              -- 双提交 CSRF 令牌
+);
+CREATE INDEX IF NOT EXISTS idx_auth_sessions_user_id ON auth_sessions(user_id);
+
+-- 登录失败限流记录
+CREATE TABLE IF NOT EXISTS login_attempts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_key TEXT NOT NULL,             -- 客户端标识（IP / 用户名）
+    attempted_at TEXT NOT NULL DEFAULT (datetime('now')),
+    success INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_login_attempts_source ON login_attempts(source_key, attempted_at);
+
+-- OIDC 登录临时态（state/nonce/PKCE），短生命周期
+CREATE TABLE IF NOT EXISTS oidc_login_state (
+    state TEXT PRIMARY KEY,
+    nonce TEXT NOT NULL,
+    code_verifier TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);

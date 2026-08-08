@@ -2,6 +2,7 @@
 
 import logging
 import os
+import secrets
 from collections.abc import AsyncGenerator
 from pathlib import Path
 
@@ -67,8 +68,54 @@ async def _migrate(db: aiosqlite.Connection) -> None:
         if column_name not in message_columns:
             await db.execute(f"ALTER TABLE session_messages ADD COLUMN {column_name} TEXT")
 
-    # 4) other new tables are created via IF NOT EXISTS in schema.sql (already
-    #    idempotent), so no extra work is needed here.
+    # 4) created_by column — for resource multi-tenant isolation (Req 7.5.1,
+    #    7.4). Existing tables instances, sessions, and image_generations need
+    #    a nullable `created_by TEXT` column so each resource can be attributed
+    #    to the user who created it. Old rows keep NULL (visible to all / admin).
+    for table in ("instances", "sessions", "image_generations"):
+        cursor = await db.execute(f"PRAGMA table_info({table})")
+        cols = {row[1] for row in await cursor.fetchall()}
+        if "created_by" not in cols:
+            await db.execute(f"ALTER TABLE {table} ADD COLUMN created_by TEXT")
+
+    # 5) Seed sso_config singleton row (Req 9.6, 3.1). The table is created in
+    #    schema.sql; here we ensure the single-row configuration placeholder
+    #    exists so that queries never fail on an empty table.
+    await db.execute("INSERT OR IGNORE INTO sso_config (id, login_button_enabled) VALUES (1, 0)")
+
+    # 6) Seed super_admin account if none exists (Req 3.1, 3.2).
+    #    Idempotent: only creates the account when no super_admin role exists
+    #    in the database. If SEED_ADMIN_PASSWORD is not set, a random password
+    #    is generated and logged once via warning so the deployer can use it
+    #    for first login. The account is marked must_change_password=1.
+    cursor = await db.execute("SELECT COUNT(*) FROM user_roles WHERE role = 'super_admin'")
+    (count,) = await cursor.fetchone()
+    if count == 0:
+        from app.services.auth_service import hash_password
+
+        seed_username = os.environ.get("SEED_ADMIN_USERNAME", "admin")
+        seed_password = os.environ.get("SEED_ADMIN_PASSWORD", "")
+        if not seed_password:
+            seed_password = secrets.token_urlsafe(16)
+            _logger.warning(
+                "SEED_ADMIN_PASSWORD not set. Generated initial password for '%s': %s "
+                "(change it immediately after first login)",
+                seed_username,
+                seed_password,
+            )
+        user_id = secrets.token_hex(16)
+        password_hash = hash_password(seed_password)
+        await db.execute(
+            "INSERT OR IGNORE INTO users "
+            "(id, username, auth_source, password_hash, must_change_password) "
+            "VALUES (?, ?, 'local', ?, 1)",
+            (user_id, seed_username, password_hash),
+        )
+        await db.execute(
+            "INSERT OR IGNORE INTO user_roles (user_id, role) VALUES (?, 'super_admin')",
+            (user_id,),
+        )
+        _logger.info("Seed admin '%s' created with super_admin role.", seed_username)
 
     await db.commit()
 
