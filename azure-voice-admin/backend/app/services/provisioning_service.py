@@ -1,11 +1,14 @@
 """SSO user provisioning: auto-create accounts and compute roles from group mappings."""
 
 import json
+import logging
 import secrets
 
 import aiosqlite
 
 from app.services.rbac import VALID_ROLES
+
+logger = logging.getLogger(__name__)
 
 
 async def provision_sso_user(
@@ -43,14 +46,23 @@ async def provision_sso_user(
             (user_id, username, email, subject),
         )
 
-    # Save groups for display in admin UI
-    await db.execute(
-        "UPDATE users SET sso_groups = ? WHERE id = ?",
-        (json.dumps(groups), user_id),
-    )
-
     # Compute roles from group_role_mappings
     roles = await _compute_roles(db, groups)
+
+    # Save only the groups that have a configured mapping (filter out unmapped groups)
+    if groups:
+        placeholders = ",".join("?" for _ in groups)
+        cursor = await db.execute(
+            f"SELECT group_name FROM group_role_mappings WHERE group_name IN ({placeholders})",
+            groups,
+        )
+        mapped_groups = [row[0] for row in await cursor.fetchall()]
+    else:
+        mapped_groups = []
+    await db.execute(
+        "UPDATE users SET sso_groups = ? WHERE id = ?",
+        (json.dumps(mapped_groups), user_id),
+    )
 
     # Replace all existing roles with computed ones (convergent update)
     await db.execute("DELETE FROM user_roles WHERE user_id = ?", (user_id,))
