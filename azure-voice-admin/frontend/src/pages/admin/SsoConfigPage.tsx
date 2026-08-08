@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
+import { toast } from '@/components/ui/toast'
 
 export function SsoConfigPage() {
   const [loading, setLoading] = useState(true)
@@ -123,6 +124,7 @@ export function SsoConfigPage() {
 
   const copyToClipboard = (text: string, field: string) => {
     navigator.clipboard.writeText(text)
+    toast({ title: '✅ 已复制到剪贴板', duration: 2000 })
     setCopiedField(field)
     setTimeout(() => setCopiedField(null), 2000)
   }
