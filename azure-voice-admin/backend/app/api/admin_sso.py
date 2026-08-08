@@ -1,7 +1,7 @@
 """Admin SSO configuration API (requires sso:manage capability)."""
 
 import aiosqlite
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from app.api.deps import CurrentUser, require_permission
@@ -117,3 +117,37 @@ async def update_sso_config(
 
     # Return updated config
     return await get_sso_config(user=user, db=db)
+
+
+class DiscoverRequest(BaseModel):
+    discovery_url: str
+
+
+class DiscoverResponse(BaseModel):
+    issuer: str | None = None
+    authorization_endpoint: str | None = None
+    token_endpoint: str | None = None
+    userinfo_endpoint: str | None = None
+    jwks_uri: str | None = None
+
+
+@router.post("/discover", response_model=DiscoverResponse)
+async def discover_endpoints(
+    body: DiscoverRequest,
+    user: CurrentUser = Depends(require_permission("sso:manage")),
+):
+    """Fetch OIDC discovery document and return discovered endpoints."""
+    from app.services.oidc_service import discover
+
+    try:
+        doc = await discover(body.discovery_url)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"无法获取 discovery 文档: {e}") from None
+
+    return DiscoverResponse(
+        issuer=doc.get("issuer"),
+        authorization_endpoint=doc.get("authorization_endpoint"),
+        token_endpoint=doc.get("token_endpoint"),
+        userinfo_endpoint=doc.get("userinfo_endpoint"),
+        jwks_uri=doc.get("jwks_uri"),
+    )
