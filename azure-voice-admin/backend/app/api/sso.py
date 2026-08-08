@@ -19,7 +19,8 @@ async def _load_sso_config(db: aiosqlite.Connection) -> dict | None:
     cursor = await db.execute(
         "SELECT issuer, discovery_url, client_id, client_secret_encrypted, "
         "authorization_endpoint, token_endpoint, userinfo_endpoint, jwks_uri, "
-        "redirect_uri, scopes, groups_claim, end_session_endpoint, login_button_enabled "
+        "redirect_uri, scopes, groups_claim, end_session_endpoint, login_button_enabled, "
+        "cookie_secure "
         "FROM sso_config WHERE id = 1"
     )
     row = await cursor.fetchone()
@@ -39,6 +40,7 @@ async def _load_sso_config(db: aiosqlite.Connection) -> dict | None:
         "groups_claim": row[10],
         "end_session_endpoint": row[11],
         "login_button_enabled": bool(row[12]),
+        "cookie_secure": bool(row[13]),
     }
 
 
@@ -184,7 +186,7 @@ async def sso_callback(
         key=auth_service.SESSION_COOKIE_NAME,
         value=session_token,
         httponly=True,
-        secure=True,
+        secure=config["cookie_secure"],
         samesite="lax",
         max_age=auth_service.SESSION_LIFETIME_HOURS * 3600,
         path="/",

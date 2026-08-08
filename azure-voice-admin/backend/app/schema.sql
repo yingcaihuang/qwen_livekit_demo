@@ -126,6 +126,7 @@ CREATE TABLE IF NOT EXISTS sso_config (
     groups_claim TEXT NOT NULL DEFAULT 'groups',
     end_session_endpoint TEXT,
     login_button_enabled INTEGER NOT NULL DEFAULT 0,  -- 首页统一认证入口开关
+    cookie_secure INTEGER NOT NULL DEFAULT 0,
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

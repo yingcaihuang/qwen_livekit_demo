@@ -25,6 +25,7 @@ class SsoConfigResponse(BaseModel):
     groups_claim: str = "groups"
     end_session_endpoint: str | None = None
     login_button_enabled: bool = False
+    cookie_secure: bool = False
 
 
 class SsoConfigUpdate(BaseModel):
@@ -41,6 +42,7 @@ class SsoConfigUpdate(BaseModel):
     groups_claim: str | None = None
     end_session_endpoint: str | None = None
     login_button_enabled: bool | None = None
+    cookie_secure: bool | None = None
 
 
 @router.get("", response_model=SsoConfigResponse)
@@ -52,7 +54,8 @@ async def get_sso_config(
     cursor = await db.execute(
         "SELECT issuer, discovery_url, client_id, client_secret_encrypted, "
         "authorization_endpoint, token_endpoint, userinfo_endpoint, jwks_uri, "
-        "redirect_uri, scopes, groups_claim, end_session_endpoint, login_button_enabled "
+        "redirect_uri, scopes, groups_claim, end_session_endpoint, login_button_enabled, "
+        "cookie_secure "
         "FROM sso_config WHERE id = 1"
     )
     row = await cursor.fetchone()
@@ -72,6 +75,7 @@ async def get_sso_config(
         groups_claim=row[10] or "groups",
         end_session_endpoint=row[11],
         login_button_enabled=bool(row[12]),
+        cookie_secure=bool(row[13]),
     )
 
 
@@ -110,6 +114,8 @@ async def update_sso_config(
         fields["end_session_endpoint"] = body.end_session_endpoint
     if body.login_button_enabled is not None:
         fields["login_button_enabled"] = int(body.login_button_enabled)
+    if body.cookie_secure is not None:
+        fields["cookie_secure"] = int(body.cookie_secure)
 
     if fields:
         set_clause = ", ".join(f"{k} = ?" for k in fields)

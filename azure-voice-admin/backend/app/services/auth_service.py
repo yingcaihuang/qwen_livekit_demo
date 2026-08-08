@@ -87,3 +87,10 @@ async def record_login_attempt(db: aiosqlite.Connection, source_key: str, *, suc
         (source_key, int(success)),
     )
     await db.commit()
+
+
+async def get_cookie_secure(db: aiosqlite.Connection) -> bool:
+    """Read cookie_secure setting from sso_config."""
+    cursor = await db.execute("SELECT cookie_secure FROM sso_config WHERE id = 1")
+    row = await cursor.fetchone()
+    return bool(row[0]) if row else False

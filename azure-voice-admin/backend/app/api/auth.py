@@ -70,11 +70,12 @@ async def login(
     caps = list(capabilities_for(set(roles)))
 
     # Set cookie
+    cookie_secure = await auth_service.get_cookie_secure(db)
     response.set_cookie(
         key=auth_service.SESSION_COOKIE_NAME,
         value=session_token,
         httponly=True,
-        secure=True,
+        secure=cookie_secure,
         samesite="lax",
         max_age=auth_service.SESSION_LIFETIME_HOURS * 3600,
         path="/",
@@ -132,10 +133,11 @@ async def logout(
 
         await auth_service.invalidate_session(db, token)
 
+    cookie_secure = await auth_service.get_cookie_secure(db)
     response.delete_cookie(
         key=auth_service.SESSION_COOKIE_NAME,
         httponly=True,
-        secure=True,
+        secure=cookie_secure,
         samesite="lax",
         path="/",
     )

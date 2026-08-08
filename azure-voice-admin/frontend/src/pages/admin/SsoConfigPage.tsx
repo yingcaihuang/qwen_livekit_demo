@@ -18,6 +18,7 @@ export function SsoConfigPage() {
     scopes: 'openid profile email groups',
     groups_claim: 'groups',
     login_button_enabled: false,
+    cookie_secure: false,
   })
   const [discovering, setDiscovering] = useState(false)
   const [secretSet, setSecretSet] = useState(false)
@@ -40,6 +41,7 @@ export function SsoConfigPage() {
           scopes: d.scopes || 'openid profile email groups',
           groups_claim: d.groups_claim || 'groups',
           login_button_enabled: d.login_button_enabled,
+          cookie_secure: d.cookie_secure,
         }))
         setSecretSet(d.client_secret_set)
       })
@@ -152,6 +154,13 @@ export function SsoConfigPage() {
             <div className="h-5 w-9 rounded-full bg-gray-300 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all peer-checked:bg-primary peer-checked:after:translate-x-full" />
           </label>
           <span className="text-sm text-gray-700">在登录页显示"统一认证入口"按钮</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <label className="relative inline-flex cursor-pointer items-center">
+            <input type="checkbox" checked={form.cookie_secure} onChange={e => setForm(f => ({...f, cookie_secure: e.target.checked}))} className="peer sr-only" />
+            <div className="h-5 w-9 rounded-full bg-gray-300 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all peer-checked:bg-primary peer-checked:after:translate-x-full" />
+          </label>
+          <span className="text-sm text-gray-700">Cookie Secure 模式（仅 HTTPS 环境启用）</span>
         </div>
         {/* Authentik 配置参考 — 方便用户复制到 Authentik */}
         <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-2">
