@@ -167,3 +167,25 @@ async def update_user(
         roles=[rr[0] for rr in role_rows],
         created_at=r[6],
     )
+
+
+@router.delete("/{user_id}", status_code=204)
+async def delete_user(
+    user_id: str,
+    user: CurrentUser = Depends(require_permission("user:manage")),
+    db: aiosqlite.Connection = Depends(get_db),
+):
+    """Delete a user and all associated data (sessions, roles)."""
+    # Prevent self-deletion
+    if user_id == user.id:
+        raise HTTPException(status_code=400, detail="不能删除自己的账号")
+
+    cursor = await db.execute("SELECT id FROM users WHERE id = ?", (user_id,))
+    if not await cursor.fetchone():
+        raise HTTPException(status_code=404, detail="用户不存在")
+
+    # Invalidate all sessions first
+    await auth_service.invalidate_user_sessions(db, user_id)
+    # Delete user (CASCADE will clean up user_roles and auth_sessions)
+    await db.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    await db.commit()

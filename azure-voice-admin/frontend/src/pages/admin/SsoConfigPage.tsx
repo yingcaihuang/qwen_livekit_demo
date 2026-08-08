@@ -249,7 +249,7 @@ export function SsoConfigPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>End Session Endpoint</Label>
+              <Label>End Session Endpoint <span className="text-xs font-normal text-muted-foreground">(自动发现可回填)</span></Label>
               <Input
                 value={form.end_session_endpoint}
                 onChange={(e) => setForm((f) => ({ ...f, end_session_endpoint: e.target.value }))}

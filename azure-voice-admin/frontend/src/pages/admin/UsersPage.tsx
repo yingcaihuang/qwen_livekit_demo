@@ -76,6 +76,20 @@ export function UsersPage() {
     loadUsers()
   }
 
+  const handleDelete = async (u: User) => {
+    if (!confirm(`确定要删除用户 "${u.username}" 吗？此操作不可撤销。`)) return
+    const res = await fetch(`/api/admin/users/${u.id}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    })
+    if (res.ok) {
+      loadUsers()
+    } else {
+      const d = await res.json().catch(() => ({}))
+      alert(d.detail || '删除失败')
+    }
+  }
+
   const changeRole = async (u: User, role: string) => {
     await fetch(`/api/admin/users/${u.id}`, {
       method: 'PUT',
@@ -229,7 +243,7 @@ export function UsersPage() {
                         {u.is_active ? '启用' : '禁用'}
                       </span>
                     </td>
-                    <td className="px-6 py-3">
+                    <td className="px-6 py-3 space-x-1">
                       <Button
                         variant="ghost"
                         size="sm"
@@ -242,6 +256,14 @@ export function UsersPage() {
                         )}
                       >
                         {u.is_active ? '禁用' : '启用'}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(u)}
+                        className="text-xs text-destructive hover:text-destructive"
+                      >
+                        删除
                       </Button>
                     </td>
                   </tr>
