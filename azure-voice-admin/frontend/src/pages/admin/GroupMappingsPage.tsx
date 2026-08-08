@@ -23,36 +23,83 @@ const ROLE_COLORS: Record<string, string> = {
   viewer: 'bg-gray-500/15 text-gray-700 border-gray-200',
 }
 
-const AUTHENTIK_STEPS = [
+interface AuthentikStep {
+  step: number
+  title: string
+  desc: string
+  details?: string[]
+  code?: string
+  afterCode?: string[]
+}
+
+const AUTHENTIK_STEPS: AuthentikStep[] = [
   {
     step: 1,
     title: '在 Authentik 中创建组',
-    desc: '进入 Directory → Groups，创建对应的组（例如 platform-admins、ai-testers）。',
+    desc: '进入 Authentik 管理后台 → Directory → Groups → Create Group',
+    details: [
+      '组名建议使用英文，如 platform-admins、ai-testers、viewers',
+      '组名需与本页面"添加映射"中填写的名称完全一致（区分大小写）',
+    ],
   },
   {
     step: 2,
     title: '将用户分配到对应组',
-    desc: '在组详情页 → Members 选项卡中，将需要的用户添加到该组。',
+    desc: '点击组名进入详情页 → Members 选项卡 → Add existing user',
+    details: [
+      '一个用户可以属于多个组，系统会取所有匹配角色的并集',
+      '修改组成员后，用户下次 SSO 登录时角色会自动更新',
+    ],
   },
   {
     step: 3,
-    title: '确保 Scope Mapping 包含 groups claim',
-    desc: '进入 Customization → Property Mappings，确认 Scope 中包含 groups claim，或新建一个返回用户组列表的 mapping。',
+    title: '创建 Scope Mapping（确保 groups claim 可用）',
+    desc: '进入 Customization → Property Mappings → Create → Scope Mapping',
+    details: [
+      'Mapping Name（名称）: 填 groups（或任意名称如 "Groups Claim"）',
+      '作用域名称（Scope Name）: 填 groups',
+      '描述: 可留空或填 "Returns user group names"',
+      '表达式（Expression）: 填入以下 Python 代码:',
+    ],
+    code: 'return [group.name for group in request.user.ak_groups.all()]',
+    afterCode: [
+      '点击 Create 保存',
+      '然后进入 Applications → Providers → 编辑你的 OAuth2 Provider',
+      '在 "Scopes" / "Property Mappings" 区域，将刚才创建的 groups mapping 添加进去',
+      '确保 SSO 配置页的 Scopes 字段包含 "groups"（默认已包含）',
+    ],
   },
   {
     step: 4,
-    title: '在本页面创建映射',
-    desc: '在下方表单中输入 Authentik 组名，选择对应的平台角色后点击添加。',
+    title: '在本页面创建组→角色映射',
+    desc: '在下方"添加映射"表单中操作',
+    details: [
+      'Authentik 组名: 填写与 Authentik 中完全一致的组名（如 platform-admins）',
+      '映射角色: 选择该组对应的平台权限级别',
+      '  • super_admin — 全部权限 + 用户/SSO管理',
+      '  • admin — 管理实例 + 查看所有人的数据',
+      '  • tester — 使用测试功能 + 管理自己的数据',
+      '  • viewer — 只读，查看自己的数据',
+    ],
   },
   {
     step: 5,
-    title: 'SSO 用户登录自动匹配',
-    desc: 'SSO 用户首次登录时，系统会读取其 ID Token 中的 groups claim，自动根据映射分配角色。',
+    title: 'SSO 用户登录时自动匹配',
+    desc: '无需额外操作，系统自动处理',
+    details: [
+      '用户通过"统一认证入口"登录时，系统从 ID Token 的 groups claim 读取组列表',
+      '根据本页面配置的映射关系自动计算角色',
+      '再次登录时如果组发生变化，角色会自动更新（收敛）',
+    ],
   },
   {
     step: 6,
-    title: '默认角色',
-    desc: '未匹配到任何组的 SSO 用户将自动获得 viewer（只读）角色。',
+    title: '默认角色（未匹配时）',
+    desc: '未匹配到任何映射的 SSO 用户自动获得 viewer 角色',
+    details: [
+      '如果用户不属于任何已配置映射的组，系统默认赋予 viewer（只读）权限',
+      '确保至少为管理员组创建了映射，否则所有 SSO 用户都只有只读权限',
+    ],
   },
 ]
 
@@ -144,15 +191,36 @@ export function GroupMappingsPage() {
         </CardHeader>
         {stepsOpen && (
           <CardContent className="pt-0">
-            <div className="space-y-3">
+            <div className="space-y-4">
               {AUTHENTIK_STEPS.map((s) => (
                 <div key={s.step} className="flex gap-3">
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
                     {s.step}
                   </span>
-                  <div className="space-y-0.5">
-                    <p className="text-sm font-medium text-blue-900">{s.title}</p>
+                  <div className="space-y-1.5 flex-1">
+                    <p className="text-sm font-semibold text-blue-900">{s.title}</p>
                     <p className="text-xs text-blue-700/80">{s.desc}</p>
+                    {s.details && (
+                      <ul className="space-y-0.5 text-xs text-blue-800/70">
+                        {s.details.map((d, i) => (
+                          <li key={i} className={d.startsWith('  •') ? 'pl-4' : ''}>
+                            {d.startsWith('  •') ? d : `• ${d}`}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {s.code && (
+                      <pre className="rounded-md bg-gray-900 px-3 py-2 text-xs text-green-300 font-mono overflow-x-auto">
+                        {s.code}
+                      </pre>
+                    )}
+                    {s.afterCode && (
+                      <ul className="space-y-0.5 text-xs text-blue-800/70">
+                        {s.afterCode.map((d, i) => (
+                          <li key={i}>• {d}</li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                 </div>
               ))}
