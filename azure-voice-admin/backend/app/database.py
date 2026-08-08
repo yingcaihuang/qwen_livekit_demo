@@ -94,6 +94,12 @@ async def _migrate(db: aiosqlite.Connection) -> None:
     if "scim_token" not in sso_cols:
         await db.execute("ALTER TABLE sso_config ADD COLUMN scim_token TEXT")
 
+    # 6c) sso_groups column for storing user's Authentik groups
+    cursor = await db.execute("PRAGMA table_info(users)")
+    user_cols = {row[1] for row in await cursor.fetchall()}
+    if "sso_groups" not in user_cols:
+        await db.execute("ALTER TABLE users ADD COLUMN sso_groups TEXT DEFAULT '[]'")
+
     # 7) Seed sso_config singleton row (Req 9.6, 3.1). The table is created in
     #    schema.sql; here we ensure the single-row configuration placeholder
     #    exists so that queries never fail on an empty table.

@@ -1,5 +1,6 @@
 """SSO user provisioning: auto-create accounts and compute roles from group mappings."""
 
+import json
 import secrets
 
 import aiosqlite
@@ -41,6 +42,12 @@ async def provision_sso_user(
             "VALUES (?, ?, ?, 'sso', ?)",
             (user_id, username, email, subject),
         )
+
+    # Save groups for display in admin UI
+    await db.execute(
+        "UPDATE users SET sso_groups = ? WHERE id = ?",
+        (json.dumps(groups), user_id),
+    )
 
     # Compute roles from group_role_mappings
     roles = await _compute_roles(db, groups)

@@ -1,5 +1,6 @@
 """Admin user management API (requires user:manage capability)."""
 
+import json
 import secrets
 
 import aiosqlite
@@ -22,6 +23,7 @@ class UserResponse(BaseModel):
     is_active: bool
     must_change_password: bool
     roles: list[str]
+    groups: list[str] = []
     created_at: str
 
 
@@ -44,7 +46,7 @@ async def list_users(
 ):
     """List all users with their roles."""
     cursor = await db.execute(
-        "SELECT id, username, email, auth_source, is_active, must_change_password, created_at "
+        "SELECT id, username, email, auth_source, is_active, must_change_password, created_at, sso_groups "
         "FROM users ORDER BY created_at"
     )
     rows = await cursor.fetchall()
@@ -61,6 +63,7 @@ async def list_users(
                 is_active=bool(r[4]),
                 must_change_password=bool(r[5]),
                 roles=[rr[0] for rr in role_rows],
+                groups=json.loads(r[7] or "[]"),
                 created_at=r[6],
             )
         )
@@ -150,7 +153,7 @@ async def update_user(
 
     # Return updated user
     cursor = await db.execute(
-        "SELECT id, username, email, auth_source, is_active, must_change_password, created_at "
+        "SELECT id, username, email, auth_source, is_active, must_change_password, created_at, sso_groups "
         "FROM users WHERE id = ?",
         (user_id,),
     )
@@ -165,6 +168,7 @@ async def update_user(
         is_active=bool(r[4]),
         must_change_password=bool(r[5]),
         roles=[rr[0] for rr in role_rows],
+        groups=json.loads(r[7] or "[]"),
         created_at=r[6],
     )
 

@@ -91,6 +91,7 @@ CREATE TABLE IF NOT EXISTS users (
     sso_subject TEXT UNIQUE,              -- OIDC sub；本地账号为 NULL
     is_active INTEGER NOT NULL DEFAULT 1, -- 0 表示禁用
     must_change_password INTEGER NOT NULL DEFAULT 0,
+    sso_groups TEXT DEFAULT '[]',         -- JSON array of Authentik group names
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

@@ -15,6 +15,7 @@ interface User {
   is_active: boolean
   must_change_password: boolean
   roles: string[]
+  groups: string[]
   created_at: string
 }
 
@@ -203,6 +204,7 @@ export function UsersPage() {
                   <th className="px-6 py-3 text-left font-medium text-muted-foreground">用户名</th>
                   <th className="px-6 py-3 text-left font-medium text-muted-foreground">来源</th>
                   <th className="px-6 py-3 text-left font-medium text-muted-foreground">角色</th>
+                  <th className="px-6 py-3 text-left font-medium text-muted-foreground">SSO 组</th>
                   <th className="px-6 py-3 text-left font-medium text-muted-foreground">状态</th>
                   <th className="px-6 py-3 text-left font-medium text-muted-foreground">操作</th>
                 </tr>
@@ -231,6 +233,19 @@ export function UsersPage() {
                           </option>
                         ))}
                       </select>
+                    </td>
+                    <td className="px-6 py-3">
+                      {u.auth_source === 'sso' && u.groups.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {u.groups.map((g) => (
+                            <Badge key={g} variant="outline" className="text-xs">
+                              {g}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">-</span>
+                      )}
                     </td>
                     <td className="px-6 py-3">
                       <span className="inline-flex items-center gap-1.5 text-xs">
