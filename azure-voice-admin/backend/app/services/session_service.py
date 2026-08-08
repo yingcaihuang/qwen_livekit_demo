@@ -1,10 +1,13 @@
 """Service layer for Voice Session lifecycle management."""
 
+from __future__ import annotations
+
 import logging
 import os
 import time
 import uuid
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 import aiosqlite
 from fastapi import HTTPException
@@ -15,6 +18,9 @@ from app.models.session import (
     SessionDetail,
     SessionResponse,
 )
+
+if TYPE_CHECKING:
+    from app.api.deps import CurrentUser
 
 
 class SessionService:
@@ -44,12 +50,18 @@ class SessionService:
         return token.to_jwt()
 
     async def create_session(
-        self, db: aiosqlite.Connection, instance_id: str, voice: str = "alloy"
+        self,
+        db: aiosqlite.Connection,
+        instance_id: str,
+        voice: str = "alloy",
+        *,
+        user: CurrentUser | None = None,
     ) -> SessionResponse:
         """Create a new voice session.
 
         Validates that the instance exists, generates a unique room name and
         LiveKit token, creates the session record, and returns connection info.
+        Records ``created_by = user.id`` for multi-tenant isolation.
 
         Raises HTTPException 404 if the instance does not exist.
         """
@@ -63,6 +75,7 @@ class SessionService:
         session_id = uuid.uuid4().hex
         room_name = self._generate_room_name()
         now = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
+        created_by = user.id if user else None
 
         # Generate LiveKit token
         livekit_token = self._generate_livekit_token(room_name)
@@ -76,10 +89,10 @@ class SessionService:
         # Insert session record
         await db.execute(
             """
-            INSERT INTO sessions (id, instance_id, room_name, status, start_time)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO sessions (id, instance_id, room_name, status, start_time, created_by)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
-            (session_id, instance_id, room_name, "connecting", now),
+            (session_id, instance_id, room_name, "connecting", now, created_by),
         )
         await db.commit()
 
@@ -208,14 +221,24 @@ class SessionService:
         page: int = 1,
         page_size: int = 20,
         instance_id: str | None = None,
+        *,
+        user: CurrentUser | None = None,
     ) -> PaginatedSessions:
-        """List sessions with pagination and optional instance filter."""
+        """List sessions with pagination and optional instance filter.
+
+        Multi-tenant: when the user lacks ``resource:read:all``, only sessions
+        with matching ``created_by`` are returned.
+        """
         # Build WHERE clause
         conditions: list[str] = []
         params: list = []
         if instance_id:
             conditions.append("s.instance_id = ?")
             params.append(instance_id)
+        # Multi-tenant filter
+        if user and "resource:read:all" not in user.capabilities:
+            conditions.append("s.created_by = ?")
+            params.append(user.id)
 
         where_clause = ""
         if conditions:
@@ -265,16 +288,18 @@ class SessionService:
             page_size=page_size,
         )
 
-    async def get_session(self, db: aiosqlite.Connection, session_id: str) -> SessionDetail:
+    async def get_session(
+        self, db: aiosqlite.Connection, session_id: str, *, user: CurrentUser | None = None
+    ) -> SessionDetail:
         """Get session detail by ID.
 
-        Raises HTTPException 404 if not found.
+        Raises HTTPException 404 if not found or not owned by user.
         """
         cursor = await db.execute(
             """
             SELECT s.id, s.instance_id, i.name as instance_name, s.room_name,
                    s.status, s.start_time, s.end_time, s.input_tokens,
-                   s.output_tokens, s.error_message
+                   s.output_tokens, s.error_message, s.created_by
             FROM sessions s
             JOIN instances i ON s.instance_id = i.id
             WHERE s.id = ?
@@ -284,6 +309,11 @@ class SessionService:
         row = await cursor.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Session not found")
+
+        # Multi-tenant check
+        if user and "resource:read:all" not in user.capabilities:
+            if row[10] != user.id:
+                raise HTTPException(status_code=404, detail="Session not found")
 
         return SessionDetail(
             id=row[0],

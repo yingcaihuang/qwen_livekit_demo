@@ -130,12 +130,15 @@ class ChatService:
             "type": row[4],
         }
 
-    async def new_conversation(self, db: aiosqlite.Connection, instance_id: str) -> str:
+    async def new_conversation(
+        self, db: aiosqlite.Connection, instance_id: str, *, created_by: str | None = None
+    ) -> str:
         """Create a new ``chat`` session record and return its session_id.
 
         Verifies the instance exists and is of type ``chat``. The session is
         created with ``status='active'``; ``room_name`` (a voice-specific,
         NOT NULL column) is set to the empty string ``''`` (Requirement 2.7).
+        Records ``created_by`` for multi-tenant isolation.
 
         Raises HTTPException 404 if the instance does not exist, 422 if the
         instance is not a chat instance.
@@ -151,10 +154,10 @@ class ChatService:
         now = self._now()
         await db.execute(
             """
-            INSERT INTO sessions (id, instance_id, room_name, status, start_time)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO sessions (id, instance_id, room_name, status, start_time, created_by)
+            VALUES (?, ?, ?, ?, ?, ?)
             """,
-            (session_id, instance_id, "", "active", now),
+            (session_id, instance_id, "", "active", now, created_by),
         )
         await db.commit()
         return session_id
@@ -234,7 +237,11 @@ class ChatService:
     # Streaming proxy
     # ------------------------------------------------------------------
     async def stream_chat(
-        self, db: aiosqlite.Connection, request: ChatCompletionRequest
+        self,
+        db: aiosqlite.Connection,
+        request: ChatCompletionRequest,
+        *,
+        created_by: str | None = None,
     ) -> AsyncGenerator[str, None]:
         """Stream a chat completion, yielding normalized SSE event frames.
 
@@ -261,7 +268,9 @@ class ChatService:
         session_id = request.session_id
         if not session_id:
             try:
-                session_id = await self.new_conversation(db, request.instance_id)
+                session_id = await self.new_conversation(
+                    db, request.instance_id, created_by=created_by
+                )
             except HTTPException as exc:
                 yield self._sse({"type": "error", "message": str(exc.detail)})
                 return

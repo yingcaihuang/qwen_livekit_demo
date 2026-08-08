@@ -1,7 +1,10 @@
 """Service layer for Instance configuration management."""
 
+from __future__ import annotations
+
 import uuid
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 import aiosqlite
 from fastapi import HTTPException
@@ -12,6 +15,9 @@ from app.models.instance import (
     InstanceSummary,
     InstanceUpdate,
 )
+
+if TYPE_CHECKING:
+    from app.api.deps import CurrentUser
 
 
 class InstanceService:
@@ -28,7 +34,9 @@ class InstanceService:
             return "*" * (len(api_key) - 4) + api_key[-4:]
         return "****"
 
-    async def create_instance(self, db: aiosqlite.Connection, data: InstanceCreate) -> dict:
+    async def create_instance(
+        self, db: aiosqlite.Connection, data: InstanceCreate, *, user: CurrentUser | None = None
+    ) -> dict:
         """Create a new Instance configuration.
 
         Validates:
@@ -68,11 +76,12 @@ class InstanceService:
         # Generate ID and timestamps
         instance_id = uuid.uuid4().hex
         now = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
+        created_by = user.id if user else None
 
         await db.execute(
             """
-            INSERT INTO instances (id, name, endpoint, api_key, deployment, type, description, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO instances (id, name, endpoint, api_key, deployment, type, description, created_at, updated_at, created_by)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 instance_id,
@@ -84,6 +93,7 @@ class InstanceService:
                 data.description,
                 now,
                 now,
+                created_by,
             ),
         )
         await db.commit()
@@ -100,20 +110,33 @@ class InstanceService:
         }
 
     async def list_instances(
-        self, db: aiosqlite.Connection, type_filter: str | None = None
+        self,
+        db: aiosqlite.Connection,
+        type_filter: str | None = None,
+        *,
+        user: CurrentUser | None = None,
     ) -> list[InstanceSummary]:
         """List all instances without exposing API keys.
 
         When ``type_filter`` is provided, only instances whose ``type`` matches
-        the filter are returned (Requirement 1.8).
+        the filter are returned (Requirement 1.8). Multi-tenant: when the user
+        lacks ``resource:read:all``, only instances with matching ``created_by``
+        are returned.
         """
         query = (
             "SELECT id, name, endpoint, deployment, type, description, created_at FROM instances"
         )
-        params: tuple[str, ...] = ()
+        conditions: list[str] = []
+        params: list[str] = []
         if type_filter is not None:
-            query += " WHERE type = ?"
-            params = (type_filter,)
+            conditions.append("type = ?")
+            params.append(type_filter)
+        # Multi-tenant filter
+        if user and "resource:read:all" not in user.capabilities:
+            conditions.append("created_by = ?")
+            params.append(user.id)
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
         query += " ORDER BY created_at DESC"
 
         cursor = await db.execute(query, params)
@@ -131,18 +154,26 @@ class InstanceService:
             for row in rows
         ]
 
-    async def get_instance(self, db: aiosqlite.Connection, instance_id: str) -> InstanceDetail:
+    async def get_instance(
+        self, db: aiosqlite.Connection, instance_id: str, *, user: CurrentUser | None = None
+    ) -> InstanceDetail:
         """Get instance detail including masked API key and token usage statistics.
 
-        Raises HTTPException 404 if not found.
+        Raises HTTPException 404 if not found or not owned by user (when lacking
+        resource:read:all).
         """
         cursor = await db.execute(
-            "SELECT id, name, endpoint, api_key, deployment, type, description, created_at, updated_at FROM instances WHERE id = ?",
+            "SELECT id, name, endpoint, api_key, deployment, type, description, created_at, updated_at, created_by FROM instances WHERE id = ?",
             (instance_id,),
         )
         row = await cursor.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail="Instance not found")
+
+        # Multi-tenant check: 404 if not owned and user lacks resource:read:all
+        if user and "resource:read:all" not in user.capabilities:
+            if row[9] != user.id:
+                raise HTTPException(status_code=404, detail="Instance not found")
 
         # Compute token statistics from sessions
         stats_cursor = await db.execute(
@@ -174,18 +205,29 @@ class InstanceService:
         )
 
     async def update_instance(
-        self, db: aiosqlite.Connection, instance_id: str, data: InstanceUpdate
+        self,
+        db: aiosqlite.Connection,
+        instance_id: str,
+        data: InstanceUpdate,
+        *,
+        user: CurrentUser | None = None,
     ) -> dict:
         """Partially update an instance configuration.
 
         Only non-None fields in data are updated.
-        Raises HTTPException 404 if not found, 422 for validation errors, 409 for name conflicts.
+        Raises HTTPException 404 if not found or not owned, 422 for validation errors, 409 for name conflicts.
         """
-        # Check instance exists
-        cursor = await db.execute("SELECT id FROM instances WHERE id = ?", (instance_id,))
+        # Check instance exists and ownership
+        cursor = await db.execute(
+            "SELECT id, created_by FROM instances WHERE id = ?", (instance_id,)
+        )
         existing = await cursor.fetchone()
         if not existing:
             raise HTTPException(status_code=404, detail="Instance not found")
+        # Multi-tenant check
+        if user and "resource:read:all" not in user.capabilities:
+            if existing[1] != user.id:
+                raise HTTPException(status_code=404, detail="Instance not found")
 
         # Build update fields
         updates: dict[str, str] = {}
@@ -271,17 +313,25 @@ class InstanceService:
             "updated_at": row[7],
         }
 
-    async def delete_instance(self, db: aiosqlite.Connection, instance_id: str) -> None:
+    async def delete_instance(
+        self, db: aiosqlite.Connection, instance_id: str, *, user: CurrentUser | None = None
+    ) -> None:
         """Delete an instance configuration.
 
         Refuses deletion if the instance has active sessions (status IN ('connecting', 'connected')).
-        Raises HTTPException 404 if not found, 409 if active sessions exist.
+        Raises HTTPException 404 if not found or not owned, 409 if active sessions exist.
         """
-        # Check instance exists
-        cursor = await db.execute("SELECT id FROM instances WHERE id = ?", (instance_id,))
+        # Check instance exists and ownership
+        cursor = await db.execute(
+            "SELECT id, created_by FROM instances WHERE id = ?", (instance_id,)
+        )
         existing = await cursor.fetchone()
         if not existing:
             raise HTTPException(status_code=404, detail="Instance not found")
+        # Multi-tenant check
+        if user and "resource:read:all" not in user.capabilities:
+            if existing[1] != user.id:
+                raise HTTPException(status_code=404, detail="Instance not found")
 
         # Check for active sessions
         cursor = await db.execute(

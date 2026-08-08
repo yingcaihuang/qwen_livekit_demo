@@ -20,10 +20,11 @@ the connection stays open until persistence completes, we open a dedicated
 from collections.abc import AsyncGenerator
 
 import aiosqlite
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 
 import app.database as db_mod
+from app.api.deps import CurrentUser, require_permission
 from app.models.chat import ChatCompletionRequest
 from app.services.chat_service import ChatService
 
@@ -34,7 +35,10 @@ _chat_service = ChatService()
 
 
 @router.post("/completions")
-async def chat_completions(request: ChatCompletionRequest) -> StreamingResponse:
+async def chat_completions(
+    request: ChatCompletionRequest,
+    user: CurrentUser = Depends(require_permission("chat:use")),
+) -> StreamingResponse:
     """Stream a chat completion as Server-Sent Events (``text/event-stream``).
 
     The response body is produced by :meth:`ChatService.stream_chat`, which:
@@ -48,7 +52,12 @@ async def chat_completions(request: ChatCompletionRequest) -> StreamingResponse:
 
     A dedicated database connection is opened for the duration of the stream so
     that end-of-stream persistence still succeeds (see module docstring).
+    Records ``created_by = user.id`` on newly created sessions.
     """
+
+    # Capture user.id before entering the generator (the Depends() scope is
+    # valid for the lifetime of the request, including the streaming body).
+    user_id = user.id
 
     async def event_stream() -> AsyncGenerator[str, None]:
         # Resolve DB_PATH at call time (as a module attribute) so that runtime
@@ -60,7 +69,7 @@ async def chat_completions(request: ChatCompletionRequest) -> StreamingResponse:
             # Enable foreign key enforcement per connection (matches get_db so
             # ON DELETE CASCADE behaves consistently for session_messages).
             await db.execute("PRAGMA foreign_keys = ON")
-            async for frame in _chat_service.stream_chat(db, request):
+            async for frame in _chat_service.stream_chat(db, request, created_by=user_id):
                 yield frame
         finally:
             await db.close()

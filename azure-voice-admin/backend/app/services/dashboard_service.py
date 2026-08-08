@@ -24,6 +24,7 @@ async def compute_stats(
     *,
     type_filter: InstanceType | None = None,
     instance_id: str | None = None,
+    owner_id: str | None = None,
 ) -> DashboardStats:
     """Compute overall totals across sessions and image generations.
 
@@ -31,12 +32,13 @@ async def compute_stats(
         db: Open database connection.
         type_filter: When set, restrict aggregation to a single test type.
         instance_id: When set, restrict aggregation to a single instance.
+        owner_id: When set, restrict aggregation to resources owned by this user.
 
     Returns:
         DashboardStats with combined counts and token totals. An empty match
         set yields zero values.
     """
-    # ---- instance count (respects type/instance filters) ----
+    # ---- instance count (respects type/instance/owner filters) ----
     inst_conditions: list[str] = []
     inst_params: list = []
     if type_filter is not None:
@@ -45,6 +47,9 @@ async def compute_stats(
     if instance_id is not None:
         inst_conditions.append("id = ?")
         inst_params.append(instance_id)
+    if owner_id is not None:
+        inst_conditions.append("created_by = ?")
+        inst_params.append(owner_id)
     inst_where = ("WHERE " + " AND ".join(inst_conditions)) if inst_conditions else ""
     cursor = await db.execute(f"SELECT COUNT(*) FROM instances {inst_where}", inst_params)
     total_instances = (await cursor.fetchone())[0]
@@ -63,6 +68,9 @@ async def compute_stats(
         if instance_id is not None:
             conditions.append("s.instance_id = ?")
             params.append(instance_id)
+        if owner_id is not None:
+            conditions.append("s.created_by = ?")
+            params.append(owner_id)
         where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
         placeholders = ", ".join("?" for _ in _ACTIVE_STATUSES)
         cursor = await db.execute(
@@ -99,6 +107,9 @@ async def compute_stats(
         if instance_id is not None:
             conditions.append("instance_id = ?")
             params.append(instance_id)
+        if owner_id is not None:
+            conditions.append("created_by = ?")
+            params.append(owner_id)
         where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
         cursor = await db.execute(
             f"""
@@ -128,6 +139,7 @@ async def compute_usage_by_instance(
     db: aiosqlite.Connection,
     *,
     type_filter: InstanceType | None = None,
+    owner_id: str | None = None,
 ) -> list[InstanceUsage]:
     """Compute per-instance test counts and token usage.
 
@@ -140,29 +152,40 @@ async def compute_usage_by_instance(
     if type_filter is not None:
         conditions.append("i.type = ?")
         params.append(type_filter)
+    if owner_id is not None:
+        conditions.append("i.created_by = ?")
+        params.append(owner_id)
     where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
 
-    # Aggregate sessions and image generations separately via correlated
-    # subqueries so instances without either kind of test still appear.
+    # Build owner sub-filters for sessions and image_generations
+    session_owner_clause = ""
+    image_owner_clause = ""
+    sub_params: list = []
+    if owner_id is not None:
+        session_owner_clause = " AND s.created_by = ?"
+        sub_params.append(owner_id)
+        image_owner_clause = " AND g.created_by = ?"
+        sub_params.append(owner_id)
+
     cursor = await db.execute(
         f"""
         SELECT
             i.id,
             i.name,
-            (SELECT COUNT(*) FROM sessions s WHERE s.instance_id = i.id)
-                + (SELECT COUNT(*) FROM image_generations g WHERE g.instance_id = i.id)
+            (SELECT COUNT(*) FROM sessions s WHERE s.instance_id = i.id{session_owner_clause})
+                + (SELECT COUNT(*) FROM image_generations g WHERE g.instance_id = i.id{image_owner_clause})
                 AS test_count,
-            (SELECT COALESCE(SUM(s.input_tokens), 0) FROM sessions s WHERE s.instance_id = i.id)
+            (SELECT COALESCE(SUM(s.input_tokens), 0) FROM sessions s WHERE s.instance_id = i.id{session_owner_clause})
                 + (SELECT COALESCE(SUM(g.input_tokens), 0) FROM image_generations g
-                   WHERE g.instance_id = i.id) AS total_input_tokens,
-            (SELECT COALESCE(SUM(s.output_tokens), 0) FROM sessions s WHERE s.instance_id = i.id)
+                   WHERE g.instance_id = i.id{image_owner_clause}) AS total_input_tokens,
+            (SELECT COALESCE(SUM(s.output_tokens), 0) FROM sessions s WHERE s.instance_id = i.id{session_owner_clause})
                 + (SELECT COALESCE(SUM(g.output_tokens), 0) FROM image_generations g
-                   WHERE g.instance_id = i.id) AS total_output_tokens
+                   WHERE g.instance_id = i.id{image_owner_clause}) AS total_output_tokens
         FROM instances i
         {where}
         ORDER BY i.name
         """,
-        params,
+        sub_params + sub_params + sub_params + params,
     )
     rows = await cursor.fetchall()
     return [
@@ -181,6 +204,7 @@ async def compute_usage_by_type(
     db: aiosqlite.Connection,
     *,
     instance_id: str | None = None,
+    owner_id: str | None = None,
 ) -> list[TypeUsage]:
     """Compute test count and token usage grouped by test type.
 
@@ -193,6 +217,9 @@ async def compute_usage_by_type(
     if instance_id is not None:
         conditions.append("s.instance_id = ?")
         params.append(instance_id)
+    if owner_id is not None:
+        conditions.append("s.created_by = ?")
+        params.append(owner_id)
     where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
     cursor = await db.execute(
         f"""
@@ -216,6 +243,9 @@ async def compute_usage_by_type(
     if instance_id is not None:
         conditions.append("instance_id = ?")
         params.append(instance_id)
+    if owner_id is not None:
+        conditions.append("created_by = ?")
+        params.append(owner_id)
     where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
     cursor = await db.execute(
         f"""

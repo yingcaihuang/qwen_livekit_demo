@@ -21,6 +21,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, Upl
 from fastapi.responses import FileResponse, JSONResponse
 from starlette.status import HTTP_202_ACCEPTED, HTTP_204_NO_CONTENT
 
+from app.api.deps import CurrentUser, get_current_user, require_permission
 from app.database import get_db
 from app.models.image import (
     ImageGenerationRequest,
@@ -40,26 +41,29 @@ async def list_generations(
     page: int = 1,
     page_size: int = 20,
     db: aiosqlite.Connection = Depends(get_db),
+    user: CurrentUser = Depends(get_current_user),
 ) -> list[dict]:
     """List image generation history (most recent first), optionally by instance.
 
-    Registered with an empty path so ``GET /api/images`` is not shadowed by the
-    ``/{generation_id}`` detail route.
+    Multi-tenant: only shows user's own generations unless user has
+    ``resource:read:all``.
     """
     return await _image_service.list_generations(
-        db, instance_id=instance_id, page=page, page_size=page_size
+        db, instance_id=instance_id, page=page, page_size=page_size, user=user
     )
 
 
 @router.get("/queue")
-async def list_queue(db: aiosqlite.Connection = Depends(get_db)) -> dict:
+async def list_queue(
+    db: aiosqlite.Connection = Depends(get_db),
+    user: CurrentUser = Depends(get_current_user),
+) -> dict:
     """Return the live image job queue (pending + processing jobs).
 
-    Registered with a literal ``/queue`` path BEFORE the ``/{generation_id}``
-    detail route so the word ``queue`` is not captured as a generation id.
-    Delegates to :meth:`ImageService.list_queue`.
+    Multi-tenant: only shows user's own queued jobs unless user has
+    ``resource:read:all``.
     """
-    return await _image_service.list_queue(db)
+    return await _image_service.list_queue(db, user=user)
 
 
 @router.post("/generations", status_code=HTTP_202_ACCEPTED)
@@ -73,17 +77,11 @@ async def create_generation(
     n: int = Form(1),
     file: UploadFile | None = File(default=None),
     db: aiosqlite.Connection = Depends(get_db),
+    user: CurrentUser = Depends(require_permission("image:use")),
 ) -> JSONResponse:
     """Enqueue an image generation job from a ``multipart/form-data`` request.
 
-    Builds an :class:`ImageGenerationRequest` (with nested :class:`ImageParams`)
-    from the form fields and delegates to
-    :meth:`ImageService.enqueue_generation`. Azure is NOT called here: the
-    request returns immediately (HTTP 202) with a ``pending`` record (same shape
-    as the detail endpoint, with empty ``images``). A background worker performs
-    the Azure call and updates the row status to ``completed`` / ``failed``.
-    When a reference ``file`` is attached, the worker takes the Azure *edits*
-    path; otherwise it uses *generations*.
+    Records ``created_by = user.id`` for multi-tenant isolation.
     """
     request = ImageGenerationRequest(
         instance_id=instance_id,
@@ -96,30 +94,49 @@ async def create_generation(
             n=n,
         ),
     )
-    record = await _image_service.enqueue_generation(db, request, reference_image=file)
+    record = await _image_service.enqueue_generation(
+        db, request, reference_image=file, created_by=user.id
+    )
     return JSONResponse(content=record, status_code=HTTP_202_ACCEPTED)
 
 
 @router.get("/{generation_id}")
-async def get_generation(generation_id: str, db: aiosqlite.Connection = Depends(get_db)) -> dict:
+async def get_generation(
+    generation_id: str,
+    db: aiosqlite.Connection = Depends(get_db),
+    user: CurrentUser = Depends(get_current_user),
+) -> dict:
     """Get a single image generation's metadata (prompt/params/usage/images).
 
-    Returns 404 if the generation does not exist.
+    Returns 404 if the generation does not exist or not owned.
     """
-    generation = await _image_service.get_generation(db, generation_id)
+    generation = await _image_service.get_generation(db, generation_id, user=user)
     if generation is None:
         raise HTTPException(status_code=404, detail="Image generation not found")
     return generation
 
 
 @router.get("/{generation_id}/{index}")
-async def get_image_file(generation_id: str, index: int) -> FileResponse:
+async def get_image_file(
+    generation_id: str,
+    index: int,
+    db: aiosqlite.Connection = Depends(get_db),
+    user: CurrentUser = Depends(get_current_user),
+) -> FileResponse:
     """Serve a stored image file, guarded against path traversal (Req 9.5).
 
-    Delegates path resolution to :meth:`ImageService.resolve_image_path`, which
-    returns ``None`` when the resolved path escapes the images root or the file
-    is missing. Both cases surface as 404 (no file outside the root is served).
+    Also checks ownership: returns 404 if not owned.
     """
+    # Ownership check
+    cursor = await db.execute(
+        "SELECT id, created_by FROM image_generations WHERE id = ?", (generation_id,)
+    )
+    row = await cursor.fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Image not found")
+    if "resource:read:all" not in user.capabilities and row[1] != user.id:
+        raise HTTPException(status_code=404, detail="Image not found")
+
     resolved = _image_service.resolve_image_path(generation_id, index)
     if resolved is None:
         raise HTTPException(status_code=404, detail="Image not found")
@@ -129,12 +146,24 @@ async def get_image_file(generation_id: str, index: int) -> FileResponse:
 
 @router.delete("/{generation_id}", status_code=HTTP_204_NO_CONTENT)
 async def delete_generation(
-    generation_id: str, db: aiosqlite.Connection = Depends(get_db)
+    generation_id: str,
+    db: aiosqlite.Connection = Depends(get_db),
+    user: CurrentUser = Depends(get_current_user),
 ) -> Response:
     """Delete an image generation's on-disk files and metadata row.
 
-    Returns 204 on success. The service raises 404 when the generation does not
-    exist.
+    Returns 204 on success. Returns 404 when the generation does not
+    exist or not owned.
     """
+    # Ownership check
+    cursor = await db.execute(
+        "SELECT id, created_by FROM image_generations WHERE id = ?", (generation_id,)
+    )
+    row = await cursor.fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Image generation not found")
+    if "resource:read:all" not in user.capabilities and row[1] != user.id:
+        raise HTTPException(status_code=404, detail="Image generation not found")
+
     await _image_service.delete_generation(db, generation_id)
     return Response(status_code=HTTP_204_NO_CONTENT)

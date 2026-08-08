@@ -157,10 +157,13 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS middleware - allow all origins for local development
+# CORS middleware — configurable trusted origins, defaults to same-origin (no CORS needed)
+_cors_origins_raw = os.environ.get("CORS_ALLOWED_ORIGINS", "")
+_cors_origins = [o.strip() for o in _cors_origins_raw.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_cors_origins if _cors_origins else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -210,6 +213,42 @@ try:
     from app.api.history import router as history_router
 
     app.include_router(history_router)
+except (ImportError, ModuleNotFoundError):
+    pass
+
+# Auth & admin routers
+try:
+    from app.api.auth import router as auth_router
+
+    app.include_router(auth_router)
+except (ImportError, ModuleNotFoundError):
+    pass
+
+try:
+    from app.api.sso import router as sso_router
+
+    app.include_router(sso_router)
+except (ImportError, ModuleNotFoundError):
+    pass
+
+try:
+    from app.api.admin_sso import router as admin_sso_router
+
+    app.include_router(admin_sso_router)
+except (ImportError, ModuleNotFoundError):
+    pass
+
+try:
+    from app.api.admin_roles import router as admin_roles_router
+
+    app.include_router(admin_roles_router)
+except (ImportError, ModuleNotFoundError):
+    pass
+
+try:
+    from app.api.admin_users import router as admin_users_router
+
+    app.include_router(admin_users_router)
 except (ImportError, ModuleNotFoundError):
     pass
 

@@ -25,6 +25,7 @@ the two sources sort on a shared timeline.
 import aiosqlite
 from fastapi import APIRouter, Depends
 
+from app.api.deps import CurrentUser, get_current_user
 from app.database import get_db
 from app.models.history import HistoryItem, PaginatedHistory
 
@@ -89,7 +90,9 @@ _IMAGE_SOURCE = """
 """
 
 
-def _build_union(type_filter: str | None, instance_id: str | None) -> tuple[str, list]:
+def _build_union(
+    type_filter: str | None, instance_id: str | None, owner_id: str | None
+) -> tuple[str, list]:
     """Build the ``UNION ALL`` body (no ORDER/LIMIT) and its bound parameters.
 
     Which sources participate depends on ``type_filter``:
@@ -97,6 +100,7 @@ def _build_union(type_filter: str | None, instance_id: str | None) -> tuple[str,
     - ``voice`` / ``chat`` -> sessions source only (restricted to that type)
     - ``None`` -> both sources merged
     ``instance_id`` filters every participating source.
+    ``owner_id`` (when set) filters by ``created_by`` for multi-tenant isolation.
     """
     parts: list[str] = []
     params: list = []
@@ -112,6 +116,9 @@ def _build_union(type_filter: str | None, instance_id: str | None) -> tuple[str,
         if instance_id is not None:
             clauses.append("s.instance_id = ?")
             params.append(instance_id)
+        if owner_id is not None:
+            clauses.append("s.created_by = ?")
+            params.append(owner_id)
         sql = _SESSIONS_SOURCE
         if clauses:
             sql += " WHERE " + " AND ".join(clauses)
@@ -122,6 +129,9 @@ def _build_union(type_filter: str | None, instance_id: str | None) -> tuple[str,
         if instance_id is not None:
             clauses.append("g.instance_id = ?")
             params.append(instance_id)
+        if owner_id is not None:
+            clauses.append("g.created_by = ?")
+            params.append(owner_id)
         sql = _IMAGE_SOURCE
         if clauses:
             sql += " WHERE " + " AND ".join(clauses)
@@ -137,7 +147,7 @@ def _derive_title(raw: str | None, item_type: str) -> str:
     if not title:
         return _TITLE_FALLBACKS.get(item_type, "Untitled")
     if len(title) > _TITLE_MAX_LEN:
-        return title[:_TITLE_MAX_LEN].rstrip() + "…"
+        return title[:_TITLE_MAX_LEN].rstrip() + "\u2026"
     return title
 
 
@@ -148,6 +158,7 @@ async def list_history(
     page: int = 1,
     page_size: int = 20,
     db: aiosqlite.Connection = Depends(get_db),
+    user: CurrentUser = Depends(get_current_user),
 ) -> PaginatedHistory:
     """Return a paginated, merged history across voice / chat / image tests.
 
@@ -156,8 +167,7 @@ async def list_history(
     ``instance_id`` filters (Requirements 6.3, 6.4). Existing voice sessions are
     always included so no data is lost after the upgrade (Requirement 6.6).
 
-    An unrecognized ``type`` value yields an empty result set rather than an
-    error (defensive: keeps the view stable, Requirement 9.2 spirit).
+    Multi-tenant: filters by ``created_by`` when user lacks ``resource:read:all``.
     """
     page = max(1, int(page))
     page_size = max(1, int(page_size))
@@ -168,7 +178,10 @@ async def list_history(
     if type is not None and type not in ("voice", "chat", "image"):
         return PaginatedHistory(items=[], total=0, page=page, page_size=page_size)
 
-    union_sql, base_params = _build_union(type, instance_id)
+    # Multi-tenant: restrict to user's own resources unless admin
+    owner_id = None if "resource:read:all" in user.capabilities else user.id
+
+    union_sql, base_params = _build_union(type, instance_id, owner_id)
 
     # Total across both sources for the active filters.
     count_sql = f"SELECT COUNT(*) FROM ({union_sql})"

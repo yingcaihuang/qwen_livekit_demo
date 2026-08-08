@@ -357,6 +357,8 @@ class ImageService:
         db: aiosqlite.Connection,
         request: ImageGenerationRequest,
         reference_image: ReferenceImage = None,
+        *,
+        created_by: str | None = None,
     ) -> dict:
         """Enqueue an image generation job and return the pending record.
 
@@ -365,6 +367,7 @@ class ImageService:
         to disk (so the background worker can read it later), inserts a
         ``pending`` metadata row, enqueues the job id, and returns the record
         dict (same shape as the detail endpoint).
+        Records ``created_by`` for multi-tenant isolation.
         """
         # 1) Validate the target instance exists (raises 404 if not).
         await self._load_instance(db, request.instance_id)
@@ -405,8 +408,8 @@ class ImageService:
                 id, instance_id, session_id, prompt, params, size, quality,
                 output_format, compression, n, has_reference,
                 input_tokens, output_tokens, image_paths, status, error_message,
-                created_at, started_at, ended_at, duration_ms, ttfb_ms
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                created_at, started_at, ended_at, duration_ms, ttfb_ms, created_by
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 generation_id,
@@ -430,6 +433,7 @@ class ImageService:
                 None,
                 None,
                 None,
+                created_by,
             ),
         )
         await db.commit()
@@ -661,48 +665,70 @@ class ImageService:
         instance_id: str | None = None,
         page: int = 1,
         page_size: int = 20,
+        *,
+        user=None,
     ) -> list[dict]:
-        """List image generation metadata rows, most recent first, paginated."""
+        """List image generation metadata rows, most recent first, paginated.
+
+        Multi-tenant: when the user lacks ``resource:read:all``, only records
+        with matching ``created_by`` are returned.
+        """
         page = max(1, int(page))
         page_size = max(1, int(page_size))
         offset = (page - 1) * page_size
 
-        query = "SELECT * FROM image_generations"
-        params: tuple = ()
+        conditions: list[str] = []
+        params: list = []
         if instance_id is not None:
-            query += " WHERE instance_id = ?"
-            params = (instance_id,)
+            conditions.append("instance_id = ?")
+            params.append(instance_id)
+        # Multi-tenant filter
+        if user and "resource:read:all" not in user.capabilities:
+            conditions.append("created_by = ?")
+            params.append(user.id)
+        query = "SELECT * FROM image_generations"
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
         query += " ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?"
-        params = params + (page_size, offset)
+        params.extend([page_size, offset])
 
         cursor = await db.execute(query, params)
         rows = await cursor.fetchall()
         return [self._row_to_dict(row) for row in rows]
 
-    async def list_queue(self, db: aiosqlite.Connection) -> dict:
+    async def list_queue(self, db: aiosqlite.Connection, *, user=None) -> dict:
         """Return the current image job queue (pending + processing jobs).
 
         Queries ``image_generations`` joined to ``instances`` for rows whose
         status is ``pending`` or ``processing``, ordered by ``created_at`` ASC
         (oldest first = queue order, tiebroken by ``id`` ASC). Each item exposes
         both ``id`` and ``generation_id`` (equal) alongside the resolved
-        ``instance_name``. Returns::
+        ``instance_name``. Multi-tenant: filters by ``created_by`` when user
+        lacks ``resource:read:all``. Returns::
 
             {"items": [...], "pending": p, "processing": pr, "total": p + pr}
 
         where ``total`` == ``pending`` + ``processing``.
         """
+        conditions = ["g.status IN ('pending', 'processing')"]
+        params: list = []
+        if user and "resource:read:all" not in user.capabilities:
+            conditions.append("g.created_by = ?")
+            params.append(user.id)
+        where_clause = " AND ".join(conditions)
+
         cursor = await db.execute(
-            """
+            f"""
             SELECT g.id AS id, g.instance_id AS instance_id,
                    i.name AS instance_name, g.prompt AS prompt,
                    g.status AS status, g.n AS n, g.size AS size,
                    g.created_at AS created_at
             FROM image_generations AS g
             JOIN instances AS i ON i.id = g.instance_id
-            WHERE g.status IN ('pending', 'processing')
+            WHERE {where_clause}
             ORDER BY g.created_at ASC, g.id ASC
-            """
+            """,
+            params,
         )
         rows = await cursor.fetchall()
 
@@ -737,12 +763,23 @@ class ImageService:
             "total": pending + processing,
         }
 
-    async def get_generation(self, db: aiosqlite.Connection, generation_id: str) -> dict | None:
-        """Return a single image generation metadata row as a dict, or None."""
+    async def get_generation(
+        self, db: aiosqlite.Connection, generation_id: str, *, user=None
+    ) -> dict | None:
+        """Return a single image generation metadata row as a dict, or None.
+
+        Multi-tenant: returns None (treated as 404 by the route) if the user
+        lacks ``resource:read:all`` and does not own the record.
+        """
         cursor = await db.execute("SELECT * FROM image_generations WHERE id = ?", (generation_id,))
         row = await cursor.fetchone()
         if row is None:
             return None
+        # Multi-tenant check
+        if user and "resource:read:all" not in user.capabilities:
+            row_dict = dict(row)
+            if row_dict.get("created_by") != user.id:
+                return None
         return self._row_to_dict(row)
 
     @staticmethod
