@@ -30,6 +30,7 @@ services:
       - LIVEKIT_PUBLIC_URL=ws://localhost:7880
       - DB_PATH=/app/data/voice_admin.db
       - PORT=8090
+      - AUTH_SECRET_KEY=6_0Edc3WKFaGWyYPO18HsbUGv-I22PqXwa7vB6Hp80M=
     volumes:
       - ./data:/app/data
     depends_on:
