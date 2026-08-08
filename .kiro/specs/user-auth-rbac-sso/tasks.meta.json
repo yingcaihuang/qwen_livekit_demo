@@ -1,0 +1,597 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 在 `app/schema.sql` 追加鉴权相关表": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114425642
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114438682
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114533000
+      }
+    ],
+    "1.2 在 `app/database.py::_migrate()` 增加补列与播种逻辑": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114425672
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114544387
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114716683
+      }
+    ],
+    "2.1 实现 `app/services/rbac.py`": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114425697
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114545226
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114717641
+      }
+    ],
+    "2.3 实现 `app/services/crypto_service.py`": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114425724
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114546110
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114718483
+      }
+    ],
+    "2.5 实现密码哈希与会话管理（`app/services/auth_service.py`）": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114425761
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114725148
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114973380
+      }
+    ],
+    "3.1 实现 `app/api/deps.py` 鉴权依赖": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114425788
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114999193
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786115217136
+      }
+    ],
+    "3.3 在 `_migrate()` 中实现 Seed_Admin 播种": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114425816
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786115000167
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786115216089
+      }
+    ],
+    "4. 检查点 —— 确保数据层与核心服务测试通过": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114425839
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786115225545
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786115290070
+      }
+    ],
+    "5.1 实现登录限流（`app/services/auth_service.py`）": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114425871
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786115298934
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786115550577
+      }
+    ],
+    "5.3 实现 `app/api/auth.py` 认证接口": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114425897
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786115559075
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786115832822
+      }
+    ],
+    "5.5 实现改密接口 `POST /api/auth/change-password`": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114425921
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786115560308
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786115833806
+      }
+    ],
+    "6.1 实现 `app/services/oidc_service.py`": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114425946
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786115299727
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786115549533
+      }
+    ],
+    "6.4 实现 `app/services/provisioning_service.py`": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114425973
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786115300626
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786115551367
+      }
+    ],
+    "6.7 实现 `app/api/sso.py` 端点": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114426005
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786115561124
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786115834578
+      }
+    ],
+    "7. 检查点 —— 确保登录与 SSO 测试通过": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114426045
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786115845479
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786115910551
+      }
+    ],
+    "8.1 实现 `app/api/admin_sso.py`（`sso:manage`）": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114426071
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786115912018
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786116112205
+      }
+    ],
+    "8.4 实现 `app/api/admin_roles.py`（`role:manage`）": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114426096
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786115913026
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786116110422
+      }
+    ],
+    "8.6 实现 `app/api/admin_users.py`（`user:manage`）": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114426122
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786115914043
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786116111333
+      }
+    ],
+    "9.1 为现有路由补 `require_permission` 守卫与资源多租户隔离": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114426148
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786116127788
+      },
+      {
+        "executionId": "fb21017a-bbb1-478f-8a96-c9b34b44ca6f",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786157428549
+      }
+    ],
+    "9.2 实现资源多租户隔离过滤": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114426173
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786116128779
+      },
+      {
+        "executionId": "fb21017a-bbb1-478f-8a96-c9b34b44ca6f",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786157429618
+      }
+    ],
+    "9.4 在 `app/main.py` 注册路由、收紧 CORS、实现 CSRF 校验": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114426199
+      },
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786116130123
+      }
+    ],
+    "10. 检查点 —— 确保后端全部测试通过": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114426231
+      },
+      {
+        "executionId": "fb21017a-bbb1-478f-8a96-c9b34b44ca6f",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786157437599
+      },
+      {
+        "executionId": "fb21017a-bbb1-478f-8a96-c9b34b44ca6f",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786157502165
+      }
+    ],
+    "11.1 实现 `components/auth/AuthProvider.tsx` 与 `useAuth`": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114426263
+      },
+      {
+        "executionId": "fb21017a-bbb1-478f-8a96-c9b34b44ca6f",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786157503597
+      },
+      {
+        "executionId": "fb21017a-bbb1-478f-8a96-c9b34b44ca6f",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786157654485
+      }
+    ],
+    "11.2 改造 `hooks/useApi.ts` 与全局 fetch": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114426289
+      },
+      {
+        "executionId": "fb21017a-bbb1-478f-8a96-c9b34b44ca6f",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786157504729
+      },
+      {
+        "executionId": "fb21017a-bbb1-478f-8a96-c9b34b44ca6f",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786157655613
+      }
+    ],
+    "11.3 实现 `components/auth/ProtectedRoute.tsx`": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114426314
+      },
+      {
+        "executionId": "fb21017a-bbb1-478f-8a96-c9b34b44ca6f",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786157505756
+      },
+      {
+        "executionId": "fb21017a-bbb1-478f-8a96-c9b34b44ca6f",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786157656583
+      }
+    ],
+    "12.1 实现 `pages/LoginPage.tsx`": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114426339
+      },
+      {
+        "executionId": "fb21017a-bbb1-478f-8a96-c9b34b44ca6f",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786157663346
+      },
+      {
+        "executionId": "fb21017a-bbb1-478f-8a96-c9b34b44ca6f",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786157978955
+      }
+    ],
+    "12.3 实现首次强制改密页/流程": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114426362
+      },
+      {
+        "executionId": "fb21017a-bbb1-478f-8a96-c9b34b44ca6f",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786157664479
+      },
+      {
+        "executionId": "fb21017a-bbb1-478f-8a96-c9b34b44ca6f",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786157980091
+      }
+    ],
+    "12.4 实现后台页面：用户管理、组映射、SSO 配置": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114426387
+      },
+      {
+        "executionId": "fb21017a-bbb1-478f-8a96-c9b34b44ca6f",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786157665660
+      },
+      {
+        "executionId": "fb21017a-bbb1-478f-8a96-c9b34b44ca6f",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786157981142
+      }
+    ],
+    "13.1 改造 `App.tsx` 路由": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114426413
+      },
+      {
+        "executionId": "fb21017a-bbb1-478f-8a96-c9b34b44ca6f",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786157666722
+      },
+      {
+        "executionId": "fb21017a-bbb1-478f-8a96-c9b34b44ca6f",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786157982056
+      }
+    ],
+    "13.2 改造 `Sidebar` 能力驱动显隐": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114426453
+      },
+      {
+        "executionId": "fb21017a-bbb1-478f-8a96-c9b34b44ca6f",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786157667613
+      },
+      {
+        "executionId": "fb21017a-bbb1-478f-8a96-c9b34b44ca6f",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786157983041
+      }
+    ],
+    "14. 最终检查点 —— 确保前后端测试与构建通过": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114426479
+      },
+      {
+        "executionId": "fb21017a-bbb1-478f-8a96-c9b34b44ca6f",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786157990006
+      },
+      {
+        "executionId": "fb21017a-bbb1-478f-8a96-c9b34b44ca6f",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786158056525
+      }
+    ],
+    "1. 数据层：新增表结构与幂等迁移": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114716716
+      }
+    ],
+    "2. 核心服务：RBAC、加密、会话与密码": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786114973419
+      }
+    ],
+    "3. 鉴权依赖与 Seed_Admin 播种": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786115217159
+      }
+    ],
+    "5. 本地登录与会话接口": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786115833843
+      }
+    ],
+    "6. OIDC SSO 登录与自动开通": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786115834604
+      }
+    ],
+    "8. 管理后台接口": [
+      {
+        "executionId": "3286b0df-97fd-4719-9a13-ef8f01760d0e",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786116112231
+      }
+    ],
+    "9. 为现有接口挂权限守卫并接线后端": [
+      {
+        "executionId": "fb21017a-bbb1-478f-8a96-c9b34b44ca6f",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786157429649
+      }
+    ],
+    "11. 前端鉴权基础设施": [
+      {
+        "executionId": "fb21017a-bbb1-478f-8a96-c9b34b44ca6f",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786157656609
+      }
+    ],
+    "12. 登录页与后台页面": [
+      {
+        "executionId": "fb21017a-bbb1-478f-8a96-c9b34b44ca6f",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786157981171
+      }
+    ],
+    "13. 前端接线与导航": [
+      {
+        "executionId": "fb21017a-bbb1-478f-8a96-c9b34b44ca6f",
+        "chatSessionId": "sess_6b16600a-7bfa-4200-918d-b71897904873",
+        "timestamp": 1786157983072
+      }
+    ]
+  }
+}
