@@ -90,6 +90,10 @@ async def _migrate(db: aiosqlite.Connection) -> None:
             "ALTER TABLE sso_config ADD COLUMN cookie_secure INTEGER NOT NULL DEFAULT 0"
         )
 
+    # 6b) scim_token column for sso_config (SCIM v2 bearer token).
+    if "scim_token" not in sso_cols:
+        await db.execute("ALTER TABLE sso_config ADD COLUMN scim_token TEXT")
+
     # 7) Seed sso_config singleton row (Req 9.6, 3.1). The table is created in
     #    schema.sql; here we ensure the single-row configuration placeholder
     #    exists so that queries never fail on an empty table.

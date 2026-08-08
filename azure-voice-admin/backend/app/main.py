@@ -252,6 +252,13 @@ try:
 except (ImportError, ModuleNotFoundError):
     pass
 
+try:
+    from app.api.scim import router as scim_router
+
+    app.include_router(scim_router)
+except (ImportError, ModuleNotFoundError):
+    pass
+
 # Register WebSocket endpoints if available
 try:
     from app.api.websockets import ws_session_logs

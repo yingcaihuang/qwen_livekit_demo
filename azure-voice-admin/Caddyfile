@@ -7,6 +7,10 @@
         reverse_proxy backend:8090
     }
 
+    handle /scim/* {
+        reverse_proxy backend:8090
+    }
+
     handle /ws/* {
         reverse_proxy backend:8090
     }

@@ -29,6 +29,8 @@ export function SsoConfigPage() {
   const [discovering, setDiscovering] = useState(false)
   const [secretSet, setSecretSet] = useState(false)
   const [copiedField, setCopiedField] = useState<string | null>(null)
+  const [scimTokenSet, setScimTokenSet] = useState(false)
+  const [scimToken, setScimToken] = useState('')
 
   useEffect(() => {
     fetch('/api/admin/sso-config', { credentials: 'include' })
@@ -51,6 +53,7 @@ export function SsoConfigPage() {
           cookie_secure: d.cookie_secure,
         }))
         setSecretSet(d.client_secret_set)
+        setScimTokenSet(d.scim_token_set)
       })
       .catch(() => {})
       .finally(() => setLoading(false))
@@ -122,6 +125,16 @@ export function SsoConfigPage() {
     navigator.clipboard.writeText(text)
     setCopiedField(field)
     setTimeout(() => setCopiedField(null), 2000)
+  }
+
+  const handleGenerateScimToken = async () => {
+    if (scimTokenSet && !confirm('重新生成将使旧 Token 立即失效，Authentik 需要更新。确定继续？')) return
+    const res = await fetch('/api/admin/sso-config/scim-token', { method: 'POST', credentials: 'include' })
+    if (res.ok) {
+      const d = await res.json()
+      setScimToken(d.scim_token)
+      setScimTokenSet(true)
+    }
   }
 
   if (loading) {
@@ -337,6 +350,43 @@ export function SsoConfigPage() {
                 Cookie Secure 模式（仅 HTTPS 环境启用）
               </span>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Section 4: SCIM Provisioning */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">SCIM 用户同步</CardTitle>
+          <CardDescription>通过 SCIM v2 协议从 Authentik 自动同步用户和组变更</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-4">
+            <div className="flex-1">
+              <p className="text-sm">SCIM Token: {scimTokenSet ? <span className="text-emerald-600 font-medium">已生成</span> : <span className="text-muted-foreground">未生成</span>}</p>
+              {scimToken && (
+                <div className="mt-2 flex items-center gap-2">
+                  <code className="flex-1 rounded-md border bg-muted px-3 py-1.5 text-xs font-mono break-all">{scimToken}</code>
+                  <Button variant="ghost" size="sm" onClick={() => copyToClipboard(scimToken, 'scim')}>
+                    {copiedField === 'scim' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+              )}
+              <p className="mt-1 text-xs text-muted-foreground">⚠️ Token 仅在生成时显示一次，请立即复制</p>
+            </div>
+            <Button variant="outline" onClick={handleGenerateScimToken}>
+              {scimTokenSet ? '重新生成' : '生成 Token'}
+            </Button>
+          </div>
+          <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-3 space-y-1.5">
+            <p className="text-xs font-medium text-amber-800">在 Authentik 中配置 SCIM Provider：</p>
+            <ol className="list-decimal pl-5 space-y-1 text-xs text-amber-700">
+              <li>进入 Applications → Providers → Create → <strong>SCIM Provider</strong></li>
+              <li>URL 填入: <code className="rounded bg-white px-1.5 py-0.5 border text-xs">{`${window.location.origin}/scim/v2`}</code></li>
+              <li>Token 填入上方生成的 SCIM Token</li>
+              <li>点 Finish 保存后，进入 Applications → 你的应用 → 关联此 SCIM Provider</li>
+              <li>Authentik 会自动同步用户/组变更到本平台</li>
+            </ol>
           </div>
         </CardContent>
       </Card>

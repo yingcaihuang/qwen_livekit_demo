@@ -127,6 +127,7 @@ CREATE TABLE IF NOT EXISTS sso_config (
     end_session_endpoint TEXT,
     login_button_enabled INTEGER NOT NULL DEFAULT 0,  -- 首页统一认证入口开关
     cookie_secure INTEGER NOT NULL DEFAULT 0,
+    scim_token TEXT,                              -- SCIM v2 Bearer token (plaintext)
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

@@ -26,6 +26,7 @@ class SsoConfigResponse(BaseModel):
     end_session_endpoint: str | None = None
     login_button_enabled: bool = False
     cookie_secure: bool = False
+    scim_token_set: bool = False
 
 
 class SsoConfigUpdate(BaseModel):
@@ -55,7 +56,7 @@ async def get_sso_config(
         "SELECT issuer, discovery_url, client_id, client_secret_encrypted, "
         "authorization_endpoint, token_endpoint, userinfo_endpoint, jwks_uri, "
         "redirect_uri, scopes, groups_claim, end_session_endpoint, login_button_enabled, "
-        "cookie_secure "
+        "cookie_secure, scim_token "
         "FROM sso_config WHERE id = 1"
     )
     row = await cursor.fetchone()
@@ -76,6 +77,7 @@ async def get_sso_config(
         end_session_endpoint=row[11],
         login_button_enabled=bool(row[12]),
         cookie_secure=bool(row[13]),
+        scim_token_set=bool(row[14]),
     )
 
 
@@ -164,3 +166,28 @@ async def discover_endpoints(
         jwks_uri=doc.get("jwks_uri"),
         end_session_endpoint=doc.get("end_session_endpoint"),
     )
+
+
+@router.post("/scim-token")
+async def generate_scim_token(
+    user: CurrentUser = Depends(require_permission("sso:manage")),
+    db: aiosqlite.Connection = Depends(get_db),
+):
+    """Generate a new SCIM bearer token. Replaces any existing token."""
+    import secrets
+
+    token = secrets.token_urlsafe(32)
+    await db.execute("UPDATE sso_config SET scim_token = ? WHERE id = 1", (token,))
+    await db.commit()
+    return {"scim_token": token}
+
+
+@router.get("/scim-token")
+async def get_scim_token_status(
+    user: CurrentUser = Depends(require_permission("sso:manage")),
+    db: aiosqlite.Connection = Depends(get_db),
+):
+    """Check if SCIM token is set (don't return the actual token)."""
+    cursor = await db.execute("SELECT scim_token FROM sso_config WHERE id = 1")
+    row = await cursor.fetchone()
+    return {"scim_token_set": bool(row and row[0])}
