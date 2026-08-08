@@ -92,6 +92,7 @@ CREATE TABLE IF NOT EXISTS users (
     is_active INTEGER NOT NULL DEFAULT 1, -- 0 表示禁用
     must_change_password INTEGER NOT NULL DEFAULT 0,
     sso_groups TEXT DEFAULT '[]',         -- JSON array of Authentik group names
+    role_override INTEGER NOT NULL DEFAULT 0,  -- 1=角色已手动覆盖,SSO登录不再自动更新
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );

@@ -14,6 +14,7 @@ interface User {
   auth_source: string
   is_active: boolean
   must_change_password: boolean
+  role_override: boolean
   roles: string[]
   groups: string[]
   created_at: string
@@ -97,6 +98,16 @@ export function UsersPage() {
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({ roles: [role] }),
+    })
+    loadUsers()
+  }
+
+  const resetOverride = async (u: User) => {
+    await fetch(`/api/admin/users/${u.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ role_override: false }),
     })
     loadUsers()
   }
@@ -219,20 +230,27 @@ export function UsersPage() {
                       </Badge>
                     </td>
                     <td className="px-6 py-3">
-                      <select
-                        value={u.roles[0] || 'viewer'}
-                        onChange={(e) => changeRole(u, e.target.value)}
-                        className={cn(
-                          'rounded-md border px-2 py-0.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-                          ROLE_COLORS[u.roles[0] ?? 'viewer'] || ROLE_COLORS.viewer
+                      <div className="flex items-center gap-1.5">
+                        <select
+                          value={u.roles[0] || 'viewer'}
+                          onChange={(e) => changeRole(u, e.target.value)}
+                          className={cn(
+                            'rounded-md border px-2 py-0.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                            ROLE_COLORS[u.roles[0] ?? 'viewer'] || ROLE_COLORS.viewer
+                          )}
+                        >
+                          {VALID_ROLES.map((r) => (
+                            <option key={r} value={r}>
+                              {r}
+                            </option>
+                          ))}
+                        </select>
+                        {u.auth_source === 'sso' && u.role_override && (
+                          <Badge variant="outline" className="text-xs border-amber-300 text-amber-700 bg-amber-50">
+                            手动
+                          </Badge>
                         )}
-                      >
-                        {VALID_ROLES.map((r) => (
-                          <option key={r} value={r}>
-                            {r}
-                          </option>
-                        ))}
-                      </select>
+                      </div>
                     </td>
                     <td className="px-6 py-3">
                       {u.auth_source === 'sso' && u.groups.length > 0 ? (
@@ -272,6 +290,16 @@ export function UsersPage() {
                       >
                         {u.is_active ? '禁用' : '启用'}
                       </Button>
+                      {u.auth_source === 'sso' && u.role_override && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => resetOverride(u)}
+                          className="text-xs text-amber-600 hover:text-amber-700"
+                        >
+                          解除覆盖
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="sm"

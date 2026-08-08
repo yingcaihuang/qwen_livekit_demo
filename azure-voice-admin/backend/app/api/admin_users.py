@@ -22,6 +22,7 @@ class UserResponse(BaseModel):
     auth_source: str
     is_active: bool
     must_change_password: bool
+    role_override: bool = False
     roles: list[str]
     groups: list[str] = []
     created_at: str
@@ -37,6 +38,7 @@ class UserCreate(BaseModel):
 class UserUpdate(BaseModel):
     is_active: bool | None = None
     roles: list[str] | None = None
+    role_override: bool | None = None
 
 
 @router.get("", response_model=list[UserResponse])
@@ -46,7 +48,7 @@ async def list_users(
 ):
     """List all users with their roles."""
     cursor = await db.execute(
-        "SELECT id, username, email, auth_source, is_active, must_change_password, created_at, sso_groups "
+        "SELECT id, username, email, auth_source, is_active, must_change_password, created_at, sso_groups, role_override "
         "FROM users ORDER BY created_at"
     )
     rows = await cursor.fetchall()
@@ -62,6 +64,7 @@ async def list_users(
                 auth_source=r[3],
                 is_active=bool(r[4]),
                 must_change_password=bool(r[5]),
+                role_override=bool(r[8]),
                 roles=[rr[0] for rr in role_rows],
                 groups=json.loads(r[7] or "[]"),
                 created_at=r[6],
@@ -125,8 +128,9 @@ async def update_user(
     db: aiosqlite.Connection = Depends(get_db),
 ):
     """Update user: enable/disable or change roles. Disabling invalidates sessions."""
-    cursor = await db.execute("SELECT id FROM users WHERE id = ?", (user_id,))
-    if not await cursor.fetchone():
+    cursor = await db.execute("SELECT id, auth_source FROM users WHERE id = ?", (user_id,))
+    existing = await cursor.fetchone()
+    if not existing:
         raise HTTPException(status_code=404, detail="用户不存在")
 
     if body.is_active is not None:
@@ -148,12 +152,40 @@ async def update_user(
                 "INSERT INTO user_roles (user_id, role) VALUES (?, ?)",
                 (user_id, role),
             )
+        # For SSO users, manually changing roles implies override
+        if existing[1] == "sso":
+            await db.execute(
+                "UPDATE users SET role_override = 1, updated_at = datetime('now') WHERE id = ?",
+                (user_id,),
+            )
+
+    if body.role_override is not None:
+        await db.execute(
+            "UPDATE users SET role_override = ?, updated_at = datetime('now') WHERE id = ?",
+            (int(body.role_override), user_id),
+        )
+        # If clearing override, recompute roles from current group mappings
+        if not body.role_override and existing[1] == "sso":
+            from app.services.provisioning_service import _compute_roles
+
+            groups_cursor = await db.execute(
+                "SELECT sso_groups FROM users WHERE id = ?", (user_id,)
+            )
+            groups_row = await groups_cursor.fetchone()
+            groups = json.loads(groups_row[0] or "[]") if groups_row else []
+            roles = await _compute_roles(db, groups)
+            await db.execute("DELETE FROM user_roles WHERE user_id = ?", (user_id,))
+            for role in roles:
+                await db.execute(
+                    "INSERT INTO user_roles (user_id, role) VALUES (?, ?)",
+                    (user_id, role),
+                )
 
     await db.commit()
 
     # Return updated user
     cursor = await db.execute(
-        "SELECT id, username, email, auth_source, is_active, must_change_password, created_at, sso_groups "
+        "SELECT id, username, email, auth_source, is_active, must_change_password, created_at, sso_groups, role_override "
         "FROM users WHERE id = ?",
         (user_id,),
     )
@@ -167,6 +199,7 @@ async def update_user(
         auth_source=r[3],
         is_active=bool(r[4]),
         must_change_password=bool(r[5]),
+        role_override=bool(r[8]),
         roles=[rr[0] for rr in role_rows],
         groups=json.loads(r[7] or "[]"),
         created_at=r[6],

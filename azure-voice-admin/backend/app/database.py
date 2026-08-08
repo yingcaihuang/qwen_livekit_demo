@@ -106,6 +106,10 @@ async def _migrate(db: aiosqlite.Connection) -> None:
     if "sso_groups" not in user_cols:
         await db.execute("ALTER TABLE users ADD COLUMN sso_groups TEXT DEFAULT '[]'")
 
+    # 6d) role_override column — when 1, SSO login will not auto-update roles
+    if "role_override" not in user_cols:
+        await db.execute("ALTER TABLE users ADD COLUMN role_override INTEGER NOT NULL DEFAULT 0")
+
     # 7) Seed sso_config singleton row (Req 9.6, 3.1). The table is created in
     #    schema.sql; here we ensure the single-row configuration placeholder
     #    exists so that queries never fail on an empty table.

@@ -64,13 +64,16 @@ async def provision_sso_user(
         (json.dumps(mapped_groups), user_id),
     )
 
-    # Replace all existing roles with computed ones (convergent update)
-    await db.execute("DELETE FROM user_roles WHERE user_id = ?", (user_id,))
-    for role in roles:
-        await db.execute(
-            "INSERT INTO user_roles (user_id, role) VALUES (?, ?)",
-            (user_id, role),
-        )
+    # Check if roles are manually overridden (skip auto-update if so)
+    cursor = await db.execute("SELECT role_override FROM users WHERE id = ?", (user_id,))
+    override_row = await cursor.fetchone()
+    if not (override_row and override_row[0]):
+        # Replace all existing roles with computed ones (convergent update)
+        await db.execute("DELETE FROM user_roles WHERE user_id = ?", (user_id,))
+        for role in roles:
+            await db.execute(
+                "INSERT INTO user_roles (user_id, role) VALUES (?, ?)", (user_id, role)
+            )
 
     await db.commit()
     return user_id
