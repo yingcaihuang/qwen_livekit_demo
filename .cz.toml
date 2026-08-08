@@ -4,30 +4,31 @@ version = "0.1.0"
 tag_format = "v$version"
 
 [tool.commitizen.customize]
-# Allowed commit types
+# Allowed commit types - supports bilingual description (English / 中文)
 schema_pattern = "^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\\(.+\\))?!?: .+"
-schema = "<type>(<scope>): <description>"
+schema = "<type>(<scope>): <english description> / <中文描述>"
 info = """
-Commit message 必须遵循 Conventional Commits 规范：
+Commit message 必须遵循 Conventional Commits 规范，标题需包含英文和中文描述：
 
-  <type>(<scope>): <description>
+  <type>(<scope>): <english description> / <中文描述>
 
 允许的 type：
-  feat     - 新功能
-  fix      - Bug 修复
-  docs     - 文档变更
-  style    - 代码格式（不影响逻辑）
-  refactor - 代码重构
-  perf     - 性能优化
-  test     - 测试相关
-  build    - 构建系统或外部依赖
-  ci       - CI/CD 配置
-  chore    - 其他杂项
-  revert   - 回滚提交
+  feat     - 新功能 / New feature
+  fix      - Bug 修复 / Bug fix
+  docs     - 文档变更 / Documentation
+  style    - 代码格式 / Code style
+  refactor - 代码重构 / Refactoring
+  perf     - 性能优化 / Performance
+  test     - 测试相关 / Tests
+  build    - 构建系统 / Build system
+  ci       - CI/CD 配置 / CI/CD
+  chore    - 其他杂项 / Chores
+  revert   - 回滚提交 / Revert
 
 示例：
-  feat(voice): 添加音色选择功能
-  fix(session): 修复 token 统计为零的问题
-  docs: 更新 README
-  chore(docker): 优化构建配置
+  feat(voice): add voice selection / 添加音色选择功能
+  fix(session): fix zero token count / 修复 token 统计为零的问题
+  docs: update README / 更新 README
+  chore(docker): optimize build config / 优化构建配置
+  feat(saml): add SAML 2.0 SP support / 新增 SAML 单点登录支持
 """
