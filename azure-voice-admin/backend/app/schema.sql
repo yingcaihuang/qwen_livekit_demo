@@ -125,6 +125,7 @@ CREATE TABLE IF NOT EXISTS sso_config (
     redirect_uri TEXT,
     scopes TEXT NOT NULL DEFAULT 'openid profile email groups',
     groups_claim TEXT NOT NULL DEFAULT 'groups',
+    groups_source TEXT NOT NULL DEFAULT 'userinfo',  -- 'userinfo' | 'id_token'
     end_session_endpoint TEXT,
     login_button_enabled INTEGER NOT NULL DEFAULT 0,  -- 首页统一认证入口开关
     cookie_secure INTEGER NOT NULL DEFAULT 0,

@@ -24,6 +24,7 @@ export function SsoConfigPage() {
     redirect_uri: '',
     scopes: 'openid profile email groups',
     groups_claim: 'groups',
+    groups_source: 'userinfo' as string,
     login_button_enabled: false,
     cookie_secure: false,
   })
@@ -50,6 +51,7 @@ export function SsoConfigPage() {
           redirect_uri: d.redirect_uri || '',
           scopes: d.scopes || 'openid profile email groups',
           groups_claim: d.groups_claim || 'groups',
+          groups_source: d.groups_source || 'userinfo',
           login_button_enabled: d.login_button_enabled,
           cookie_secure: d.cookie_secure,
         }))
@@ -320,6 +322,20 @@ export function SsoConfigPage() {
                 value={form.groups_claim}
                 onChange={(e) => setForm((f) => ({ ...f, groups_claim: e.target.value }))}
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Groups 来源</Label>
+              <select
+                value={form.groups_source}
+                onChange={(e) => setForm((f) => ({ ...f, groups_source: e.target.value }))}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option value="userinfo">Userinfo 端点</option>
+                <option value="id_token">ID Token</option>
+              </select>
+              <p className="text-xs text-muted-foreground">
+                选择从哪里读取用户的 groups claim。ID Token 受 Scope Mapping 表达式控制；Userinfo 可能返回完整组列表。
+              </p>
             </div>
           </div>
 

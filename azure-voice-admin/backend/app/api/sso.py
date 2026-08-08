@@ -19,8 +19,8 @@ async def _load_sso_config(db: aiosqlite.Connection) -> dict | None:
     cursor = await db.execute(
         "SELECT issuer, discovery_url, client_id, client_secret_encrypted, "
         "authorization_endpoint, token_endpoint, userinfo_endpoint, jwks_uri, "
-        "redirect_uri, scopes, groups_claim, end_session_endpoint, login_button_enabled, "
-        "cookie_secure "
+        "redirect_uri, scopes, groups_claim, groups_source, end_session_endpoint, "
+        "login_button_enabled, cookie_secure "
         "FROM sso_config WHERE id = 1"
     )
     row = await cursor.fetchone()
@@ -38,9 +38,10 @@ async def _load_sso_config(db: aiosqlite.Connection) -> dict | None:
         "redirect_uri": row[8],
         "scopes": row[9],
         "groups_claim": row[10],
-        "end_session_endpoint": row[11],
-        "login_button_enabled": bool(row[12]),
-        "cookie_secure": bool(row[13]),
+        "groups_source": row[11] or "userinfo",
+        "end_session_endpoint": row[12],
+        "login_button_enabled": bool(row[13]),
+        "cookie_secure": bool(row[14]),
     }
 
 
@@ -169,7 +170,11 @@ async def sso_callback(
     username = userinfo.get("preferred_username") or userinfo.get("email") or subject
     email = userinfo.get("email")
     groups_claim = config["groups_claim"]
-    groups = userinfo.get(groups_claim, [])
+    groups_source = config.get("groups_source", "userinfo")
+    if groups_source == "id_token":
+        groups = payload.get(groups_claim, [])
+    else:
+        groups = userinfo.get(groups_claim, [])
     if isinstance(groups, str):
         groups = [groups]
 

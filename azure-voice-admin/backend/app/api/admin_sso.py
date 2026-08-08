@@ -23,6 +23,7 @@ class SsoConfigResponse(BaseModel):
     redirect_uri: str | None = None
     scopes: str = "openid profile email groups"
     groups_claim: str = "groups"
+    groups_source: str = "userinfo"
     end_session_endpoint: str | None = None
     login_button_enabled: bool = False
     cookie_secure: bool = False
@@ -41,6 +42,7 @@ class SsoConfigUpdate(BaseModel):
     redirect_uri: str | None = None
     scopes: str | None = None
     groups_claim: str | None = None
+    groups_source: str | None = None
     end_session_endpoint: str | None = None
     login_button_enabled: bool | None = None
     cookie_secure: bool | None = None
@@ -55,8 +57,8 @@ async def get_sso_config(
     cursor = await db.execute(
         "SELECT issuer, discovery_url, client_id, client_secret_encrypted, "
         "authorization_endpoint, token_endpoint, userinfo_endpoint, jwks_uri, "
-        "redirect_uri, scopes, groups_claim, end_session_endpoint, login_button_enabled, "
-        "cookie_secure, scim_token "
+        "redirect_uri, scopes, groups_claim, groups_source, end_session_endpoint, "
+        "login_button_enabled, cookie_secure, scim_token "
         "FROM sso_config WHERE id = 1"
     )
     row = await cursor.fetchone()
@@ -74,10 +76,11 @@ async def get_sso_config(
         redirect_uri=row[8],
         scopes=row[9] or "openid profile email groups",
         groups_claim=row[10] or "groups",
-        end_session_endpoint=row[11],
-        login_button_enabled=bool(row[12]),
-        cookie_secure=bool(row[13]),
-        scim_token_set=bool(row[14]),
+        groups_source=row[11] or "userinfo",
+        end_session_endpoint=row[12],
+        login_button_enabled=bool(row[13]),
+        cookie_secure=bool(row[14]),
+        scim_token_set=bool(row[15]),
     )
 
 
@@ -112,6 +115,8 @@ async def update_sso_config(
         fields["scopes"] = body.scopes
     if body.groups_claim is not None:
         fields["groups_claim"] = body.groups_claim
+    if body.groups_source is not None:
+        fields["groups_source"] = body.groups_source
     if body.end_session_endpoint is not None:
         fields["end_session_endpoint"] = body.end_session_endpoint
     if body.login_button_enabled is not None:

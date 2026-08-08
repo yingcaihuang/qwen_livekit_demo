@@ -94,6 +94,12 @@ async def _migrate(db: aiosqlite.Connection) -> None:
     if "scim_token" not in sso_cols:
         await db.execute("ALTER TABLE sso_config ADD COLUMN scim_token TEXT")
 
+    # 6b2) groups_source column for sso_config ('userinfo' | 'id_token').
+    if "groups_source" not in sso_cols:
+        await db.execute(
+            "ALTER TABLE sso_config ADD COLUMN groups_source TEXT NOT NULL DEFAULT 'userinfo'"
+        )
+
     # 6c) sso_groups column for storing user's Authentik groups
     cursor = await db.execute("PRAGMA table_info(users)")
     user_cols = {row[1] for row in await cursor.fetchall()}
