@@ -345,7 +345,7 @@ export function SsoConfigPage() {
       <Card className="border-blue-200 bg-blue-50/50">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm font-semibold text-blue-800">
-            📋 以下 URI 需要在 Authentik 应用配置中填写（Provider 设置）
+            📋 以下 URI 需要在 Authentik Provider 配置中填写
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
@@ -354,70 +354,85 @@ export function SsoConfigPage() {
             <code className="flex-1 rounded-md border bg-white px-3 py-1.5 text-xs text-foreground">
               {`${window.location.origin}/api/auth/sso/callback`}
             </code>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="shrink-0 text-blue-600"
-              onClick={() =>
-                copyToClipboard(
-                  `${window.location.origin}/api/auth/sso/callback`,
-                  'redirect'
-                )
-              }
-            >
-              {copiedField === 'redirect' ? (
-                <Check className="h-4 w-4" />
-              ) : (
-                <Copy className="h-4 w-4" />
-              )}
+            <Button variant="ghost" size="sm" className="shrink-0 text-blue-600"
+              onClick={() => copyToClipboard(`${window.location.origin}/api/auth/sso/callback`, 'redirect')}>
+              {copiedField === 'redirect' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
             </Button>
           </div>
           <div className="flex items-center gap-3">
-            <span className="w-52 shrink-0 text-xs font-medium text-blue-700">
-              Post Logout Redirect URI:
-            </span>
+            <span className="w-52 shrink-0 text-xs font-medium text-blue-700">Post Logout Redirect URI:</span>
             <code className="flex-1 rounded-md border bg-white px-3 py-1.5 text-xs text-foreground">
               {`${window.location.origin}/login`}
             </code>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="shrink-0 text-blue-600"
-              onClick={() =>
-                copyToClipboard(`${window.location.origin}/login`, 'logout')
-              }
-            >
-              {copiedField === 'logout' ? (
-                <Check className="h-4 w-4" />
-              ) : (
-                <Copy className="h-4 w-4" />
-              )}
+            <Button variant="ghost" size="sm" className="shrink-0 text-blue-600"
+              onClick={() => copyToClipboard(`${window.location.origin}/login`, 'logout')}>
+              {copiedField === 'logout' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
             </Button>
           </div>
           <div className="flex items-center gap-3">
-            <span className="w-52 shrink-0 text-xs font-medium text-blue-700">
-              Back-Channel Logout URI:
-            </span>
+            <span className="w-52 shrink-0 text-xs font-medium text-blue-700">Front-Channel Logout URI:</span>
+            <code className="flex-1 rounded-md border bg-white px-3 py-1.5 text-xs text-foreground">
+              {`${window.location.origin}/api/auth/sso/frontchannel-logout`}
+            </code>
+            <Button variant="ghost" size="sm" className="shrink-0 text-blue-600"
+              onClick={() => copyToClipboard(`${window.location.origin}/api/auth/sso/frontchannel-logout`, 'frontchannel')}>
+              {copiedField === 'frontchannel' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+            </Button>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="w-52 shrink-0 text-xs font-medium text-blue-700">Back-Channel Logout URI:</span>
             <code className="flex-1 rounded-md border bg-white px-3 py-1.5 text-xs text-foreground">
               {`${window.location.origin}/api/auth/sso/backchannel-logout`}
             </code>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="shrink-0 text-blue-600"
-              onClick={() =>
-                copyToClipboard(
-                  `${window.location.origin}/api/auth/sso/backchannel-logout`,
-                  'backchannel'
-                )
-              }
-            >
-              {copiedField === 'backchannel' ? (
-                <Check className="h-4 w-4" />
-              ) : (
-                <Copy className="h-4 w-4" />
-              )}
+            <Button variant="ghost" size="sm" className="shrink-0 text-blue-600"
+              onClick={() => copyToClipboard(`${window.location.origin}/api/auth/sso/backchannel-logout`, 'backchannel')}>
+              {copiedField === 'backchannel' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
             </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Authentik Logout Configuration Guide */}
+      <Card className="border-amber-200 bg-amber-50/50">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-semibold text-amber-800">
+            🔐 Authentik 注销配置指南（Single Logout）
+          </CardTitle>
+          <CardDescription className="text-xs text-amber-700">
+            配置后，当用户从 Authentik 或其他关联应用退出时，本平台的会话也会自动失效
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 text-sm">
+          {/* Method 1: Front-Channel */}
+          <div className="rounded-lg border border-amber-200 bg-white p-4 space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="rounded bg-emerald-100 px-2 py-0.5 text-xs font-bold text-emerald-700">推荐 · 内网可用</span>
+              <h4 className="font-semibold text-foreground">方式一：正向通道（Front-Channel）</h4>
+            </div>
+            <p className="text-xs text-muted-foreground">通过浏览器 iframe 注销，无需公网可达。适用于内网/本地开发环境。</p>
+            <ol className="list-decimal pl-5 space-y-1 text-xs text-foreground">
+              <li>进入 Authentik → <strong>Applications → Providers</strong>，编辑你的 OAuth2 Provider</li>
+              <li>在 <strong>注销 URI (Logout URI)</strong> 字段填入：<code className="rounded bg-muted px-1.5 py-0.5">{`${window.location.origin}/api/auth/sso/frontchannel-logout`}</code></li>
+              <li><strong>注销方法</strong> 选择：<strong>正向通道（Front-channel）</strong></li>
+              <li>点击 <strong>保存 / Update</strong></li>
+            </ol>
+            <p className="text-xs text-amber-700 italic">原理：用户在 Authentik 注销时，浏览器会加载一个隐藏 iframe 访问此 URL，自动携带 Cookie 使会话失效。</p>
+          </div>
+
+          {/* Method 2: Back-Channel */}
+          <div className="rounded-lg border border-amber-200 bg-white p-4 space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="rounded bg-blue-100 px-2 py-0.5 text-xs font-bold text-blue-700">需公网可达</span>
+              <h4 className="font-semibold text-foreground">方式二：反向通道（Back-Channel）</h4>
+            </div>
+            <p className="text-xs text-muted-foreground">Authentik 服务器直接 POST 签名 Token 到本应用。即使用户浏览器已关闭也能注销。需要 Authentik 能访问本应用地址。</p>
+            <ol className="list-decimal pl-5 space-y-1 text-xs text-foreground">
+              <li>进入 Authentik → <strong>Applications → Providers</strong>，编辑你的 OAuth2 Provider</li>
+              <li>在 <strong>注销 URI (Logout URI)</strong> 字段填入：<code className="rounded bg-muted px-1.5 py-0.5">{`${window.location.origin}/api/auth/sso/backchannel-logout`}</code></li>
+              <li><strong>注销方法</strong> 选择：<strong>反向通道（Back-channel）</strong></li>
+              <li>点击 <strong>保存 / Update</strong></li>
+            </ol>
+            <p className="text-xs text-amber-700 italic">⚠️ 要求：Authentik 服务器必须能通过网络访问到上述 URI。内网/localhost 环境下 Authentik 在公网时此方式不可用，请改用正向通道。</p>
           </div>
         </CardContent>
       </Card>

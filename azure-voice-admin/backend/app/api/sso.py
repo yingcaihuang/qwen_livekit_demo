@@ -252,3 +252,27 @@ async def backchannel_logout(
 
     # OIDC spec requires 200 OK response on success
     return Response(status_code=200)
+
+
+@router.get("/frontchannel-logout")
+async def frontchannel_logout(
+    request: Request,
+    db: aiosqlite.Connection = Depends(get_db),
+):
+    """OIDC Front-Channel Logout: called via hidden iframe in the user's browser.
+
+    When Authentik logs out a user, it renders an iframe pointing to this URL.
+    Since the browser makes the request, it carries the session cookie.
+    We simply invalidate the session from the cookie.
+    """
+    token = request.cookies.get(auth_service.SESSION_COOKIE_NAME)
+    if token:
+        session = await auth_service.load_session(db, token)
+        if session:
+            await auth_service.invalidate_session(db, token)
+            logger.info("Front-channel logout: invalidated session for user %s", session["user_id"])
+
+    # Must return 200 with empty or minimal HTML (iframe response)
+    from fastapi.responses import HTMLResponse
+
+    return HTMLResponse(content="<html><body>Logged out</body></html>", status_code=200)
