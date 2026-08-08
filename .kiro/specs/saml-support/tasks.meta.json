@@ -1,0 +1,353 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 扩展 schema.sql，新增 `saml_config` 和 `saml_login_state` 两张表": [
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786175570574
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786175580970
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786175649371
+      }
+    ],
+    "1.2 更新 `requirements.txt`，添加 `python3-saml>=1.16.0` 依赖": [
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786175570611
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786175581548
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786175650256
+      }
+    ],
+    "2.1 创建 `app/services/saml_service.py`，实现基础设施函数": [
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786175570632
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786175660186
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786175852039
+      }
+    ],
+    "2.2 实现 `saml_service.py` 中的 SP Metadata 生成函数": [
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786175570656
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786175857535
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786176207524
+      }
+    ],
+    "2.3 实现 `saml_service.py` 中的 IdP Metadata 解析函数": [
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786175570679
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786175858384
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786176208379
+      }
+    ],
+    "2.4 实现 `saml_service.py` 中的登录流程函数": [
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786175570698
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786176220093
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786176406423
+      }
+    ],
+    "2.5 实现 `saml_service.py` 中的安全验证函数": [
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786175570721
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786175859042
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786176209237
+      }
+    ],
+    "3. Checkpoint - 确保 SAML 服务层测试通过": [
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786175570750
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786176422836
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786176550507
+      }
+    ],
+    "4.1 创建 `app/api/saml.py`，实现 SAML 公开路由": [
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786175570773
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786176567209
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786176946585
+      }
+    ],
+    "4.2 在 ACS 处理中集成 `provisioning_service.provision_sso_user`": [
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786175570794
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786176960745
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786177099381
+      }
+    ],
+    "4.3 修改 `app/api/sso.py`，扩展 `public-config` 端点返回 `saml_login_enabled` 字段": [
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786175570813
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786176961510
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786177100095
+      }
+    ],
+    "4.4 在 `app/main.py` 中注册 SAML 路由": [
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786175570831
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786176962544
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786177100952
+      }
+    ],
+    "5.1 创建 `app/api/admin_saml.py`，实现 SAML 配置管理路由": [
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786175570848
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786176568001
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786176947527
+      }
+    ],
+    "6. Checkpoint - 确保后端所有测试通过": [
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786175570870
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786177106711
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786177232548
+      }
+    ],
+    "7.1 创建 `frontend/src/components/admin/SamlConfigPanel.tsx` 组件": [
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786175570894
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786177238862
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786177393132
+      }
+    ],
+    "7.2 修改 `frontend/src/pages/admin/SsoConfigPage.tsx`，重构为 Tab 结构": [
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786175570924
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786177399817
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786177618571
+      }
+    ],
+    "8.1 修改 `frontend/src/pages/LoginPage.tsx`，支持多 SSO 入口": [
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786175570946
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786177400862
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786177619254
+      }
+    ],
+    "9. Final Checkpoint - 全部测试通过并验证集成": [
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786175570965
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786177625756
+      },
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786177710707
+      }
+    ],
+    "1. 数据库 Schema 与依赖配置": [
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786175650290
+      }
+    ],
+    "2. SAML 核心服务层": [
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786176406448
+      }
+    ],
+    "5. SAML 管理 API 端点": [
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786176947559
+      }
+    ],
+    "4. SAML 公开 API 端点": [
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786177100978
+      }
+    ],
+    "7. 前端 SAML 配置面板": [
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786177618603
+      }
+    ],
+    "8. 前端登录页多 SSO 入口": [
+      {
+        "executionId": "9dcf3af7-a54b-4d6c-8df2-ecef634a4738",
+        "chatSessionId": "sess_7f534887-0441-4bc7-8e4d-79e754aa725b",
+        "timestamp": 1786177619278
+      }
+    ]
+  }
+}

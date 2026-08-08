@@ -5,6 +5,10 @@ WORKDIR /app
 # Install system dependencies for building Python packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
+    pkg-config \
+    libxml2-dev \
+    libxmlsec1-dev \
+    libxmlsec1-openssl \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies

@@ -160,3 +160,31 @@ CREATE TABLE IF NOT EXISTS oidc_login_state (
     code_verifier TEXT NOT NULL,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- ============================================================
+-- SAML 2.0 SP 支持表
+-- ============================================================
+
+-- SAML 配置（单例行；存储 IdP/SP 配置）
+CREATE TABLE IF NOT EXISTS saml_config (
+    id INTEGER PRIMARY KEY CHECK (id = 1),  -- 单例行
+    idp_entity_id TEXT,
+    idp_sso_url TEXT,
+    idp_slo_url TEXT,
+    idp_x509_cert TEXT,                     -- PEM 格式 X.509 证书
+    sp_entity_id TEXT,                      -- 默认: {origin}/api/saml/metadata
+    groups_attribute TEXT NOT NULL DEFAULT 'groups',
+    nameid_format TEXT NOT NULL DEFAULT 'urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress',
+    sign_algorithm TEXT NOT NULL DEFAULT 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha256',
+    login_button_enabled INTEGER NOT NULL DEFAULT 0,
+    idp_metadata_url TEXT,
+    clock_skew_seconds INTEGER NOT NULL DEFAULT 120,
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- SAML 登录请求状态（SP-Initiated 流程 AuthnRequest ID 存储，防重放）
+CREATE TABLE IF NOT EXISTS saml_login_state (
+    request_id TEXT PRIMARY KEY,            -- AuthnRequest 的 ID 属性
+    relay_state TEXT,                       -- 登录后跳转路径
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);

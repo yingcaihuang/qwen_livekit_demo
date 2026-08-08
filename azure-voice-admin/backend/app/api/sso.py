@@ -49,7 +49,16 @@ async def _load_sso_config(db: aiosqlite.Connection) -> dict | None:
 async def public_config(db: aiosqlite.Connection = Depends(get_db)):
     """Return public SSO config (login button enabled state). No auth required."""
     config = await _load_sso_config(db)
-    return {"login_button_enabled": config["login_button_enabled"] if config else False}
+
+    # Check SAML login enabled status
+    cursor = await db.execute("SELECT login_button_enabled FROM saml_config WHERE id = 1")
+    saml_row = await cursor.fetchone()
+    saml_login_enabled = bool(saml_row[0]) if saml_row else False
+
+    return {
+        "login_button_enabled": config["login_button_enabled"] if config else False,
+        "saml_login_enabled": saml_login_enabled,
+    }
 
 
 @router.get("/login")

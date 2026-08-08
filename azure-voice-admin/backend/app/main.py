@@ -239,6 +239,20 @@ except (ImportError, ModuleNotFoundError):
     pass
 
 try:
+    from app.api.admin_saml import router as admin_saml_router
+
+    app.include_router(admin_saml_router)
+except (ImportError, ModuleNotFoundError):
+    pass
+
+try:
+    from app.api.saml import router as saml_router
+
+    app.include_router(saml_router)
+except (ImportError, ModuleNotFoundError):
+    pass
+
+try:
     from app.api.admin_roles import router as admin_roles_router
 
     app.include_router(admin_roles_router)

@@ -18,6 +18,7 @@ async def provision_sso_user(
     username: str,
     email: str | None,
     groups: list[str],
+    auth_source: str = "sso",
 ) -> str:
     """Provision or update an SSO user based on OIDC userinfo.
 
@@ -42,8 +43,8 @@ async def provision_sso_user(
         user_id = secrets.token_hex(16)
         await db.execute(
             "INSERT INTO users (id, username, email, auth_source, sso_subject) "
-            "VALUES (?, ?, ?, 'sso', ?)",
-            (user_id, username, email, subject),
+            "VALUES (?, ?, ?, ?, ?)",
+            (user_id, username, email, auth_source, subject),
         )
 
     # Compute roles from group_role_mappings

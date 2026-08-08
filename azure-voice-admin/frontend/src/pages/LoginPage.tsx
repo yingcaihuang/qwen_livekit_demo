@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/components/auth/AuthProvider'
+import { Shield } from 'lucide-react'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -10,6 +11,7 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [ssoEnabled, setSsoEnabled] = useState(false)
+  const [samlEnabled, setSamlEnabled] = useState(false)
 
   // Redirect if already logged in
   useEffect(() => {
@@ -20,7 +22,10 @@ export function LoginPage() {
   useEffect(() => {
     fetch('/api/auth/sso/public-config')
       .then(r => r.json())
-      .then(d => setSsoEnabled(d.login_button_enabled))
+      .then(d => {
+        setSsoEnabled(d.login_button_enabled)
+        setSamlEnabled(d.saml_login_enabled)
+      })
       .catch(() => {})
   }, [])
 
@@ -107,8 +112,8 @@ export function LoginPage() {
           </button>
         </form>
 
-        {/* SSO Divider + Button */}
-        {ssoEnabled && (
+        {/* SSO Divider + Buttons */}
+        {(ssoEnabled || samlEnabled) && (
           <>
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -118,15 +123,30 @@ export function LoginPage() {
                 <span className="bg-white px-2 text-gray-400">或</span>
               </div>
             </div>
-            <a
-              href="/api/auth/sso/login"
-              className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 10.5V6.75a4.5 4.5 0 1 1 9 0v3.75M3.75 21.75h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H3.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
-              </svg>
-              统一认证入口
-            </a>
+
+            <div className="space-y-3">
+              {ssoEnabled && (
+                <a
+                  href="/api/auth/sso/login"
+                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 10.5V6.75a4.5 4.5 0 1 1 9 0v3.75M3.75 21.75h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H3.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                  </svg>
+                  统一认证入口
+                </a>
+              )}
+
+              {samlEnabled && (
+                <a
+                  href="/api/saml/login"
+                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+                >
+                  <Shield className="h-4 w-4" />
+                  SAML 企业登录
+                </a>
+              )}
+            </div>
           </>
         )}
       </div>
