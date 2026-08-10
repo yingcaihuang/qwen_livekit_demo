@@ -2,6 +2,9 @@
 FROM node:22-alpine AS frontend-builder
 WORKDIR /app
 
+# 使用国内 npm 镜像源加速
+RUN npm config set registry https://registry.npmmirror.com
+
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@9 --activate
 

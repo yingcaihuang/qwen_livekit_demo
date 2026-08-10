@@ -2,6 +2,9 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
+# 使用国内镜像源加速（apt: 阿里云, pip: 清华）
+RUN sed -i 's|deb.debian.org|mirrors.aliyun.com|g' /etc/apt/sources.list.d/debian.sources
+
 # Install system dependencies for building Python packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
@@ -13,7 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Install Python dependencies
 COPY pyproject.toml ./
-RUN pip install --no-cache-dir -e .
+RUN pip install --no-cache-dir -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com -e .
 
 # Copy application code
 COPY . .
