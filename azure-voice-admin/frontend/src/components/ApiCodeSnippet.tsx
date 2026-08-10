@@ -81,7 +81,13 @@ export function ApiCodeSnippet({ endpoint, apiKey, body, operation }: ApiCodeSni
   const [copied, setCopied] = useState(false)
   const [expanded, setExpanded] = useState(false)
 
-  const fullUrl = `${endpoint.replace(/\/$/, '')}/openai/v1/${operation}`
+  // Resolve URL: if endpoint already contains /openai/v1, just append operation;
+  // otherwise append /openai/v1/{operation}
+  const base = endpoint.replace(/\/$/, '')
+  const v1Marker = '/openai/v1'
+  const fullUrl = base.includes(v1Marker)
+    ? `${base.substring(0, base.indexOf(v1Marker) + v1Marker.length)}/${operation}`
+    : `${base}${v1Marker}/${operation}`
   const key = apiKey || 'YOUR_API_KEY'
 
   const generators: Record<Language, () => string> = {
