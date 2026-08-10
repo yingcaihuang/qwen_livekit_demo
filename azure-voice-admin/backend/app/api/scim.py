@@ -410,8 +410,8 @@ async def _sync_group_members(
     # Find users matching the member external IDs
     placeholders = ",".join("?" for _ in member_external_ids)
     cursor = await db.execute(
-        f"SELECT id, sso_subject, sso_groups FROM users WHERE sso_subject IN ({placeholders})",
-        member_external_ids,
+        f"SELECT id, sso_subject, sso_groups FROM users WHERE id IN ({placeholders}) OR sso_subject IN ({placeholders})",
+        member_external_ids + member_external_ids,
     )
     member_rows = await cursor.fetchall()
     member_user_ids = set()
@@ -551,7 +551,8 @@ async def patch_group(
                 # Add these users to the group
                 for ext_id in member_ids:
                     cursor2 = await db.execute(
-                        "SELECT id, sso_groups FROM users WHERE sso_subject = ?", (ext_id,)
+                        "SELECT id, sso_groups FROM users WHERE id = ? OR sso_subject = ?",
+                        (ext_id, ext_id),
                     )
                     user_row = await cursor2.fetchone()
                     if user_row:
@@ -585,7 +586,8 @@ async def patch_group(
                 # Remove these users from the group
                 for ext_id in member_ids:
                     cursor2 = await db.execute(
-                        "SELECT id, sso_groups FROM users WHERE sso_subject = ?", (ext_id,)
+                        "SELECT id, sso_groups FROM users WHERE id = ? OR sso_subject = ?",
+                        (ext_id, ext_id),
                     )
                     user_row = await cursor2.fetchone()
                     if user_row:
