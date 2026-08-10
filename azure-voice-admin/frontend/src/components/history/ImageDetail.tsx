@@ -32,6 +32,7 @@ export interface ImageDetailData {
   n?: number
   endpoint?: string
   deployment?: string
+  api_key?: string
   params?: {
     size?: string
     quality?: string
@@ -238,6 +239,7 @@ export function ImageDetail({ data }: ImageDetailProps) {
           <CardContent>
             <ApiCodeSnippet
               endpoint={data.endpoint}
+              apiKey={data.api_key}
               operation={data.has_reference ? 'images/edits' : 'images/generations'}
               body={{
                 model: data.deployment || '',

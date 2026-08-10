@@ -41,23 +41,26 @@ def _check_livekit_reachable(livekit_url: str, timeout: float = 3.0) -> bool:
 
 
 def _check_avx2_support() -> bool:
-    """Check if the CPU supports AVX2 instruction set.
+    """Check if livekit-agents native extensions are usable.
 
-    livekit-agents >= 1.0 requires AVX2 for its native Rust extensions.
-    Returns True if AVX2 is available, False otherwise.
+    The livekit SDK >= 1.0 includes Rust-compiled native extensions that may
+    require AVX2 on x86_64. Rather than checking CPU flags (which is unreliable
+    in Docker/VM environments), we directly attempt to import livekit.agents.
+    If the import succeeds without segfault, realtime features are available.
     """
-    try:
-        with open("/proc/cpuinfo") as f:
-            cpuinfo = f.read()
-            return "avx2" in cpuinfo
-    except (FileNotFoundError, PermissionError):
-        # Non-Linux or can't read cpuinfo, try importing livekit.agents
-        try:
-            import livekit.agents  # noqa: F401
+    import subprocess
+    import sys
 
-            return True
-        except Exception:
-            return False
+    try:
+        # Run import in a subprocess to catch segfaults/core dumps
+        result = subprocess.run(
+            [sys.executable, "-c", "import livekit.agents"],
+            capture_output=True,
+            timeout=10,
+        )
+        return result.returncode == 0
+    except (subprocess.TimeoutExpired, Exception):
+        return False
 
 
 async def _session_cleanup_loop():
