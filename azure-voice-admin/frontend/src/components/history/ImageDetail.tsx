@@ -1,7 +1,8 @@
-import { AlertTriangle, ArrowDown, ArrowUp, Calendar, ImageIcon, Layers, Loader2 } from 'lucide-react'
+import { AlertTriangle, ArrowDown, ArrowUp, Calendar, Code2, ImageIcon, Layers, Loader2 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TypeBadge } from '@/components/instances/TypeBadge'
 import { ImageMetrics } from '@/components/image/ImageMetrics'
+import { ApiCodeSnippet } from '@/components/ApiCodeSnippet'
 
 /**
  * 图像生成详情数据形态，对应后端 `GET /api/images/{generation_id}` 的行字典：
@@ -29,6 +30,8 @@ export interface ImageDetailData {
   output_format?: string
   compression?: number
   n?: number
+  endpoint?: string
+  deployment?: string
   params?: {
     size?: string
     quality?: string
@@ -221,6 +224,31 @@ export function ImageDetail({ data }: ImageDetailProps) {
             </div>
           )}
         </div>
+      )}
+
+      {/* API Code Snippet */}
+      {data.endpoint && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+              <Code2 className="h-4 w-4 text-blue-500" />
+              等效 API 请求
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ApiCodeSnippet
+              endpoint={data.endpoint}
+              operation={data.has_reference ? 'images/edits' : 'images/generations'}
+              body={{
+                model: data.deployment || '',
+                prompt: data.prompt,
+                size: data.size ?? data.params?.size ?? '1024x1024',
+                quality: data.quality ?? data.params?.quality ?? 'auto',
+                n: data.n ?? data.params?.n ?? 1,
+              }}
+            />
+          </CardContent>
+        </Card>
       )}
     </div>
   )

@@ -182,6 +182,18 @@ async def get_generation(
     generation = await _image_service.get_generation(db, generation_id, user=user)
     if generation is None:
         raise HTTPException(status_code=404, detail="Image generation not found")
+
+    # Enrich with instance endpoint/deployment for API code snippet
+    if generation.get("instance_id"):
+        inst_cursor = await db.execute(
+            "SELECT endpoint, deployment FROM instances WHERE id = ?",
+            (generation["instance_id"],),
+        )
+        inst_row = await inst_cursor.fetchone()
+        if inst_row:
+            generation["endpoint"] = inst_row[0]
+            generation["deployment"] = inst_row[1]
+
     return generation
 
 
