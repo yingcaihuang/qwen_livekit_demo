@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, LayoutGrid, List, Trash2, Download, Upload, AlertTriangle } from 'lucide-react'
+import { Plus, LayoutGrid, List, Trash2, Download, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { InstanceCard } from '@/components/instances/InstanceCard'
 import { ExportDialog } from '@/components/instances/ExportDialog'
 import { ImportDialog } from '@/components/instances/ImportDialog'
 import { useApi } from '@/hooks/useApi'
-import { useSystemStatus } from '@/hooks/useSystemStatus'
+import { RealtimeWarning } from '@/components/RealtimeWarning'
 import { cn } from '@/lib/utils'
 import { TypeBadge } from '@/components/instances/TypeBadge'
 import type { Instance, InstanceType } from '@/types'
@@ -46,7 +46,6 @@ export function InstancesPage() {
 
   const url = typeFilter === 'all' ? '/api/instances' : `/api/instances?type=${typeFilter}`
   const { data: instances, loading, error, refetch } = useApi<Instance[]>(url)
-  const systemStatus = useSystemStatus()
 
   const handleDelete = async (id: string) => {
     if (!confirm('确定要删除此实例吗？')) return
@@ -115,16 +114,7 @@ export function InstancesPage() {
         </div>
       </div>
 
-      {/* AVX2 Warning */}
-      {systemStatus && !systemStatus.realtime_available && (
-        <div className="flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
-          <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600" />
-          <div className="text-sm">
-            <p className="font-medium text-amber-800">实时功能不可用</p>
-            <p className="text-amber-700">当前服务器 CPU 不支持 AVX2 指令集，语音对话、实时翻译和实时转录功能无法使用。文本对话和图像生成功能正常。</p>
-          </div>
-        </div>
-      )}
+      <RealtimeWarning />
 
       {/* Filter + View Toggle */}
       <div className="flex items-center justify-between gap-4">

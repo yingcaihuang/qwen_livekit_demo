@@ -6,6 +6,7 @@ import { TokenDonutChart } from '@/components/dashboard/TokenDonutChart'
 import { SessionsChart } from '@/components/dashboard/SessionsChart'
 import { TypeUsagePanel } from '@/components/dashboard/TypeUsagePanel'
 import { useApi } from '@/hooks/useApi'
+import { RealtimeWarning } from '@/components/RealtimeWarning'
 import { cn } from '@/lib/utils'
 import type { DashboardStats, InstanceType, InstanceUsage, TypeUsage } from '@/types'
 
@@ -74,6 +75,8 @@ export function DashboardPage() {
           })}
         </div>
       </div>
+
+      <RealtimeWarning />
 
       {loading ? (
         <div className="flex items-center justify-center p-12">

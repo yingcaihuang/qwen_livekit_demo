@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SessionList } from '@/components/history/SessionList'
 import { HistoryFilter, type HistoryTypeFilter } from '@/components/history/HistoryFilter'
+import { RealtimeWarning } from '@/components/RealtimeWarning'
 import type { Instance, HistoryItem, PaginatedHistory } from '@/types'
 
 const PAGE_SIZE = 10
@@ -106,6 +107,8 @@ export function HistoryPage() {
         </h1>
         <p className="text-sm text-muted-foreground">查看语音 / 对话 / 图像测试记录与用量</p>
       </div>
+
+      <RealtimeWarning />
 
       {/* Filters */}
       <HistoryFilter
