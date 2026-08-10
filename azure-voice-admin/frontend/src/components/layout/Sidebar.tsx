@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Server, History, Users, Shield, Settings, LogOut } from 'lucide-react'
+import { LayoutDashboard, Server, History, Users, Shield, Settings, LogOut, KeyRound } from 'lucide-react'
 import { useAuth } from '@/components/auth/AuthProvider'
 
 interface NavItem {
@@ -86,12 +86,17 @@ export function Sidebar() {
 
       {/* User info + logout at bottom */}
       {user && (
-        <div className="border-t border-border p-3">
+        <div className="border-t border-border p-3 space-y-1">
           <div className="flex items-center justify-between px-3 py-2">
             <span className="text-xs text-muted-foreground truncate">{user.username}</span>
-            <button onClick={logout} className="text-muted-foreground hover:text-foreground" title="退出登录">
-              <LogOut className="h-4 w-4" />
-            </button>
+            <div className="flex items-center gap-1">
+              <Link to="/change-password" className="text-muted-foreground hover:text-foreground" title="修改密码">
+                <KeyRound className="h-4 w-4" />
+              </Link>
+              <button onClick={logout} className="text-muted-foreground hover:text-foreground" title="退出登录">
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
       )}

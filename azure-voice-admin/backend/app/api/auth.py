@@ -148,6 +148,46 @@ async def logout(
     return result
 
 
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
+@router.post("/change-password")
+async def change_password(
+    body: ChangePasswordRequest,
+    request: Request,
+    user: CurrentUser = Depends(get_current_user),
+    db: aiosqlite.Connection = Depends(get_db),
+):
+    """Change current user's password. Requires valid current password."""
+    # Validate new password length
+    if len(body.new_password) < 12:
+        raise HTTPException(status_code=422, detail="新密码长度至少12个字符")
+
+    # Load current password hash
+    cursor = await db.execute(
+        "SELECT password_hash, auth_source FROM users WHERE id = ?", (user.id,)
+    )
+    row = await cursor.fetchone()
+    if not row or row[1] != "local":
+        raise HTTPException(status_code=400, detail="仅本地账号可修改密码")
+
+    # Verify current password
+    if not auth_service.verify_password(body.current_password, row[0]):
+        raise HTTPException(status_code=400, detail="当前密码错误")
+
+    # Update password and clear must_change_password flag
+    new_hash = auth_service.hash_password(body.new_password)
+    await db.execute(
+        "UPDATE users SET password_hash = ?, must_change_password = 0, updated_at = datetime('now') WHERE id = ?",
+        (new_hash, user.id),
+    )
+    await db.commit()
+
+    return {"detail": "密码已修改"}
+
+
 @router.get("/me")
 async def me(user: CurrentUser = Depends(get_current_user)):
     """Return current authenticated user info."""
