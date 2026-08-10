@@ -8,6 +8,8 @@ services:
       - "80:80"
       - "443:443"
       - "443:443/udp"
+    environment:
+      - SITE_DOMAIN=${SITE_DOMAIN:-:80}
     volumes:
       - caddy_data:/data
       - caddy_config:/config
@@ -27,7 +29,7 @@ services:
       - .env.production
     environment:
       - LIVEKIT_URL=ws://livekit:7880
-      - LIVEKIT_PUBLIC_URL=ws://localhost:7880
+      - LIVEKIT_PUBLIC_URL=${LIVEKIT_PUBLIC_URL:-ws://localhost:7880}
       - DB_PATH=/app/data/voice_admin.db
       - PORT=8090
       - AUTH_SECRET_KEY=6_0Edc3WKFaGWyYPO18HsbUGv-I22PqXwa7vB6Hp80M=
