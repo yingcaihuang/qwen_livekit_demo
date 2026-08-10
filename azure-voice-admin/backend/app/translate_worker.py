@@ -276,9 +276,26 @@ async def entrypoint(ctx: JobContext) -> None:
                 details=str(ev) if ev else "",
             )
 
+        # Subscribe to user and agent state changes for debug logging
+        @session.on("user_state_changed")
+        def _on_user_state(ev) -> None:
+            emit_event(
+                f"user.{ev.new_state}",
+                direction="inbound",
+                payload=json.dumps({"old_state": ev.old_state, "new_state": ev.new_state}),
+            )
+
+        @session.on("agent_state_changed")
+        def _on_agent_state(ev) -> None:
+            emit_event(
+                f"agent.{ev.new_state}",
+                direction="internal",
+                payload=json.dumps({"old_state": ev.old_state, "new_state": ev.new_state}),
+            )
+
         emit_event("session.started")
 
-        # Start the agent session - this blocks until the session ends
+        # Start the agent session
         await session.start(agent=TranslateAssistant(target_language), room=ctx.room)
 
         emit_event(
@@ -290,6 +307,28 @@ async def entrypoint(ctx: JobContext) -> None:
                 }
             ),
         )
+
+        # For translation models, session.start() may return immediately
+        # since there's no standard dialogue loop. We need to keep the worker alive
+        # until the room is disconnected (user stops the session).
+        # Wait for the room disconnect event.
+        disconnect_future = asyncio.get_event_loop().create_future()
+
+        @ctx.room.on("disconnected")
+        def _on_disconnected(*args) -> None:
+            if not disconnect_future.done():
+                disconnect_future.set_result(True)
+
+        @ctx.room.on("participant_disconnected")
+        def _on_participant_left(*args) -> None:
+            # If the user participant leaves, end the session
+            if not disconnect_future.done():
+                disconnect_future.set_result(True)
+
+        try:
+            await asyncio.wait_for(disconnect_future, timeout=3600)  # Max 1 hour
+        except TimeoutError:
+            emit_event("session.timeout")
 
     except Exception as exc:
         emit_error("Translate session error", details=str(exc))
