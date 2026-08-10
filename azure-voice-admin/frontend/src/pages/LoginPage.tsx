@@ -15,7 +15,13 @@ export function LoginPage() {
 
   // Redirect if already logged in
   useEffect(() => {
-    if (user) navigate('/', { replace: true })
+    if (user) {
+      if (user.must_change_password && user.auth_source === 'local') {
+        navigate('/change-password', { replace: true })
+      } else {
+        navigate('/', { replace: true })
+      }
+    }
   }, [user, navigate])
 
   // Check SSO config
