@@ -444,6 +444,15 @@ async def _sync_group_members(
                 await db.execute(
                     "INSERT INTO user_roles (user_id, role) VALUES (?, ?)", (user_id, role)
                 )
+        # Auto-enable if user was disabled and now has a mapped group
+        cursor3 = await db.execute("SELECT is_active FROM users WHERE id = ?", (user_id,))
+        active_row = await cursor3.fetchone()
+        if active_row and not active_row[0]:
+            await db.execute(
+                "UPDATE users SET is_active = 1, updated_at = datetime('now') WHERE id = ?",
+                (user_id,),
+            )
+            logger.info("SCIM: auto-enabled user %s (added to group '%s')", user_id, group_name)
 
     # Remove group from users who are no longer members
     cursor = await db.execute(
