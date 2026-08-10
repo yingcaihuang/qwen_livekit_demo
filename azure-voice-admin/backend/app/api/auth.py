@@ -92,6 +92,31 @@ async def login(
     }
 
 
+@router.get("/initial-setup")
+async def initial_setup(db: aiosqlite.Connection = Depends(get_db)):
+    """Check if initial admin setup is pending (admin still has default password).
+
+    Returns the default credentials hint if a super_admin user still has
+    must_change_password=true. Once the password is changed, returns no hint.
+    """
+    # Check if there's a local super_admin with must_change_password=true
+    cursor = await db.execute(
+        "SELECT u.username FROM users u "
+        "JOIN user_roles ur ON u.id = ur.user_id "
+        "WHERE ur.role = 'super_admin' AND u.auth_source = 'local' AND u.must_change_password = 1 "
+        "LIMIT 1"
+    )
+    row = await cursor.fetchone()
+    if row:
+        return {
+            "show_hint": True,
+            "username": row[0],
+            "password": "ChangeMe@2024",
+            "message": "首次使用请用默认账号登录，登录后需立即修改密码",
+        }
+    return {"show_hint": False}
+
+
 @router.post("/logout")
 async def logout(
     request: Request,

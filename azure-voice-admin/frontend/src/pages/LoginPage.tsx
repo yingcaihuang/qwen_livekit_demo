@@ -12,6 +12,7 @@ export function LoginPage() {
   const [error, setError] = useState('')
   const [ssoEnabled, setSsoEnabled] = useState(false)
   const [samlEnabled, setSamlEnabled] = useState(false)
+  const [initialHint, setInitialHint] = useState<{show_hint: boolean, username?: string, password?: string, message?: string} | null>(null)
 
   // Redirect if already logged in
   useEffect(() => {
@@ -32,6 +33,14 @@ export function LoginPage() {
         setSsoEnabled(d.login_button_enabled)
         setSamlEnabled(d.saml_login_enabled)
       })
+      .catch(() => {})
+  }, [])
+
+  // Check initial setup hint
+  useEffect(() => {
+    fetch('/api/auth/initial-setup')
+      .then(r => r.json())
+      .then(setInitialHint)
       .catch(() => {})
   }, [])
 
@@ -70,6 +79,17 @@ export function LoginPage() {
           <h1 className="text-2xl font-bold text-gray-900">Azure OpenAI 测试平台</h1>
           <p className="mt-2 text-sm text-gray-500">请登录以继续</p>
         </div>
+
+        {/* Initial setup hint */}
+        {initialHint?.show_hint && (
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm">
+            <p className="font-medium text-blue-800">{initialHint.message}</p>
+            <div className="mt-2 space-y-1 text-blue-700">
+              <p>账号: <code className="rounded bg-blue-100 px-1.5 py-0.5 font-mono text-blue-900">{initialHint.username}</code></p>
+              <p>密码: <code className="rounded bg-blue-100 px-1.5 py-0.5 font-mono text-blue-900">{initialHint.password}</code></p>
+            </div>
+          </div>
+        )}
 
         {/* Login Form */}
         <form onSubmit={handleLogin} className="space-y-4">

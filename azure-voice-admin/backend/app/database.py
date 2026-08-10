@@ -117,24 +117,21 @@ async def _migrate(db: aiosqlite.Connection) -> None:
 
     # 8) Seed super_admin account if none exists (Req 3.1, 3.2).
     #    Idempotent: only creates the account when no super_admin role exists
-    #    in the database. If SEED_ADMIN_PASSWORD is not set, a random password
-    #    is generated and logged once via warning so the deployer can use it
-    #    for first login. The account is marked must_change_password=1.
+    #    in the database. If SEED_ADMIN_PASSWORD is not set, uses a fixed default
+    #    password that is shown on the login page until changed.
+    #    The account is marked must_change_password=1.
     cursor = await db.execute("SELECT COUNT(*) FROM user_roles WHERE role = 'super_admin'")
     (count,) = await cursor.fetchone()
     if count == 0:
         from app.services.auth_service import hash_password
 
         seed_username = os.environ.get("SEED_ADMIN_USERNAME", "admin")
-        seed_password = os.environ.get("SEED_ADMIN_PASSWORD", "")
-        if not seed_password:
-            seed_password = secrets.token_urlsafe(16)
-            _logger.warning(
-                "SEED_ADMIN_PASSWORD not set. Generated initial password for '%s': %s "
-                "(change it immediately after first login)",
-                seed_username,
-                seed_password,
-            )
+        seed_password = os.environ.get("SEED_ADMIN_PASSWORD", "ChangeMe@2024")
+        _logger.info(
+            "Seed admin '%s' created. Default password: %s (must change on first login)",
+            seed_username,
+            seed_password,
+        )
         user_id = secrets.token_hex(16)
         password_hash = hash_password(seed_password)
         await db.execute(
