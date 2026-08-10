@@ -258,3 +258,70 @@ async def reset_password(
     await auth_service.invalidate_user_sessions(db, user_id)
 
     return {"new_password": new_password}
+
+
+class BatchAction(BaseModel):
+    user_ids: list[str]
+
+
+@router.post("/batch/disable", status_code=200)
+async def batch_disable_users(
+    body: BatchAction,
+    user: CurrentUser = Depends(require_permission("user:manage")),
+    db: aiosqlite.Connection = Depends(get_db),
+):
+    """批量禁用用户。不能禁用自己。"""
+    affected = 0
+    for uid in body.user_ids:
+        if uid == user.id:
+            continue  # Skip self
+        cursor = await db.execute("SELECT id FROM users WHERE id = ?", (uid,))
+        if await cursor.fetchone():
+            await db.execute(
+                "UPDATE users SET is_active = 0, updated_at = datetime('now') WHERE id = ?",
+                (uid,),
+            )
+            await auth_service.invalidate_user_sessions(db, uid)
+            affected += 1
+    await db.commit()
+    return {"affected": affected}
+
+
+@router.post("/batch/enable", status_code=200)
+async def batch_enable_users(
+    body: BatchAction,
+    user: CurrentUser = Depends(require_permission("user:manage")),
+    db: aiosqlite.Connection = Depends(get_db),
+):
+    """批量启用用户。"""
+    affected = 0
+    for uid in body.user_ids:
+        cursor = await db.execute("SELECT id FROM users WHERE id = ?", (uid,))
+        if await cursor.fetchone():
+            await db.execute(
+                "UPDATE users SET is_active = 1, updated_at = datetime('now') WHERE id = ?",
+                (uid,),
+            )
+            affected += 1
+    await db.commit()
+    return {"affected": affected}
+
+
+@router.post("/batch/delete", status_code=200)
+async def batch_delete_users(
+    body: BatchAction,
+    user: CurrentUser = Depends(require_permission("user:manage")),
+    db: aiosqlite.Connection = Depends(get_db),
+):
+    """批量删除用户。不能删除自己。"""
+    affected = 0
+    for uid in body.user_ids:
+        if uid == user.id:
+            continue  # Skip self
+        cursor = await db.execute("SELECT id FROM users WHERE id = ?", (uid,))
+        if await cursor.fetchone():
+            await auth_service.invalidate_user_sessions(db, uid)
+            await db.execute("DELETE FROM users WHERE id = ?", (uid,))
+            affected += 1
+    await db.commit()
+    return {"affected": affected}

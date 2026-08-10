@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Plus, UserPlus } from 'lucide-react'
+import { Plus, UserPlus, Trash2, Ban, CheckCircle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -36,17 +36,60 @@ export function UsersPage() {
   const [newUser, setNewUser] = useState({ username: '', password: '', email: '', roles: ['viewer'] })
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState('')
+  const [selected, setSelected] = useState<Set<string>>(new Set())
 
   const loadUsers = () => {
     fetch('/api/admin/users', { credentials: 'include' })
       .then((r) => r.json())
-      .then(setUsers)
+      .then((data) => {
+        setUsers(data)
+        setSelected(new Set())
+      })
       .catch(() => {})
       .finally(() => setLoading(false))
   }
   useEffect(() => {
     loadUsers()
   }, [])
+
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selected.size === users.length) {
+      setSelected(new Set())
+    } else {
+      setSelected(new Set(users.map((u) => u.id)))
+    }
+  }
+
+  const batchAction = async (action: 'disable' | 'enable' | 'delete') => {
+    const ids = Array.from(selected)
+    if (ids.length === 0) return
+
+    const labels = { disable: '禁用', enable: '启用', delete: '删除' }
+    if (!confirm(`确定要批量${labels[action]} ${ids.length} 个用户吗？${action === 'delete' ? '此操作不可撤销。' : ''}`)) return
+
+    const res = await fetch(`/api/admin/users/batch/${action}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ user_ids: ids }),
+    })
+    if (res.ok) {
+      const data = await res.json()
+      alert(`成功${labels[action]} ${data.affected} 个用户`)
+      loadUsers()
+    } else {
+      alert('操作失败')
+    }
+  }
 
   const handleCreate = async () => {
     setCreating(true)
@@ -159,6 +202,53 @@ export function UsersPage() {
         </Button>
       </div>
 
+      {/* Batch Actions Toolbar */}
+      {selected.size > 0 && (
+        <Card className="border-indigo-200 bg-indigo-50/50">
+          <CardContent className="flex items-center gap-3 py-3">
+            <span className="text-sm font-medium text-indigo-700">
+              已选择 {selected.size} 个用户
+            </span>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => batchAction('disable')}
+                className="text-amber-700 border-amber-300 hover:bg-amber-50"
+              >
+                <Ban className="mr-1 h-3.5 w-3.5" />
+                批量禁用
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => batchAction('enable')}
+                className="text-emerald-700 border-emerald-300 hover:bg-emerald-50"
+              >
+                <CheckCircle className="mr-1 h-3.5 w-3.5" />
+                批量启用
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => batchAction('delete')}
+              >
+                <Trash2 className="mr-1 h-3.5 w-3.5" />
+                批量删除
+              </Button>
+            </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setSelected(new Set())}
+              className="ml-auto text-xs"
+            >
+              取消选择
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Create User Card */}
       {showCreate && (
         <Card>
@@ -233,24 +323,48 @@ export function UsersPage() {
             <table className="w-full text-sm">
               <thead className="border-b bg-muted/50">
                 <tr>
-                  <th className="px-6 py-3 text-left font-medium text-muted-foreground">用户名</th>
-                  <th className="px-6 py-3 text-left font-medium text-muted-foreground">来源</th>
-                  <th className="px-6 py-3 text-left font-medium text-muted-foreground">角色</th>
-                  <th className="px-6 py-3 text-left font-medium text-muted-foreground">SSO 组</th>
-                  <th className="px-6 py-3 text-left font-medium text-muted-foreground">状态</th>
-                  <th className="px-6 py-3 text-left font-medium text-muted-foreground">操作</th>
+                  <th className="px-4 py-3 text-left">
+                    <input
+                      type="checkbox"
+                      checked={selected.size === users.length && users.length > 0}
+                      onChange={toggleSelectAll}
+                      className="h-4 w-4 rounded border-gray-300"
+                      aria-label="全选"
+                    />
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">用户名</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">来源</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">角色</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">SSO 组</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">状态</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">操作</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map((u) => (
-                  <tr key={u.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
-                    <td className="px-6 py-3 font-medium">{u.username}</td>
-                    <td className="px-6 py-3">
+                  <tr
+                    key={u.id}
+                    className={cn(
+                      'border-b last:border-0 transition-colors',
+                      selected.has(u.id) ? 'bg-indigo-50/50' : 'hover:bg-muted/30'
+                    )}
+                  >
+                    <td className="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={selected.has(u.id)}
+                        onChange={() => toggleSelect(u.id)}
+                        className="h-4 w-4 rounded border-gray-300"
+                        aria-label={`选择 ${u.username}`}
+                      />
+                    </td>
+                    <td className="px-4 py-3 font-medium">{u.username}</td>
+                    <td className="px-4 py-3">
                       <Badge variant="secondary" className="text-xs">
                         {u.auth_source}
                       </Badge>
                     </td>
-                    <td className="px-6 py-3">
+                    <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
                         <select
                           value={u.roles[0] || 'viewer'}
@@ -273,7 +387,7 @@ export function UsersPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-3">
+                    <td className="px-4 py-3">
                       {u.auth_source === 'sso' && u.groups.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
                           {u.groups.map((g) => (
@@ -286,7 +400,7 @@ export function UsersPage() {
                         <span className="text-xs text-muted-foreground">-</span>
                       )}
                     </td>
-                    <td className="px-6 py-3">
+                    <td className="px-4 py-3">
                       <span className="inline-flex items-center gap-1.5 text-xs">
                         <span
                           className={cn(
@@ -297,7 +411,7 @@ export function UsersPage() {
                         {u.is_active ? '启用' : '禁用'}
                       </span>
                     </td>
-                    <td className="px-6 py-3 space-x-1">
+                    <td className="px-4 py-3 space-x-1">
                       <Button
                         variant="ghost"
                         size="sm"
