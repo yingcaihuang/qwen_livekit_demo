@@ -40,6 +40,26 @@ def _check_livekit_reachable(livekit_url: str, timeout: float = 3.0) -> bool:
         return False
 
 
+def _check_avx2_support() -> bool:
+    """Check if the CPU supports AVX2 instruction set.
+
+    livekit-agents >= 1.0 requires AVX2 for its native Rust extensions.
+    Returns True if AVX2 is available, False otherwise.
+    """
+    try:
+        with open("/proc/cpuinfo") as f:
+            cpuinfo = f.read()
+            return "avx2" in cpuinfo
+    except (FileNotFoundError, PermissionError):
+        # Non-Linux or can't read cpuinfo, try importing livekit.agents
+        try:
+            import livekit.agents  # noqa: F401
+
+            return True
+        except Exception:
+            return False
+
+
 async def _session_cleanup_loop():
     """Background task: periodically mark stale sessions as cancelled."""
     import aiosqlite
@@ -126,6 +146,19 @@ async def lifespan(app: FastAPI):
     # Store connectivity status in app.state for other endpoints to check
     app.state.livekit_reachable = livekit_reachable
     app.state.livekit_url = livekit_url
+
+    # Check AVX2 support (required for livekit-agents native extensions)
+    avx2_supported = _check_avx2_support()
+    app.state.avx2_supported = avx2_supported
+    # realtime features (voice, translate, transcribe) require both LiveKit and AVX2
+    app.state.realtime_available = livekit_reachable and avx2_supported
+
+    if not avx2_supported:
+        logger.warning(
+            "CPU does not support AVX2 instructions. "
+            "Realtime features (voice, translate, transcribe) will be DISABLED. "
+            "Chat and image generation will work normally."
+        )
 
     # Start session cleanup background task
     cleanup_task = asyncio.create_task(_session_cleanup_loop())
@@ -300,9 +333,13 @@ except (ImportError, ModuleNotFoundError):
 async def health_check():
     """Health check endpoint."""
     livekit_reachable = getattr(app.state, "livekit_reachable", False)
+    avx2_supported = getattr(app.state, "avx2_supported", True)
+    realtime_available = getattr(app.state, "realtime_available", True)
     return {
         "status": "ok",
         "livekit_connected": livekit_reachable,
+        "avx2_supported": avx2_supported,
+        "realtime_available": realtime_available,
     }
 
 
