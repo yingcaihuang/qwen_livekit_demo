@@ -47,13 +47,10 @@ export function LoginPage() {
         body: JSON.stringify({ username, password }),
       })
       if (res.ok) {
-        const data = await res.json()
         await refreshAuth()
-        if (data.must_change_password) {
-          navigate('/change-password', { replace: true })
-        } else {
-          navigate('/', { replace: true })
-        }
+        // Navigation is handled by the useEffect watching `user` state.
+        // This avoids a race condition where navigate() fires before
+        // React commits the updated user state from refreshAuth().
       } else {
         const data = await res.json().catch(() => ({}))
         setError(data.detail || '登录失败')
