@@ -67,6 +67,36 @@ docker compose up -d
 - 按实例 / 类型分类统计
 - 会话历史（语音 / Chat / 图片）
 
+## 系统截图
+
+### Dashboard
+
+![Dashboard 统计面板](docs/screenshots/dashboard.png)
+
+### 实例管理
+
+![实例列表](docs/screenshots/instance-list.png)
+
+### 会话历史
+
+![会话历史列表](docs/screenshots/historylist.png)
+
+### Chat 对话详情
+
+![Chat 对话历史](docs/screenshots/history-chat.png)
+
+### 语音会话详情
+
+![语音会话历史](docs/screenshots/history-voice.png)
+
+### 图片生成详情
+
+![图片生成历史](docs/screenshots/histotry-image2.png)
+
+### SSO 组映射
+
+![SSO 组映射配置](docs/screenshots/authentik-groups.png)
+
 ## Docker 部署
 
 ### 服务架构
