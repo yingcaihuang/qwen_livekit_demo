@@ -16,6 +16,7 @@ interface ImageParamsPanelProps {
   params: ImageParams
   onChange: (patch: Partial<ImageParams>) => void
   disabled?: boolean
+  hasReferenceImages?: boolean
 }
 
 const selectClass =
@@ -32,7 +33,7 @@ function clamp(value: number, min: number, max: number): number {
  * 图像格式下拉、变体数量滑块（默认 1，>= 1 — 需求 4.6）。
  * 参数状态由页面提升管理，此处仅受控展示与回调。
  */
-export function ImageParamsPanel({ params, onChange, disabled }: ImageParamsPanelProps) {
+export function ImageParamsPanel({ params, onChange, disabled, hasReferenceImages }: ImageParamsPanelProps) {
   return (
     <Card className="shadow-sm">
       <CardHeader className="pb-3">
@@ -108,6 +109,32 @@ export function ImageParamsPanel({ params, onChange, disabled }: ImageParamsPane
             className="w-full accent-amber-500 disabled:opacity-50"
           />
         </div>
+
+        {/* Input Fidelity (editing mode only) */}
+        {hasReferenceImages && (
+          <div className="space-y-2">
+            <Label htmlFor="input_fidelity">Input Fidelity</Label>
+            <select
+              id="input_fidelity"
+              value={params.input_fidelity ?? ''}
+              disabled={disabled}
+              onChange={(e) =>
+                onChange({
+                  input_fidelity: (e.target.value || null) as ImageParams['input_fidelity'],
+                })
+              }
+              className={selectClass}
+            >
+              <option value="">Default</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+            <p className="text-xs text-muted-foreground">
+              控制输出与参考图的匹配程度
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   )

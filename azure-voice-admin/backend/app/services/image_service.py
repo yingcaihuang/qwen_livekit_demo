@@ -252,37 +252,44 @@ class ImageService:
         deployment: str,
         prompt: str,
         params: ImageParams,
-        reference_bytes: bytes,
-        reference_content_type: str | None = None,
-        reference_filename: str | None = None,
+        reference_images: list[tuple[bytes, str, str]],
+        mask_bytes: bytes | None = None,
+        input_fidelity: str | None = None,
     ) -> tuple[dict, int, int]:
-        """Call Azure Images ``edits`` with multipart form-data (with reference image).
+        """Call Azure Images ``edits`` with multipart form-data (with reference images).
 
-        The multipart ``image`` part is sent with the reference image's *real*
-        mimetype (detected via :meth:`_detect_image_type`) and a matching
-        filename. Azure validates this mimetype and rejects
-        ``application/octet-stream``.
+        Sends multiple reference images as repeated ``image[]`` fields.
+        Optionally includes a mask and input_fidelity parameter.
 
         Returns ``(data, ttfb_ms, total_ms)`` (see ``_post``).
         """
         url = self._azure_edits_url(endpoint)
-        content_type, filename = self._detect_image_type(
-            reference_bytes, reference_content_type, reference_filename
-        )
         form = aiohttp.FormData()
         form.add_field("model", deployment)
-        form.add_field(
-            "image",
-            reference_bytes,
-            filename=filename,
-            content_type=content_type,
-        )
         form.add_field("prompt", prompt)
         form.add_field("size", params.size)
         form.add_field("quality", params.quality)
         form.add_field("output_format", params.output_format)
         form.add_field("output_compression", str(params.compression))
         form.add_field("n", str(params.n))
+
+        # Multiple reference images as image[] fields
+        for data, content_type, filename in reference_images:
+            form.add_field(
+                "image[]",
+                data,
+                filename=filename,
+                content_type=content_type,
+            )
+
+        # Optional mask
+        if mask_bytes is not None:
+            form.add_field("mask", mask_bytes, filename="mask.png", content_type="image/png")
+
+        # Optional input_fidelity
+        if input_fidelity is not None:
+            form.add_field("input_fidelity", input_fidelity)
+
         headers = {"api-key": api_key}
         return await self._post(url, headers=headers, data=form)
 
@@ -328,6 +335,26 @@ class ImageService:
                             url,
                             text[:1000],
                         )
+                        # Classify common Azure errors with user-friendly messages
+                        if resp.status == 429:
+                            raise HTTPException(
+                                status_code=429,
+                                detail="请求过于频繁，请稍后重试",
+                            )
+                        # Check for content policy violation
+                        try:
+                            error_body = json.loads(text)
+                            error_code = error_body.get("error", {}).get("code", "")
+                            if (
+                                error_code == "contentFilter"
+                                or error_code == "content_policy_violation"
+                            ):
+                                raise HTTPException(
+                                    status_code=400,
+                                    detail="内容被安全系统拦截，请修改提示词",
+                                )
+                        except (json.JSONDecodeError, AttributeError):
+                            pass
                         raise HTTPException(
                             status_code=502,
                             detail=(
@@ -356,16 +383,17 @@ class ImageService:
         self,
         db: aiosqlite.Connection,
         request: ImageGenerationRequest,
-        reference_image: ReferenceImage = None,
+        reference_images: list | None = None,
+        mask: "UploadFile | bytes | None" = None,
         *,
         created_by: str | None = None,
     ) -> dict:
         """Enqueue an image generation job and return the pending record.
 
         This runs entirely in the request handler and MUST NOT call Azure. It
-        validates the instance, normalizes params, persists any reference image
-        to disk (so the background worker can read it later), inserts a
-        ``pending`` metadata row, enqueues the job id, and returns the record
+        validates the instance, normalizes params, persists any reference images
+        and mask to disk (so the background worker can read them later), inserts
+        a ``pending`` metadata row, enqueues the job id, and returns the record
         dict (same shape as the detail endpoint).
         Records ``created_by`` for multi-tenant isolation.
         """
@@ -379,25 +407,35 @@ class ImageService:
             output_format=request.params.output_format,
             compression=self._clamp_compression(request.params.compression),
             n=max(1, int(request.params.n)),
+            input_fidelity=request.params.input_fidelity,
         )
 
         generation_id = uuid.uuid4().hex
 
-        # 3) If a reference image is provided, persist it to disk now so the
-        #    worker (running on its own connection, after the request returns)
-        #    can read it back. We detect the real image type from the bytes.
+        # 3) Persist reference images (if any) to disk so the background worker can read them.
         has_reference = False
-        reference = await self._read_reference_bytes(reference_image)
-        if reference is not None:
-            reference_bytes, upload_content_type, filename = reference
-            _content_type, ref_filename = self._detect_image_type(
-                reference_bytes, upload_content_type, filename
-            )
-            ext = ref_filename.rsplit(".", 1)[-1] if "." in ref_filename else "png"
+        if reference_images:
             gen_dir = IMAGES_DIR / generation_id
             gen_dir.mkdir(parents=True, exist_ok=True)
-            (gen_dir / f"_reference.{ext}").write_bytes(reference_bytes)
-            has_reference = True
+            for idx, ref_file in enumerate(reference_images):
+                ref_data = await self._read_reference_bytes(ref_file)
+                if ref_data is not None:
+                    ref_bytes, upload_content_type, filename = ref_data
+                    _content_type, ref_filename = self._detect_image_type(
+                        ref_bytes, upload_content_type, filename
+                    )
+                    ext = ref_filename.rsplit(".", 1)[-1] if "." in ref_filename else "png"
+                    (gen_dir / f"_reference_{idx}.{ext}").write_bytes(ref_bytes)
+                    has_reference = True
+
+        # 3b) Persist mask (if provided) to disk.
+        if mask is not None:
+            mask_ref = await self._read_reference_bytes(mask)
+            if mask_ref is not None:
+                mask_bytes, _, _ = mask_ref
+                gen_dir = IMAGES_DIR / generation_id
+                gen_dir.mkdir(parents=True, exist_ok=True)
+                (gen_dir / "_mask.png").write_bytes(mask_bytes)
 
         # 4) Insert the pending row. Timing columns / error_message stay NULL.
         created_at = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
@@ -496,21 +534,25 @@ class ImageService:
                 # 3) Load instance credentials (mark failed if the instance is gone).
                 endpoint, api_key, deployment = await self._load_instance(db, instance_id)
 
-                # 4) Call Azure: edits when a reference image was saved, else generations.
+                # 4) Call Azure: edits when reference images were saved, else generations.
                 if has_reference:
-                    reference_bytes = self._read_saved_reference(gen_dir)
-                    if reference_bytes is None:
+                    reference_files = self._read_all_saved_references(gen_dir)
+                    if not reference_files:
                         raise HTTPException(
                             status_code=500,
-                            detail="Reference image file is missing for this generation",
+                            detail="Reference image files are missing for this generation",
                         )
+                    mask_bytes = self._read_saved_mask(gen_dir)
+                    input_fidelity = params_dict.get("input_fidelity")
                     payload, ttfb_ms, total_ms = await self._call_edits(
                         endpoint,
                         api_key,
                         deployment,
                         prompt,
                         params,
-                        reference_bytes,
+                        reference_images=reference_files,
+                        mask_bytes=mask_bytes,
+                        input_fidelity=input_fidelity,
                     )
                 else:
                     payload, ttfb_ms, total_ms = await self._call_generations(
@@ -600,16 +642,66 @@ class ImageService:
                 return match.read_bytes()
         return None
 
+    @classmethod
+    def _read_all_saved_references(cls, gen_dir: Path) -> list[tuple[bytes, str, str]]:
+        """Read all saved reference files from a generation directory.
+
+        Supports both legacy format (_reference.*) and new indexed format
+        (_reference_0.*, _reference_1.*, etc.).
+
+        Returns list of (bytes, content_type, filename) tuples.
+        """
+        if not gen_dir.exists():
+            return []
+
+        results: list[tuple[bytes, str, str]] = []
+
+        # First try new indexed format
+        indexed = sorted(gen_dir.glob("_reference_*"))
+        if indexed:
+            for path in indexed:
+                if path.is_file() and not path.name.startswith("_reference."):
+                    data = path.read_bytes()
+                    ext = path.suffix.lstrip(".")
+                    content_type = cls._MEDIA_TYPES.get(ext, "image/png")
+                    results.append((data, content_type, path.name))
+            if results:
+                return results
+
+        # Fallback to legacy single-reference format
+        legacy = sorted(gen_dir.glob("_reference.*"))
+        for path in legacy:
+            if path.is_file():
+                data = path.read_bytes()
+                ext = path.suffix.lstrip(".")
+                content_type = cls._MEDIA_TYPES.get(ext, "image/png")
+                results.append((data, content_type, path.name))
+        return results
+
+    @staticmethod
+    def _read_saved_mask(gen_dir: Path) -> bytes | None:
+        """Read the saved _mask.png file from a generation directory, or None."""
+        if not gen_dir.exists():
+            return None
+        mask_path = gen_dir / "_mask.png"
+        if mask_path.is_file():
+            return mask_path.read_bytes()
+        return None
+
     @staticmethod
     def _cleanup_reference(gen_dir: Path) -> None:
-        """Best-effort delete of the saved ``_reference.*`` file(s)."""
+        """Best-effort delete of saved reference and mask files."""
         try:
             if not gen_dir.exists():
                 return
-            for match in gen_dir.glob("_reference.*"):
+            # Clean both legacy (_reference.*) and indexed (_reference_*) formats
+            for match in gen_dir.glob("_reference*"):
                 match.unlink(missing_ok=True)
+            # Clean mask file
+            mask_path = gen_dir / "_mask.png"
+            mask_path.unlink(missing_ok=True)
         except Exception:  # pragma: no cover - best effort
-            logger.debug("Failed to clean up reference file under %s", gen_dir)
+            logger.debug("Failed to clean up reference/mask files under %s", gen_dir)
 
     # ------------------------------------------------------------------
     # Path resolution (path-traversal guard, Property 18 / Requirement 9.5)

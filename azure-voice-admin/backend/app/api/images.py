@@ -34,6 +34,31 @@ router = APIRouter(prefix="/api/images", tags=["images"])
 # Singleton service instance (mirrors the pattern used in sessions.py / chat.py).
 _image_service = ImageService()
 
+# Maximum reference image size (50MB, Azure limit)
+_MAX_IMAGE_BYTES = 50 * 1024 * 1024
+
+
+async def _is_allowed_image(file: UploadFile) -> bool:
+    """Check if file is PNG or JPEG by reading magic bytes."""
+    header = await file.read(8)
+    await file.seek(0)
+    if not header:
+        return False
+    # PNG magic bytes
+    if header[:8] == b"\x89PNG\r\n\x1a\n":
+        return True
+    # JPEG SOI marker
+    if header[:3] == b"\xff\xd8\xff":
+        return True
+    return False
+
+
+async def _is_png(file: UploadFile) -> bool:
+    """Check if file is PNG by reading magic bytes."""
+    header = await file.read(8)
+    await file.seek(0)
+    return len(header) >= 8 and header[:8] == b"\x89PNG\r\n\x1a\n"
+
 
 @router.get("")
 async def list_generations(
@@ -75,14 +100,53 @@ async def create_generation(
     output_format: str = Form("png"),
     compression: int = Form(100),
     n: int = Form(1),
+    input_fidelity: str | None = Form(default=None),
+    files: list[UploadFile] = File(default=[]),
+    mask: UploadFile | None = File(default=None),
+    # Legacy single-file field for backward compatibility
     file: UploadFile | None = File(default=None),
     db: aiosqlite.Connection = Depends(get_db),
     user: CurrentUser = Depends(require_permission("image:use")),
 ) -> JSONResponse:
     """Enqueue an image generation job from a ``multipart/form-data`` request.
 
+    Supports multiple reference images (files field), optional mask, and input_fidelity.
+    Legacy single-file (file field) is supported for backward compatibility.
     Records ``created_by = user.id`` for multi-tenant isolation.
     """
+    # Merge legacy `file` into files list for unified handling
+    all_files = list(files)
+    if file is not None and not files:
+        all_files = [file]
+
+    # Validate reference image count (max 10)
+    if len(all_files) > 10:
+        raise HTTPException(status_code=422, detail="参考图最多 10 张")
+
+    # Validate each reference image format and size
+    for f in all_files:
+        if not await _is_allowed_image(f):
+            raise HTTPException(
+                status_code=422, detail=f"仅支持 PNG 和 JPG 格式（文件: {f.filename}）"
+            )
+        content = await f.read()
+        if len(content) > _MAX_IMAGE_BYTES:
+            raise HTTPException(
+                status_code=413, detail=f"图片大小不能超过 50MB（文件: {f.filename}）"
+            )
+        await f.seek(0)
+
+    # Validate mask
+    if mask is not None:
+        if not await _is_png(mask):
+            raise HTTPException(status_code=422, detail="遮罩图必须是 PNG 格式")
+        mask_content = await mask.read()
+        if len(mask_content) > _MAX_IMAGE_BYTES:
+            raise HTTPException(status_code=413, detail="遮罩图大小不能超过 50MB")
+        await mask.seek(0)
+        if not all_files:
+            raise HTTPException(status_code=422, detail="使用遮罩需要至少上传一张参考图")
+
     request = ImageGenerationRequest(
         instance_id=instance_id,
         prompt=prompt,
@@ -92,10 +156,15 @@ async def create_generation(
             output_format=output_format,
             compression=compression,
             n=n,
+            input_fidelity=input_fidelity,
         ),
     )
     record = await _image_service.enqueue_generation(
-        db, request, reference_image=file, created_by=user.id
+        db,
+        request,
+        reference_images=all_files if all_files else None,
+        mask=mask,
+        created_by=user.id,
     )
     return JSONResponse(content=record, status_code=HTTP_202_ACCEPTED)
 

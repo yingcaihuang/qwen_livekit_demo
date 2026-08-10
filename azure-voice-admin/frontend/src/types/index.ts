@@ -176,6 +176,7 @@ export interface ImageParams {
   output_format: string;
   compression: number; // 0-100
   n: number; // >= 1
+  input_fidelity?: 'low' | 'medium' | 'high' | null;
 }
 
 /**

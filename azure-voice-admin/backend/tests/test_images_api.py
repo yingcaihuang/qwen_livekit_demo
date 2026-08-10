@@ -386,7 +386,7 @@ class TestImageGeneration:
 
         # The reference bytes were saved under the generation dir for the worker.
         gen_dir = image_svc.IMAGES_DIR / gen_id
-        saved_refs = list(gen_dir.glob("_reference.*"))
+        saved_refs = list(gen_dir.glob("_reference_*"))
         assert len(saved_refs) == 1
         assert saved_refs[0].read_bytes() == _FAKE_IMAGE_BYTES
 
@@ -406,7 +406,7 @@ class TestImageGeneration:
         image_content_types = [
             headers.get("Content-Type")
             for type_options, headers, _value in form._fields
-            if type_options.get("name") == "image"
+            if type_options.get("name") == "image[]"
         ]
         assert image_content_types == ["image/png"]
         assert all(ct != "application/octet-stream" for ct in image_content_types)
@@ -422,7 +422,7 @@ class TestImageGeneration:
         assert detail.status_code == 200
         assert detail.json()["status"] == "completed"
         assert detail.json()["has_reference"] is True
-        assert list(gen_dir.glob("_reference.*")) == []
+        assert list(gen_dir.glob("_reference*")) == []
 
     async def test_generations_branch_uses_json_body(self, client, image_instance_id, monkeypatch):
         """Without a reference file, the Azure *generations* JSON path is used."""

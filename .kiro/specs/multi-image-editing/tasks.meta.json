@@ -1,0 +1,347 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Add `input_fidelity` field to `ImageParams` Pydantic model in `backend/app/models/image.py`": [
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334276184
+      },
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334290487
+      },
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334367151
+      }
+    ],
+    "1.2 Add validation helper functions in `backend/app/api/images.py`": [
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334276212
+      },
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334291235
+      },
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334367818
+      }
+    ],
+    "2.1 Update `create_generation` endpoint signature in `backend/app/api/images.py`": [
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334276243
+      },
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334374487
+      },
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334509085
+      }
+    ],
+    "2.2 Implement request validation logic in `create_generation`": [
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334276268
+      },
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334517331
+      },
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334661717
+      }
+    ],
+    "3.1 Update `enqueue_generation` method in `backend/app/services/image_service.py`": [
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334276293
+      },
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334518178
+      },
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334661875
+      }
+    ],
+    "3.2 Add `_read_all_saved_references` static method": [
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334276313
+      },
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334375394
+      },
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334510047
+      }
+    ],
+    "3.3 Add `_read_saved_mask` static method": [
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334276336
+      },
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334376071
+      },
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334510820
+      }
+    ],
+    "3.4 Update `_call_edits` to accept multiple images, mask, and input_fidelity": [
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334276369
+      },
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334518947
+      },
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334662983
+      }
+    ],
+    "3.5 Update `process_job` to use multi-reference and mask": [
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334276393
+      },
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334669467
+      },
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334908031
+      }
+    ],
+    "4.1 Update error handling in `process_job` exception handler": [
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334276412
+      },
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334670196
+      },
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334908927
+      }
+    ],
+    "5. Checkpoint - Backend complete": [
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334276433
+      },
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334941733
+      },
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786335055896
+      }
+    ],
+    "6.1 Update `ImageParams` type in `frontend/src/types/index.ts`": [
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334276454
+      },
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786335062376
+      },
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786335387344
+      }
+    ],
+    "6.2 Update `ImagePlaygroundPage` state in `frontend/src/pages/ImagePlaygroundPage.tsx`": [
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334276477
+      },
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786335063147
+      },
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786335388263
+      }
+    ],
+    "7.1 Refactor `ImagePromptBar` component for multi-file support": [
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334276495
+      },
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786335389120
+      }
+    ],
+    "7.2 Add mask upload area to `ImagePromptBar`": [
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334276518
+      },
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786335390049
+      }
+    ],
+    "8.1 Add conditional `input_fidelity` select in `frontend/src/components/image/ImageParamsPanel.tsx`": [
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334276543
+      },
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786335390929
+      }
+    ],
+    "9.1 Update `ImagePlaygroundPage` to pass new props": [
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334276562
+      },
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786335391838
+      }
+    ],
+    "10. Final checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334276585
+      },
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786335398544
+      },
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786335471170
+      }
+    ],
+    "1. Update backend data model and configuration": [
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334367843
+      }
+    ],
+    "2. Modify backend API endpoint for multi-file support": [
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334661736
+      }
+    ],
+    "3. Modify Image_Service for multi-reference persistence and processing": [
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334908057
+      }
+    ],
+    "4. Implement enhanced error message classification": [
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786334908953
+      }
+    ],
+    "6. Update frontend types and state management": [
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786335388288
+      }
+    ],
+    "7. Implement multi-file upload UI": [
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786335390073
+      }
+    ],
+    "8. Update `ImageParamsPanel` with input_fidelity selector": [
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786335390957
+      }
+    ],
+    "9. Wire components together and verify backward compatibility": [
+      {
+        "executionId": "bdd955f9-4946-45f0-a6a0-ab76431ed78a",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786335391862
+      }
+    ]
+  }
+}

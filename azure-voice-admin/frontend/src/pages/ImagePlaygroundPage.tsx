@@ -27,6 +27,7 @@ const DEFAULT_PARAMS: ImageParams = {
   output_format: 'png',
   compression: 100,
   n: 1,
+  input_fidelity: null,
 }
 
 export function ImagePlaygroundPage() {
@@ -36,7 +37,8 @@ export function ImagePlaygroundPage() {
   const [instanceName, setInstanceName] = useState<string>('')
   const [prompt, setPrompt] = useState('')
   const [params, setParams] = useState<ImageParams>(DEFAULT_PARAMS)
-  const [referenceImage, setReferenceImage] = useState<File | null>(null)
+  const [referenceImages, setReferenceImages] = useState<File[]>([])
+  const [maskFile, setMaskFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<ImageGeneration | null>(null)
@@ -130,8 +132,12 @@ export function ImagePlaygroundPage() {
       formData.append('output_format', params.output_format)
       formData.append('compression', String(params.compression))
       formData.append('n', String(params.n))
-      if (referenceImage) {
-        formData.append('file', referenceImage)
+      if (params.input_fidelity) {
+        formData.append('input_fidelity', params.input_fidelity)
+      }
+      referenceImages.forEach((f) => formData.append('files', f))
+      if (maskFile) {
+        formData.append('mask', maskFile)
       }
 
       const response = await fetch('/api/images/generations', {
@@ -167,7 +173,7 @@ export function ImagePlaygroundPage() {
     } finally {
       setLoading(false)
     }
-  }, [instanceId, prompt, params, referenceImage, refreshQueueCount])
+  }, [instanceId, prompt, params, referenceImages, maskFile, refreshQueueCount])
 
   return (
     <div className="space-y-6">
@@ -218,8 +224,11 @@ export function ImagePlaygroundPage() {
               quality={params.quality}
               onSizeChange={(size) => updateParams({ size })}
               onQualityChange={(quality) => updateParams({ quality })}
-              referenceImage={referenceImage}
-              onAttachReference={setReferenceImage}
+              referenceImages={referenceImages}
+              onAddReferences={(files) => setReferenceImages((prev) => [...prev, ...files])}
+              onRemoveReference={(idx) => setReferenceImages((prev) => prev.filter((_, i) => i !== idx))}
+              maskFile={maskFile}
+              onSetMask={setMaskFile}
               onSubmit={handleSubmit}
               loading={loading}
             />
@@ -277,6 +286,7 @@ export function ImagePlaygroundPage() {
               params={params}
               onChange={updateParams}
               disabled={loading}
+              hasReferenceImages={referenceImages.length > 0}
             />
           </div>
         </div>

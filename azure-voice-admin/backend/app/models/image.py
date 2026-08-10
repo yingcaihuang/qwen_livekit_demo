@@ -13,6 +13,7 @@ class ImageParams(BaseModel):
     output_format: str = "png"  # 输出格式，至少支持 png
     compression: int = 100  # 压缩级别，clamp 到 [0, 100]
     n: int = 1  # 生成变体数量，>= 1
+    input_fidelity: Literal["low", "medium", "high"] | None = None  # 编辑模式下的输入保真度
 
 
 class ImageGenerationRequest(BaseModel):
