@@ -11,6 +11,10 @@ interface ApiCodeSnippetProps {
   body: Record<string, unknown>
   /** Operation path appended to endpoint, e.g. "images/generations" or "responses" */
   operation: string
+  /** When true, generate multipart/form-data code instead of JSON */
+  multipart?: boolean
+  /** Number of reference images (for multipart display) */
+  referenceImageCount?: number
 }
 
 function generateCurl(url: string, apiKey: string, body: Record<string, unknown>): string {
@@ -70,13 +74,97 @@ func main() {
 }`
 }
 
+function generateCurlMultipart(url: string, apiKey: string, body: Record<string, unknown>, refCount: number): string {
+  let cmd = `curl -X POST "${url}" \\\n  -H "api-key: ${apiKey}"`
+  // Add form fields
+  for (const [key, value] of Object.entries(body)) {
+    cmd += ` \\\n  -F "${key}=${value}"`
+  }
+  // Add reference image placeholders
+  for (let i = 0; i < refCount; i++) {
+    cmd += ` \\\n  -F "image[]=@reference_image_${i + 1}.png"`
+  }
+  return cmd
+}
+
+function generatePythonMultipart(url: string, apiKey: string, body: Record<string, unknown>, refCount: number): string {
+  const fields = Object.entries(body).map(([k, v]) => `    "${k}": (None, "${v}")`).join(',\n')
+  const files = Array.from({ length: refCount }, (_, i) =>
+    `    ("image[]", ("reference_${i + 1}.png", open("reference_image_${i + 1}.png", "rb"), "image/png"))`
+  ).join(',\n')
+
+  return `import requests
+
+url = "${url}"
+headers = {"api-key": "${apiKey}"}
+
+# 表单字段
+fields = {
+${fields},
+}
+
+# 参考图文件（替换为实际文件路径）
+files = [
+${files},
+]
+
+response = requests.post(url, headers=headers, files=list(fields.items()) + files)
+print(response.json())`
+}
+
+function generateGolangMultipart(url: string, apiKey: string, body: Record<string, unknown>, refCount: number): string {
+  const fieldLines = Object.entries(body).map(([k, v]) => `    writer.WriteField("${k}", "${v}")`).join('\n')
+  const fileLines = Array.from({ length: refCount }, (_, i) =>
+    `    // 添加参考图 ${i + 1}\n    part${i + 1}, _ := writer.CreateFormFile("image[]", "reference_${i + 1}.png")\n    file${i + 1}, _ := os.Open("reference_image_${i + 1}.png")\n    io.Copy(part${i + 1}, file${i + 1})\n    file${i + 1}.Close()`
+  ).join('\n')
+
+  return `package main
+
+import (
+    "bytes"
+    "fmt"
+    "io"
+    "mime/multipart"
+    "net/http"
+    "os"
+)
+
+func main() {
+    url := "${url}"
+
+    var body bytes.Buffer
+    writer := multipart.NewWriter(&body)
+
+    // 表单字段
+${fieldLines}
+
+    // 参考图文件（替换为实际文件路径）
+${fileLines}
+
+    writer.Close()
+
+    req, _ := http.NewRequest("POST", url, &body)
+    req.Header.Set("Content-Type", writer.FormDataContentType())
+    req.Header.Set("api-key", "${apiKey}")
+
+    resp, err := (&http.Client{}).Do(req)
+    if err != nil {
+        panic(err)
+    }
+    defer resp.Body.Close()
+
+    result, _ := io.ReadAll(resp.Body)
+    fmt.Println(string(result))
+}`
+}
+
 const LANGUAGES: { value: Language; label: string }[] = [
   { value: 'curl', label: 'cURL' },
   { value: 'python', label: 'Python' },
   { value: 'golang', label: 'Go' },
 ]
 
-export function ApiCodeSnippet({ endpoint, apiKey, body, operation }: ApiCodeSnippetProps) {
+export function ApiCodeSnippet({ endpoint, apiKey, body, operation, multipart, referenceImageCount }: ApiCodeSnippetProps) {
   const [lang, setLang] = useState<Language>('curl')
   const [copied, setCopied] = useState(false)
   const [expanded, setExpanded] = useState(false)
@@ -90,11 +178,18 @@ export function ApiCodeSnippet({ endpoint, apiKey, body, operation }: ApiCodeSni
     : `${base}${v1Marker}/${operation}`
   const key = apiKey || 'YOUR_API_KEY'
 
-  const generators: Record<Language, () => string> = {
-    curl: () => generateCurl(fullUrl, key, body),
-    python: () => generatePython(fullUrl, key, body),
-    golang: () => generateGolang(fullUrl, key, body),
-  }
+  const refCount = referenceImageCount || 0
+  const generators: Record<Language, () => string> = multipart
+    ? {
+        curl: () => generateCurlMultipart(fullUrl, key, body, refCount),
+        python: () => generatePythonMultipart(fullUrl, key, body, refCount),
+        golang: () => generateGolangMultipart(fullUrl, key, body, refCount),
+      }
+    : {
+        curl: () => generateCurl(fullUrl, key, body),
+        python: () => generatePython(fullUrl, key, body),
+        golang: () => generateGolang(fullUrl, key, body),
+      }
 
   const code = generators[lang]()
 

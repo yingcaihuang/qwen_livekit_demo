@@ -241,6 +241,8 @@ export function ImageDetail({ data }: ImageDetailProps) {
               endpoint={data.endpoint}
               apiKey={data.api_key}
               operation={data.has_reference ? 'images/edits' : 'images/generations'}
+              multipart={data.has_reference}
+              referenceImageCount={data.reference_images?.length || 0}
               body={{
                 model: data.deployment || '',
                 prompt: data.prompt,
