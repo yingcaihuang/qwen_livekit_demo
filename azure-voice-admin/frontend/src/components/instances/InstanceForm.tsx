@@ -45,6 +45,38 @@ const TYPE_OPTIONS: ReadonlyArray<{
   { value: 'transcribe', label: '转录', icon: FileText, gradient: 'from-rose-500 to-pink-500' },
 ]
 
+/** 每种实例类型的字段 placeholder 示例 */
+const TYPE_PLACEHOLDERS: Record<string, { name: string; endpoint: string; deployment: string; deploymentHint?: string }> = {
+  voice: {
+    name: 'gpt-realtime-2.1',
+    endpoint: 'https://your-resource.openai.azure.com',
+    deployment: 'gpt-realtime-2.1',
+  },
+  chat: {
+    name: 'gpt-5.5',
+    endpoint: 'https://your-resource.services.ai.azure.com',
+    deployment: 'gpt-5.5, gpt-4o, gpt-4o-mini',
+    deploymentHint: '可用英文逗号分隔填写多个模型，测试时可在对话页选择',
+  },
+  image: {
+    name: 'gpt-image-2',
+    endpoint: 'https://your-resource.services.ai.azure.com',
+    deployment: 'gpt-image-2',
+  },
+  translate: {
+    name: 'gpt-realtime-translate',
+    endpoint: 'https://your-resource.services.ai.azure.com',
+    deployment: 'gpt-realtime-translate',
+    deploymentHint: '按小时计费的实时翻译模型',
+  },
+  transcribe: {
+    name: 'gpt-transcribe',
+    endpoint: 'https://your-resource.services.ai.azure.com',
+    deployment: 'gpt-transcribe',
+    deploymentHint: '按小时计费的实时转录模型',
+  },
+}
+
 export function InstanceForm({ mode, instanceId, initialData }: InstanceFormProps) {
   const navigate = useNavigate()
   const [form, setForm] = useState<InstanceFormData>({
@@ -214,7 +246,7 @@ export function InstanceForm({ mode, instanceId, initialData }: InstanceFormProp
               id="name"
               value={form.name}
               onChange={(e) => handleChange('name', e.target.value)}
-              placeholder="例如：GPT-4o Realtime 生产环境"
+              placeholder={`例如：${TYPE_PLACEHOLDERS[form.type]?.name || 'my-instance'}`}
             />
             {errors.name && (
               <p className="text-sm text-destructive">{errors.name}</p>
@@ -227,7 +259,7 @@ export function InstanceForm({ mode, instanceId, initialData }: InstanceFormProp
               id="endpoint"
               value={form.endpoint}
               onChange={(e) => handleChange('endpoint', e.target.value)}
-              placeholder="例如：https://xxx.openai.azure.com"
+              placeholder={`例如：${TYPE_PLACEHOLDERS[form.type]?.endpoint || 'https://xxx.openai.azure.com'}`}
             />
             {errors.endpoint && (
               <p className="text-sm text-destructive">{errors.endpoint}</p>
@@ -258,11 +290,13 @@ export function InstanceForm({ mode, instanceId, initialData }: InstanceFormProp
               id="deployment"
               value={form.deployment}
               onChange={(e) => handleChange('deployment', e.target.value)}
-              placeholder="例如：gpt-4o-realtime-preview"
+              placeholder={`例如：${TYPE_PLACEHOLDERS[form.type]?.deployment || 'model-name'}`}
             />
-            <p className="text-xs text-muted-foreground">
-              对话类型可用英文逗号分隔填写多个模型，例如：gpt-5.5, gpt-4o；测试时可在对话页选择
-            </p>
+            {TYPE_PLACEHOLDERS[form.type]?.deploymentHint && (
+              <p className="text-xs text-muted-foreground">
+                {TYPE_PLACEHOLDERS[form.type]?.deploymentHint}
+              </p>
+            )}
             {errors.deployment && (
               <p className="text-sm text-destructive">{errors.deployment}</p>
             )}
