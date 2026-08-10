@@ -90,9 +90,11 @@ export function Sidebar() {
           <div className="flex items-center justify-between px-3 py-2">
             <span className="text-xs text-muted-foreground truncate">{user.username}</span>
             <div className="flex items-center gap-1">
-              <Link to="/change-password" className="text-muted-foreground hover:text-foreground" title="修改密码">
-                <KeyRound className="h-4 w-4" />
-              </Link>
+              {user.auth_source === 'local' && (
+                <Link to="/change-password" className="text-muted-foreground hover:text-foreground" title="修改密码">
+                  <KeyRound className="h-4 w-4" />
+                </Link>
+              )}
               <button onClick={logout} className="text-muted-foreground hover:text-foreground" title="退出登录">
                 <LogOut className="h-4 w-4" />
               </button>

@@ -21,6 +21,8 @@ class CurrentUser:
     username: str
     roles: set[str]
     capabilities: frozenset[str]
+    must_change_password: bool = False
+    auth_source: str = "local"
 
 
 def _is_testing() -> bool:
@@ -40,6 +42,8 @@ def _get_test_user() -> "CurrentUser":
             username="test-admin",
             roles={"super_admin"},
             capabilities=capabilities_for({"super_admin"}),
+            must_change_password=False,
+            auth_source="local",
         )
     return _TEST_USER
 
@@ -63,7 +67,10 @@ async def get_current_user(
         raise HTTPException(status_code=401, detail="会话无效或已过期")
     user_id = session["user_id"]
     # Load user record
-    cursor = await db.execute("SELECT id, username, is_active FROM users WHERE id = ?", (user_id,))
+    cursor = await db.execute(
+        "SELECT id, username, is_active, must_change_password, auth_source FROM users WHERE id = ?",
+        (user_id,),
+    )
     user_row = await cursor.fetchone()
     if not user_row or not user_row[2]:  # is_active == 0
         raise HTTPException(status_code=401, detail="账号已禁用")
@@ -72,7 +79,14 @@ async def get_current_user(
     role_rows = await cursor.fetchall()
     roles = {row[0] for row in role_rows}
     caps = capabilities_for(roles)
-    return CurrentUser(id=user_row[0], username=user_row[1], roles=roles, capabilities=caps)
+    return CurrentUser(
+        id=user_row[0],
+        username=user_row[1],
+        roles=roles,
+        capabilities=caps,
+        must_change_password=bool(user_row[3]),
+        auth_source=user_row[4] or "local",
+    )
 
 
 def require_permission(capability: str):

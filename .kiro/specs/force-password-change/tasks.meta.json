@@ -1,0 +1,182 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1. Write bug condition exploration test": [
+      {
+        "executionId": "d80f9f69-5cfe-41dc-b368-82e1159b6b77",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786327113966
+      },
+      {
+        "executionId": "d80f9f69-5cfe-41dc-b368-82e1159b6b77",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786327123102
+      },
+      {
+        "executionId": "d80f9f69-5cfe-41dc-b368-82e1159b6b77",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786327382275
+      }
+    ],
+    "2. Write preservation property tests (BEFORE implementing fix)": [
+      {
+        "executionId": "d80f9f69-5cfe-41dc-b368-82e1159b6b77",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786327113993
+      },
+      {
+        "executionId": "d80f9f69-5cfe-41dc-b368-82e1159b6b77",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786327387310
+      },
+      {
+        "executionId": "d80f9f69-5cfe-41dc-b368-82e1159b6b77",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786327608320
+      }
+    ],
+    "3.1 Extend `CurrentUser` dataclass and `get_current_user()` query in `deps.py`": [
+      {
+        "executionId": "d80f9f69-5cfe-41dc-b368-82e1159b6b77",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786327114011
+      },
+      {
+        "executionId": "d80f9f69-5cfe-41dc-b368-82e1159b6b77",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786327613705
+      },
+      {
+        "executionId": "d80f9f69-5cfe-41dc-b368-82e1159b6b77",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786327719679
+      }
+    ],
+    "3.2 Modify `MeResponse` and `me()` endpoint in `auth.py`": [
+      {
+        "executionId": "d80f9f69-5cfe-41dc-b368-82e1159b6b77",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786327114029
+      },
+      {
+        "executionId": "d80f9f69-5cfe-41dc-b368-82e1159b6b77",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786327724694
+      },
+      {
+        "executionId": "d80f9f69-5cfe-41dc-b368-82e1159b6b77",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786327805846
+      }
+    ],
+    "3.3 Extend `AuthUser` interface and `fetchMe` in `AuthProvider.tsx`": [
+      {
+        "executionId": "d80f9f69-5cfe-41dc-b368-82e1159b6b77",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786327114051
+      },
+      {
+        "executionId": "d80f9f69-5cfe-41dc-b368-82e1159b6b77",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786327811623
+      },
+      {
+        "executionId": "d80f9f69-5cfe-41dc-b368-82e1159b6b77",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786327859723
+      }
+    ],
+    "3.4 Add force password change redirect in `ProtectedRoute.tsx`": [
+      {
+        "executionId": "d80f9f69-5cfe-41dc-b368-82e1159b6b77",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786327114068
+      },
+      {
+        "executionId": "d80f9f69-5cfe-41dc-b368-82e1159b6b77",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786327864358
+      },
+      {
+        "executionId": "d80f9f69-5cfe-41dc-b368-82e1159b6b77",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786327919100
+      }
+    ],
+    "3.5 Conditionally render change-password entry in `Sidebar.tsx`": [
+      {
+        "executionId": "d80f9f69-5cfe-41dc-b368-82e1159b6b77",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786327114086
+      },
+      {
+        "executionId": "d80f9f69-5cfe-41dc-b368-82e1159b6b77",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786327923971
+      },
+      {
+        "executionId": "d80f9f69-5cfe-41dc-b368-82e1159b6b77",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786328002105
+      }
+    ],
+    "3.6 Verify bug condition exploration test now passes": [
+      {
+        "executionId": "d80f9f69-5cfe-41dc-b368-82e1159b6b77",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786327114101
+      },
+      {
+        "executionId": "d80f9f69-5cfe-41dc-b368-82e1159b6b77",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786328006702
+      },
+      {
+        "executionId": "d80f9f69-5cfe-41dc-b368-82e1159b6b77",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786328064290
+      }
+    ],
+    "3.7 Verify preservation tests still pass": [
+      {
+        "executionId": "d80f9f69-5cfe-41dc-b368-82e1159b6b77",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786327114117
+      },
+      {
+        "executionId": "d80f9f69-5cfe-41dc-b368-82e1159b6b77",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786328070166
+      },
+      {
+        "executionId": "d80f9f69-5cfe-41dc-b368-82e1159b6b77",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786328131945
+      }
+    ],
+    "4. Checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "d80f9f69-5cfe-41dc-b368-82e1159b6b77",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786327114134
+      },
+      {
+        "executionId": "d80f9f69-5cfe-41dc-b368-82e1159b6b77",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786328137942
+      },
+      {
+        "executionId": "d80f9f69-5cfe-41dc-b368-82e1159b6b77",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786328252132
+      }
+    ],
+    "3. Fix for local user force password change bypass": [
+      {
+        "executionId": "d80f9f69-5cfe-41dc-b368-82e1159b6b77",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786328131971
+      }
+    ]
+  }
+}

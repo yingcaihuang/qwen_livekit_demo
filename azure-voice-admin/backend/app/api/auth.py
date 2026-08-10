@@ -23,6 +23,7 @@ class MeResponse(BaseModel):
     roles: list[str]
     capabilities: list[str]
     must_change_password: bool = False
+    auth_source: str = "local"
 
 
 @router.post("/login")
@@ -196,4 +197,6 @@ async def me(user: CurrentUser = Depends(get_current_user)):
         username=user.username,
         roles=list(user.roles),
         capabilities=list(user.capabilities),
+        must_change_password=user.must_change_password,
+        auth_source=user.auth_source,
     )

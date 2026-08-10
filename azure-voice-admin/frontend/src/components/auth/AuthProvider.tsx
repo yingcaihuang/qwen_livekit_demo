@@ -4,6 +4,7 @@ interface AuthUser {
   id: string
   username: string
   must_change_password?: boolean
+  auth_source?: string
 }
 
 interface AuthState {
@@ -30,7 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await fetch('/api/auth/me', { credentials: 'include' })
       if (res.ok) {
         const data = await res.json()
-        setUser({ id: data.id, username: data.username, must_change_password: data.must_change_password })
+        setUser({ id: data.id, username: data.username, must_change_password: data.must_change_password, auth_source: data.auth_source })
         setRoles(data.roles)
         setCapabilities(data.capabilities)
         if (data.csrf_token) {

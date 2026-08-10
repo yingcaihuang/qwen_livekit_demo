@@ -21,6 +21,11 @@ export function ProtectedRoute({ capability, children }: ProtectedRouteProps) {
     return <Navigate to="/login" replace />
   }
 
+  // Force local users with must_change_password to change their password first
+  if (user.must_change_password && user.auth_source === 'local') {
+    return <Navigate to="/change-password" replace />
+  }
+
   if (capability && !capabilities.includes(capability)) {
     return <Navigate to="/" replace />
   }
