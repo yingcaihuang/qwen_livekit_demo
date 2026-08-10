@@ -154,6 +154,15 @@ export function ImagePromptBar({
         className="flex w-full resize-none rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
       />
 
+      {/* 参考图拖拽提示区域（无图时显示） */}
+      {referenceImages.length === 0 && (
+        <div className="flex items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/20 px-4 py-3 text-center">
+          <p className="text-xs text-muted-foreground">
+            拖拽参考图到此处，或点击下方「附参考图」按钮添加（支持多选，最多 10 张，PNG/JPG）
+          </p>
+        </div>
+      )}
+
       {/* 参考图缩略图网格 */}
       {referenceImages.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/40 p-2">
@@ -176,6 +185,7 @@ export function ImagePromptBar({
           ))}
           <span className="text-xs text-muted-foreground">
             {referenceImages.length}/{MAX_REFERENCE_COUNT}
+            {referenceImages.length < MAX_REFERENCE_COUNT && ' · 可继续添加'}
           </span>
         </div>
       )}
@@ -219,6 +229,18 @@ export function ImagePromptBar({
               + 遮罩图（可选，PNG）
             </Button>
           )}
+        </div>
+      )}
+
+      {/* 编辑模式指示器 */}
+      {referenceImages.length > 0 && (
+        <div className="flex items-center gap-1.5">
+          <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-700">
+            编辑模式
+          </span>
+          <span className="text-[11px] text-muted-foreground">
+            基于参考图编辑生成新图像
+          </span>
         </div>
       )}
 
@@ -283,7 +305,7 @@ export function ImagePromptBar({
             ) : (
               <Sparkles className="h-4 w-4" />
             )}
-            {loading ? '生成中…' : '生成'}
+            {loading ? '生成中…' : referenceImages.length > 0 ? '编辑生成' : '生成'}
           </Button>
         </div>
       </div>
