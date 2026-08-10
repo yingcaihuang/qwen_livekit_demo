@@ -18,6 +18,8 @@ const FILTER_OPTIONS: ReadonlyArray<{ value: TypeFilter; label: string }> = [
   { value: 'voice', label: '语音' },
   { value: 'chat', label: '对话' },
   { value: 'image', label: '图像' },
+  { value: 'translate', label: '翻译' },
+  { value: 'transcribe', label: '转录' },
 ]
 
 function formatRelativeTime(dateStr: string): string {
