@@ -58,10 +58,11 @@ class InstanceService:
 
         # Validate instance type (defensive service-level check; Pydantic already
         # enforces the Literal, but Requirement 1.2 requires rejecting invalid/missing type)
-        if data.type not in ("voice", "chat", "image"):
+        _VALID_TYPES = ("voice", "chat", "image", "translate", "transcribe")
+        if data.type not in _VALID_TYPES:
             raise HTTPException(
                 status_code=422,
-                detail="Instance type must be one of: voice, chat, image",
+                detail=f"Instance type must be one of: {', '.join(_VALID_TYPES)}",
             )
 
         # Check name uniqueness
