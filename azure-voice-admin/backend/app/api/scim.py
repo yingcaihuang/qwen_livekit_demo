@@ -405,6 +405,14 @@ async def _sync_group_members(
                             "INSERT INTO user_roles (user_id, role) VALUES (?, ?)",
                             (user_id, role),
                         )
+                # Auto-disable if user is no longer in ANY mapped group
+                if not groups:
+                    await db.execute(
+                        "UPDATE users SET is_active = 0, updated_at = datetime('now') WHERE id = ?",
+                        (user_id,),
+                    )
+                    await auth_service.invalidate_user_sessions(db, user_id)
+                    logger.info("SCIM: auto-disabled user %s (no mapped groups)", user_id)
         return
 
     # Find users matching the member external IDs
@@ -466,6 +474,14 @@ async def _sync_group_members(
                             "INSERT INTO user_roles (user_id, role) VALUES (?, ?)",
                             (user_id, role),
                         )
+                # Auto-disable if user is no longer in ANY mapped group
+                if not groups:
+                    await db.execute(
+                        "UPDATE users SET is_active = 0, updated_at = datetime('now') WHERE id = ?",
+                        (user_id,),
+                    )
+                    await auth_service.invalidate_user_sessions(db, user_id)
+                    logger.info("SCIM: auto-disabled user %s (no mapped groups)", user_id)
 
     logger.info("SCIM: synced group '%s' members (%d users)", group_name, len(member_user_ids))
 

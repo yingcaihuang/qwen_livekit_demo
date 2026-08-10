@@ -37,8 +37,10 @@ export function UsersPage() {
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState('')
   const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [refreshing, setRefreshing] = useState(false)
 
   const loadUsers = () => {
+    setRefreshing(true)
     fetch('/api/admin/users', { credentials: 'include' })
       .then((r) => r.json())
       .then((data) => {
@@ -46,7 +48,10 @@ export function UsersPage() {
         setSelected(new Set())
       })
       .catch(() => {})
-      .finally(() => setLoading(false))
+      .finally(() => {
+        setLoading(false)
+        setRefreshing(false)
+      })
   }
   useEffect(() => {
     loadUsers()
@@ -197,9 +202,9 @@ export function UsersPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={loadUsers}>
-            <RefreshCw className="h-4 w-4" />
-            刷新
+          <Button variant="outline" onClick={loadUsers} disabled={refreshing}>
+            <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
+            {refreshing ? '刷新中...' : '刷新'}
           </Button>
           <Button onClick={() => setShowCreate(true)}>
             <Plus className="h-4 w-4" />
