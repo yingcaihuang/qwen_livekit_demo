@@ -13,6 +13,7 @@ export interface ImageDetailData {
   instance_id: string
   prompt: string
   images: string[]
+  reference_images?: string[]
   input_tokens: number
   output_tokens: number
   has_reference: boolean
@@ -133,6 +134,39 @@ export function ImageDetail({ data }: ImageDetailProps) {
         durationMs={data.duration_ms}
         ttfbMs={data.ttfb_ms}
       />
+
+      {/* Reference Images */}
+      {data.reference_images && data.reference_images.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+              <ImageIcon className="h-4 w-4 text-emerald-500" />
+              参考图
+              <span className="text-xs font-normal">（{data.reference_images.length} 张）</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-3">
+              {data.reference_images.map((url, index) => (
+                <a
+                  key={url}
+                  href={url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="group overflow-hidden rounded-lg border shadow-sm transition hover:shadow-md"
+                >
+                  <img
+                    src={url}
+                    alt={`参考图 ${index + 1}`}
+                    className="h-24 w-24 object-cover transition group-hover:scale-[1.05]"
+                    loading="lazy"
+                  />
+                </a>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Result: status-aware（生成中 / 失败 / 完成） */}
       {isPending ? (

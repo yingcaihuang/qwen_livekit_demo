@@ -185,6 +185,56 @@ async def get_generation(
     return generation
 
 
+@router.get("/{generation_id}/ref/{ref_index}")
+async def get_reference_image(
+    generation_id: str,
+    ref_index: int,
+    db: aiosqlite.Connection = Depends(get_db),
+    user: CurrentUser = Depends(get_current_user),
+) -> FileResponse:
+    """Serve a stored reference image file for history viewing."""
+    from app.config import IMAGES_DIR
+
+    # Ownership check
+    cursor = await db.execute(
+        "SELECT id, created_by FROM image_generations WHERE id = ?", (generation_id,)
+    )
+    row = await cursor.fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Image not found")
+    if "resource:read:all" not in user.capabilities and row[1] != user.id:
+        raise HTTPException(status_code=404, detail="Image not found")
+
+    gen_dir = IMAGES_DIR / generation_id
+    if not gen_dir.exists():
+        raise HTTPException(status_code=404, detail="Reference image not found")
+
+    # Find reference files (indexed format first, then legacy)
+    refs = sorted(gen_dir.glob("_reference_*"))
+    if not refs:
+        refs = sorted(gen_dir.glob("_reference.*"))
+
+    if ref_index < 0 or ref_index >= len(refs):
+        raise HTTPException(status_code=404, detail="Reference image not found")
+
+    path = refs[ref_index]
+    # Path traversal guard
+    if not path.resolve().is_relative_to(IMAGES_DIR.resolve()):
+        raise HTTPException(status_code=404, detail="Reference image not found")
+
+    # Determine media type from extension
+    ext = path.suffix.lower()
+    media_types = {
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".webp": "image/webp",
+    }
+    media_type = media_types.get(ext, "image/png")
+
+    return FileResponse(str(path), media_type=media_type)
+
+
 @router.get("/{generation_id}/{index}")
 async def get_image_file(
     generation_id: str,

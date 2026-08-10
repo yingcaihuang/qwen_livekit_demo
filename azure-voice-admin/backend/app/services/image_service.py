@@ -690,18 +690,15 @@ class ImageService:
 
     @staticmethod
     def _cleanup_reference(gen_dir: Path) -> None:
-        """Best-effort delete of saved reference and mask files."""
+        """Clean up temporary mask file after processing. Reference images are KEPT for history viewing."""
         try:
             if not gen_dir.exists():
                 return
-            # Clean both legacy (_reference.*) and indexed (_reference_*) formats
-            for match in gen_dir.glob("_reference*"):
-                match.unlink(missing_ok=True)
-            # Clean mask file
+            # Only clean mask file; reference images are preserved for viewing in history
             mask_path = gen_dir / "_mask.png"
             mask_path.unlink(missing_ok=True)
         except Exception:  # pragma: no cover - best effort
-            logger.debug("Failed to clean up reference/mask files under %s", gen_dir)
+            logger.debug("Failed to clean up mask file under %s", gen_dir)
 
     # ------------------------------------------------------------------
     # Path resolution (path-traversal guard, Property 18 / Requirement 9.5)
@@ -892,6 +889,17 @@ class ImageService:
         data["images"] = [
             f"/api/images/{data['id']}/{index}" for index in range(len(data["image_paths"]))
         ]
+        # Expose reference image URLs for history viewing
+        data["reference_images"] = []
+        if data.get("has_reference"):
+            gen_dir = IMAGES_DIR / data["id"]
+            if gen_dir.exists():
+                refs = sorted(gen_dir.glob("_reference_*"))
+                if not refs:
+                    refs = sorted(gen_dir.glob("_reference.*"))
+                data["reference_images"] = [
+                    f"/api/images/{data['id']}/ref/{i}" for i in range(len(refs))
+                ]
         # Expose both ``id`` and ``generation_id`` (equal) so the frontend can
         # use either interchangeably across enqueue/detail/list responses.
         data["generation_id"] = data["id"]
