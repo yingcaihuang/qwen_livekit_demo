@@ -20,13 +20,13 @@ from __future__ import annotations
 
 # Operations understood by the resolver. ``operation`` is the trailing path the
 # v1 surface appends after the ``/openai/v1`` segment.
-_OPERATIONS = ("images/generations", "images/edits", "chat/completions")
+_OPERATIONS = ("images/generations", "images/edits", "chat/completions", "responses")
 
 # Marker identifying the Azure "v1" (OpenAI-compatible) surface.
 _V1_MARKER = "/openai/v1"
 
 # Trailing verbs that indicate the user pasted a full operation URL.
-_OPERATION_VERBS = ("generations", "edits", "completions")
+_OPERATION_VERBS = ("generations", "edits", "completions", "responses")
 
 
 def resolve_azure_url(endpoint: str, operation: str) -> str:

@@ -261,7 +261,7 @@ export function InstanceForm({ mode, instanceId, initialData }: InstanceFormProp
               id="endpoint"
               value={form.endpoint}
               onChange={(e) => handleChange('endpoint', e.target.value)}
-              placeholder={`例如：${TYPE_PLACEHOLDERS[form.type]?.endpoint || 'https://xxx.openai.azure.com'}`}
+              placeholder={`例如：${TYPE_PLACEHOLDERS[form.type]?.endpoint || 'https://your-resource.services.ai.azure.com'}`}
             />
             {errors.endpoint && (
               <p className="text-sm text-destructive">{errors.endpoint}</p>
