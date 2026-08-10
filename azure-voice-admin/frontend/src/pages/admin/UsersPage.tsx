@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Plus, UserPlus, Trash2, Ban, CheckCircle } from 'lucide-react'
+import { Plus, UserPlus, Trash2, Ban, CheckCircle, RefreshCw } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -196,10 +196,16 @@ export function UsersPage() {
             管理本地用户与 SSO 用户的角色和状态
           </p>
         </div>
-        <Button onClick={() => setShowCreate(true)}>
-          <Plus className="h-4 w-4" />
-          添加用户
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={loadUsers}>
+            <RefreshCw className="h-4 w-4" />
+            刷新
+          </Button>
+          <Button onClick={() => setShowCreate(true)}>
+            <Plus className="h-4 w-4" />
+            添加用户
+          </Button>
+        </div>
       </div>
 
       {/* Batch Actions Toolbar */}
