@@ -48,3 +48,17 @@ class TokenUsageReport(BaseModel):
 
     input_tokens: int
     output_tokens: int
+
+
+class TranslateSessionCreate(BaseModel):
+    """Request model for creating a translate session."""
+
+    instance_id: str
+    target_language: str  # ISO 639-1 code (e.g., "en", "zh")
+
+
+class TranscribeSessionCreate(BaseModel):
+    """Request model for creating a transcribe session."""
+
+    instance_id: str
+    source_language: str = ""  # Empty string = auto-detect

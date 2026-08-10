@@ -21,7 +21,9 @@ CREATE TABLE IF NOT EXISTS sessions (
     end_time TEXT,
     input_tokens INTEGER DEFAULT 0,
     output_tokens INTEGER DEFAULT 0,
-    error_message TEXT
+    error_message TEXT,
+    target_language TEXT,
+    source_language TEXT
 );
 
 CREATE TABLE IF NOT EXISTS session_logs (

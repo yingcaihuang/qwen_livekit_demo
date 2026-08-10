@@ -216,6 +216,20 @@ try:
 except (ImportError, ModuleNotFoundError):
     pass
 
+try:
+    from app.api.translate_sessions import router as translate_sessions_router
+
+    app.include_router(translate_sessions_router)
+except (ImportError, ModuleNotFoundError):
+    pass
+
+try:
+    from app.api.transcribe_sessions import router as transcribe_sessions_router
+
+    app.include_router(transcribe_sessions_router)
+except (ImportError, ModuleNotFoundError):
+    pass
+
 # Auth & admin routers
 try:
     from app.api.auth import router as auth_router

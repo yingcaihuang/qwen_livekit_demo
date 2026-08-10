@@ -110,6 +110,14 @@ async def _migrate(db: aiosqlite.Connection) -> None:
     if "role_override" not in user_cols:
         await db.execute("ALTER TABLE users ADD COLUMN role_override INTEGER NOT NULL DEFAULT 0")
 
+    # 9) target_language and source_language columns for translate/transcribe sessions
+    cursor = await db.execute("PRAGMA table_info(sessions)")
+    session_cols = {row[1] for row in await cursor.fetchall()}
+    if "target_language" not in session_cols:
+        await db.execute("ALTER TABLE sessions ADD COLUMN target_language TEXT")
+    if "source_language" not in session_cols:
+        await db.execute("ALTER TABLE sessions ADD COLUMN source_language TEXT")
+
     # 7) Seed sso_config singleton row (Req 9.6, 3.1). The table is created in
     #    schema.sql; here we ensure the single-row configuration placeholder
     #    exists so that queries never fail on an empty table.

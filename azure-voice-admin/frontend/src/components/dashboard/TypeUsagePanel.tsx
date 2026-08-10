@@ -1,4 +1,4 @@
-import { Mic, MessageSquare, Image as ImageIcon, type LucideIcon } from 'lucide-react'
+import { Mic, MessageSquare, Image as ImageIcon, Languages, FileText, type LucideIcon } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import type { InstanceType, TypeUsage } from '@/types'
@@ -40,6 +40,22 @@ const TYPE_META: Record<InstanceType, TypeMeta> = {
     ring: 'ring-1 ring-emerald-500/20',
     chip: 'bg-emerald-500/15 text-emerald-600',
     accent: 'before:bg-emerald-500',
+  },
+  translate: {
+    label: '翻译',
+    icon: Languages,
+    gradient: 'bg-gradient-to-br from-cyan-500/10 to-blue-500/5',
+    ring: 'ring-1 ring-cyan-500/20',
+    chip: 'bg-cyan-500/15 text-cyan-600',
+    accent: 'before:bg-cyan-500',
+  },
+  transcribe: {
+    label: '转录',
+    icon: FileText,
+    gradient: 'bg-gradient-to-br from-rose-500/10 to-pink-500/5',
+    ring: 'ring-1 ring-rose-500/20',
+    chip: 'bg-rose-500/15 text-rose-600',
+    accent: 'before:bg-rose-500',
   },
 }
 

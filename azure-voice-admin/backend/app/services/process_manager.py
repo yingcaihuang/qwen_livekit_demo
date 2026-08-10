@@ -44,6 +44,8 @@ class ProcessManager:
         instance_config: dict,
         room_name: str,
         voice: str = "alloy",
+        worker_script: str | None = None,
+        extra_env: dict[str, str] | None = None,
     ) -> None:
         """Spawn an Agent Worker subprocess for the given session.
 
@@ -86,8 +88,15 @@ class ProcessManager:
             }
         )
 
-        # Resolve agent_worker.py path
-        agent_script = str(_AGENT_WORKER_PATH)
+        # Merge extra environment variables if provided
+        if extra_env:
+            env.update(extra_env)
+
+        # Resolve worker script path
+        if worker_script:
+            agent_script = str(Path(__file__).resolve().parent.parent / worker_script)
+        else:
+            agent_script = str(_AGENT_WORKER_PATH)
 
         logger.info(
             "Spawning agent for session %s in room %s (script=%s)",

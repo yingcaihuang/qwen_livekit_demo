@@ -9,6 +9,8 @@ CAPABILITIES = frozenset(
         "session:run",
         "chat:use",
         "image:use",
+        "translate:use",
+        "transcribe:use",
         "resource:read:all",
         "dashboard:read",
         "user:manage",
@@ -26,6 +28,8 @@ ROLE_CAPABILITIES: dict[str, frozenset[str]] = {
             "session:run",
             "chat:use",
             "image:use",
+            "translate:use",
+            "transcribe:use",
             "resource:read:all",
             "dashboard:read",
         }
@@ -37,6 +41,8 @@ ROLE_CAPABILITIES: dict[str, frozenset[str]] = {
             "session:run",
             "chat:use",
             "image:use",
+            "translate:use",
+            "transcribe:use",
             "dashboard:read",
         }
     ),

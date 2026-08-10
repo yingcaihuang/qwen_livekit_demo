@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Mic, MessageSquare, Image } from 'lucide-react'
+import { Mic, MessageSquare, Image, Languages, FileText } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -41,6 +41,8 @@ const TYPE_OPTIONS: ReadonlyArray<{
   { value: 'voice', label: '语音', icon: Mic, gradient: 'from-indigo-500 to-violet-500' },
   { value: 'chat', label: '对话', icon: MessageSquare, gradient: 'from-emerald-500 to-teal-500' },
   { value: 'image', label: '图像', icon: Image, gradient: 'from-amber-500 to-orange-500' },
+  { value: 'translate', label: '翻译', icon: Languages, gradient: 'from-cyan-500 to-blue-500' },
+  { value: 'transcribe', label: '转录', icon: FileText, gradient: 'from-rose-500 to-pink-500' },
 ]
 
 export function InstanceForm({ mode, instanceId, initialData }: InstanceFormProps) {
@@ -168,7 +170,7 @@ export function InstanceForm({ mode, instanceId, initialData }: InstanceFormProp
 
           <div className="space-y-2">
             <Label>类型 *</Label>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-5 gap-3">
               {TYPE_OPTIONS.map((option) => {
                 const Icon = option.icon
                 const selected = form.type === option.value

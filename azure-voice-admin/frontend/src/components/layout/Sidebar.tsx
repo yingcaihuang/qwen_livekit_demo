@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Server, History, Users, Shield, Settings, LogOut, KeyRound } from 'lucide-react'
+import { LayoutDashboard, Server, History, Users, Shield, Settings, LogOut, KeyRound, Languages, FileText } from 'lucide-react'
 import { useAuth } from '@/components/auth/AuthProvider'
 
 interface NavItem {
@@ -12,6 +12,8 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'Dashboard', path: '/', icon: LayoutDashboard, capability: 'dashboard:read' },
   { label: '实例管理', path: '/instances', icon: Server, capability: 'instance:read' },
+  { label: '实时翻译', path: '/translate/new', icon: Languages, capability: 'translate:use' },
+  { label: '实时转录', path: '/transcribe/new', icon: FileText, capability: 'transcribe:use' },
   { label: '会话历史', path: '/history', icon: History },
 ]
 

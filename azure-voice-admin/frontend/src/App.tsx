@@ -8,6 +8,8 @@ import { InstanceFormPage } from '@/pages/InstanceFormPage'
 import { VoiceSessionPage } from '@/pages/VoiceSessionPage'
 import { ChatPlaygroundPage } from '@/pages/ChatPlaygroundPage'
 import { ImagePlaygroundPage } from '@/pages/ImagePlaygroundPage'
+import { TranslatePage } from '@/pages/TranslatePage'
+import { TranscribePage } from '@/pages/TranscribePage'
 import { HistoryPage } from '@/pages/HistoryPage'
 import { SessionDetailPage } from '@/pages/SessionDetailPage'
 import { ImageDetailPage } from '@/pages/ImageDetailPage'
@@ -35,6 +37,8 @@ function App() {
           <Route path="/sessions/new" element={<ProtectedRoute capability="session:run"><AppShell><VoiceSessionPage /></AppShell></ProtectedRoute>} />
           <Route path="/chat/new" element={<ProtectedRoute capability="chat:use"><AppShell><ChatPlaygroundPage /></AppShell></ProtectedRoute>} />
           <Route path="/images/new" element={<ProtectedRoute capability="image:use"><AppShell><ImagePlaygroundPage /></AppShell></ProtectedRoute>} />
+          <Route path="/translate/new" element={<ProtectedRoute capability="translate:use"><AppShell><TranslatePage /></AppShell></ProtectedRoute>} />
+          <Route path="/transcribe/new" element={<ProtectedRoute capability="transcribe:use"><AppShell><TranscribePage /></AppShell></ProtectedRoute>} />
           <Route path="/history" element={<ProtectedRoute><AppShell><HistoryPage /></AppShell></ProtectedRoute>} />
           <Route path="/history/:id" element={<ProtectedRoute><AppShell><SessionDetailPage /></AppShell></ProtectedRoute>} />
           <Route path="/history/image/:id" element={<ProtectedRoute><AppShell><ImageDetailPage /></AppShell></ProtectedRoute>} />

@@ -55,12 +55,16 @@ const START_ROUTE_BY_TYPE: Record<Instance['type'], string> = {
   voice: '/sessions/new',
   chat: '/chat/new',
   image: '/images/new',
+  translate: '/translate/new',
+  transcribe: '/transcribe/new',
 }
 
 const START_LABEL_BY_TYPE: Record<Instance['type'], string> = {
   voice: 'Start Session',
   chat: '开始对话',
   image: '生成图像',
+  translate: '开始翻译',
+  transcribe: '开始转录',
 }
 
 export function InstanceCard({ instance, onDelete }: InstanceCardProps) {

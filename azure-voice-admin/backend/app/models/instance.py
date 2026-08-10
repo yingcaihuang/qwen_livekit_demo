@@ -4,8 +4,8 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-# 实例测试类型：语音实时对话 / 大语言模型对话 / 图像生成
-InstanceType = Literal["voice", "chat", "image"]
+# 实例测试类型：语音实时对话 / 大语言模型对话 / 图像生成 / 实时翻译 / 实时转录
+InstanceType = Literal["voice", "chat", "image", "translate", "transcribe"]
 
 
 class InstanceCreate(BaseModel):

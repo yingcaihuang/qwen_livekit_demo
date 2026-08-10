@@ -1,4 +1,4 @@
-import { Mic, MessageSquare, Image } from 'lucide-react'
+import { Mic, MessageSquare, Image, Languages, FileText } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { InstanceType } from '@/types'
@@ -24,6 +24,16 @@ const TYPE_CONFIG: Record<InstanceType, TypeBadgeConfig> = {
     label: '图像',
     gradient: 'from-amber-500 to-orange-500',
     icon: Image,
+  },
+  translate: {
+    label: '翻译',
+    gradient: 'from-cyan-500 to-blue-500',
+    icon: Languages,
+  },
+  transcribe: {
+    label: '转录',
+    gradient: 'from-rose-500 to-pink-500',
+    icon: FileText,
   },
 }
 

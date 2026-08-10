@@ -140,6 +140,165 @@ class SessionService:
             livekit_url=livekit_url,
         )
 
+    async def create_translate_session(
+        self,
+        db: aiosqlite.Connection,
+        instance_id: str,
+        target_language: str,
+        *,
+        user: CurrentUser | None = None,
+    ) -> SessionResponse:
+        """Create a real-time translation session.
+
+        Validates instance type is 'translate', then spawns translate_worker.py.
+        """
+        # Verify instance exists and is type "translate"
+        cursor = await db.execute("SELECT id, type FROM instances WHERE id = ?", (instance_id,))
+        instance = await cursor.fetchone()
+        if not instance:
+            raise HTTPException(status_code=404, detail="Instance not found")
+        if instance[1] != "translate":
+            raise HTTPException(status_code=400, detail="实例类型必须是 translate")
+
+        session_id = uuid.uuid4().hex
+        room_name = self._generate_room_name()
+        now = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
+        created_by = user.id if user else None
+        livekit_token = self._generate_livekit_token(room_name)
+        livekit_url = os.environ.get(
+            "LIVEKIT_PUBLIC_URL",
+            os.environ.get("LIVEKIT_URL", "ws://localhost:7880"),
+        )
+
+        await db.execute(
+            """
+            INSERT INTO sessions (id, instance_id, room_name, status, start_time, created_by, target_language)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (session_id, instance_id, room_name, "connecting", now, created_by, target_language),
+        )
+        await db.commit()
+
+        # Spawn translate worker
+        try:
+            from app.services.process_manager import process_manager
+
+            cred_cursor = await db.execute(
+                "SELECT endpoint, api_key, deployment FROM instances WHERE id = ?",
+                (instance_id,),
+            )
+            cred_row = await cred_cursor.fetchone()
+            if cred_row:
+                instance_config = {
+                    "endpoint": cred_row[0],
+                    "api_key": cred_row[1],
+                    "deployment": cred_row[2],
+                }
+                await process_manager.spawn_agent(
+                    session_id=session_id,
+                    instance_config=instance_config,
+                    room_name=room_name,
+                    worker_script="translate_worker.py",
+                    extra_env={"TARGET_LANGUAGE": target_language},
+                )
+
+                from app.services.log_broadcaster import get_log_broadcaster
+
+                stdout_reader = process_manager.get_stdout_reader(session_id)
+                if stdout_reader:
+                    broadcaster = get_log_broadcaster()
+                    await broadcaster.start_reading(session_id, stdout_reader)
+        except Exception as e:
+            logging.getLogger("session_service").error(
+                f"Failed to spawn translate agent for session {session_id}: {e}"
+            )
+
+        return SessionResponse(
+            session_id=session_id,
+            room_name=room_name,
+            livekit_token=livekit_token,
+            livekit_url=livekit_url,
+        )
+
+    async def create_transcribe_session(
+        self,
+        db: aiosqlite.Connection,
+        instance_id: str,
+        source_language: str = "",
+        *,
+        user: CurrentUser | None = None,
+    ) -> SessionResponse:
+        """Create a real-time transcription session.
+
+        Validates instance type is 'transcribe', then spawns transcribe_worker.py.
+        """
+        cursor = await db.execute("SELECT id, type FROM instances WHERE id = ?", (instance_id,))
+        instance = await cursor.fetchone()
+        if not instance:
+            raise HTTPException(status_code=404, detail="Instance not found")
+        if instance[1] != "transcribe":
+            raise HTTPException(status_code=400, detail="实例类型必须是 transcribe")
+
+        session_id = uuid.uuid4().hex
+        room_name = self._generate_room_name()
+        now = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
+        created_by = user.id if user else None
+        livekit_token = self._generate_livekit_token(room_name)
+        livekit_url = os.environ.get(
+            "LIVEKIT_PUBLIC_URL",
+            os.environ.get("LIVEKIT_URL", "ws://localhost:7880"),
+        )
+
+        await db.execute(
+            """
+            INSERT INTO sessions (id, instance_id, room_name, status, start_time, created_by, source_language)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (session_id, instance_id, room_name, "connecting", now, created_by, source_language),
+        )
+        await db.commit()
+
+        # Spawn transcribe worker
+        try:
+            from app.services.process_manager import process_manager
+
+            cred_cursor = await db.execute(
+                "SELECT endpoint, api_key, deployment FROM instances WHERE id = ?",
+                (instance_id,),
+            )
+            cred_row = await cred_cursor.fetchone()
+            if cred_row:
+                instance_config = {
+                    "endpoint": cred_row[0],
+                    "api_key": cred_row[1],
+                    "deployment": cred_row[2],
+                }
+                await process_manager.spawn_agent(
+                    session_id=session_id,
+                    instance_config=instance_config,
+                    room_name=room_name,
+                    worker_script="transcribe_worker.py",
+                    extra_env={"SOURCE_LANGUAGE": source_language},
+                )
+
+                from app.services.log_broadcaster import get_log_broadcaster
+
+                stdout_reader = process_manager.get_stdout_reader(session_id)
+                if stdout_reader:
+                    broadcaster = get_log_broadcaster()
+                    await broadcaster.start_reading(session_id, stdout_reader)
+        except Exception as e:
+            logging.getLogger("session_service").error(
+                f"Failed to spawn transcribe agent for session {session_id}: {e}"
+            )
+
+        return SessionResponse(
+            session_id=session_id,
+            room_name=room_name,
+            livekit_token=livekit_token,
+            livekit_url=livekit_url,
+        )
+
     async def stop_session(self, db: aiosqlite.Connection, session_id: str) -> dict:
         """Stop an active session.
 
