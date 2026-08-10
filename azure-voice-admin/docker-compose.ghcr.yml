@@ -1,0 +1,53 @@
+# docker-compose.ghcr.yml — 使用 GitHub Container Registry 预构建镜像部署
+# 用法：docker compose -f docker-compose.ghcr.yml up -d
+
+services:
+  caddy:
+    image: ghcr.io/yingcaihuang/azure-voice-admin-caddy:latest
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      - SITE_DOMAIN=${SITE_DOMAIN:-:80}
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      backend:
+        condition: service_started
+      livekit:
+        condition: service_started
+
+  backend:
+    image: ghcr.io/yingcaihuang/azure-voice-admin-backend:latest
+    restart: unless-stopped
+    expose:
+      - "8090"
+    env_file:
+      - .env.production
+    environment:
+      - LIVEKIT_URL=ws://livekit:7880
+      - LIVEKIT_PUBLIC_URL=${LIVEKIT_PUBLIC_URL:-ws://localhost:7880}
+      - DB_PATH=/app/data/voice_admin.db
+      - PORT=8090
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - livekit
+
+  livekit:
+    image: livekit/livekit-server:latest
+    restart: unless-stopped
+    command: --config /etc/livekit.yaml
+    volumes:
+      - ./livekit.yaml:/etc/livekit.yaml:ro
+    ports:
+      - "7880:7880"
+      - "7881:7881"
+      - "7882:7882/udp"
+
+volumes:
+  caddy_data:
+  caddy_config:
