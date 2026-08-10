@@ -365,6 +365,111 @@ async def create_group(
     )
 
 
+async def _sync_group_members(
+    db: aiosqlite.Connection, group_name: str, member_external_ids: list[str]
+) -> None:
+    """Sync group membership: update sso_groups and recompute roles for affected users.
+
+    For each user whose sso_subject is in member_external_ids, ensure group_name
+    is in their sso_groups. For users previously in this group but no longer listed,
+    remove the group from their sso_groups.
+    """
+    import json as json_mod
+
+    if not member_external_ids:
+        # No members — remove this group from all users who had it
+        cursor = await db.execute(
+            "SELECT id, sso_groups FROM users WHERE auth_source = 'sso' AND sso_groups LIKE ?",
+            (f"%{group_name}%",),
+        )
+        rows = await cursor.fetchall()
+        for row in rows:
+            user_id = row[0]
+            groups = json_mod.loads(row[1] or "[]")
+            if group_name in groups:
+                groups.remove(group_name)
+                await db.execute(
+                    "UPDATE users SET sso_groups = ?, updated_at = datetime('now') WHERE id = ?",
+                    (json_mod.dumps(groups), user_id),
+                )
+                # Recompute roles
+                cursor2 = await db.execute(
+                    "SELECT role_override FROM users WHERE id = ?", (user_id,)
+                )
+                override_row = await cursor2.fetchone()
+                if not (override_row and override_row[0]):
+                    roles = await _compute_roles(db, groups)
+                    await db.execute("DELETE FROM user_roles WHERE user_id = ?", (user_id,))
+                    for role in roles:
+                        await db.execute(
+                            "INSERT INTO user_roles (user_id, role) VALUES (?, ?)",
+                            (user_id, role),
+                        )
+        return
+
+    # Find users matching the member external IDs
+    placeholders = ",".join("?" for _ in member_external_ids)
+    cursor = await db.execute(
+        f"SELECT id, sso_subject, sso_groups FROM users WHERE sso_subject IN ({placeholders})",
+        member_external_ids,
+    )
+    member_rows = await cursor.fetchall()
+    member_user_ids = set()
+
+    for row in member_rows:
+        user_id, _subject, raw_groups = row[0], row[1], row[2]
+        member_user_ids.add(user_id)
+        groups = json_mod.loads(raw_groups or "[]")
+        if group_name not in groups:
+            groups.append(group_name)
+            await db.execute(
+                "UPDATE users SET sso_groups = ?, updated_at = datetime('now') WHERE id = ?",
+                (json_mod.dumps(groups), user_id),
+            )
+        # Recompute roles for this user
+        cursor2 = await db.execute("SELECT role_override FROM users WHERE id = ?", (user_id,))
+        override_row = await cursor2.fetchone()
+        if not (override_row and override_row[0]):
+            roles = await _compute_roles(db, groups)
+            await db.execute("DELETE FROM user_roles WHERE user_id = ?", (user_id,))
+            for role in roles:
+                await db.execute(
+                    "INSERT INTO user_roles (user_id, role) VALUES (?, ?)", (user_id, role)
+                )
+
+    # Remove group from users who are no longer members
+    cursor = await db.execute(
+        "SELECT id, sso_groups FROM users WHERE auth_source = 'sso' AND sso_groups LIKE ?",
+        (f"%{group_name}%",),
+    )
+    all_with_group = await cursor.fetchall()
+    for row in all_with_group:
+        user_id = row[0]
+        if user_id not in member_user_ids:
+            groups = json_mod.loads(row[1] or "[]")
+            if group_name in groups:
+                groups.remove(group_name)
+                await db.execute(
+                    "UPDATE users SET sso_groups = ?, updated_at = datetime('now') WHERE id = ?",
+                    (json_mod.dumps(groups), user_id),
+                )
+                # Recompute roles
+                cursor2 = await db.execute(
+                    "SELECT role_override FROM users WHERE id = ?", (user_id,)
+                )
+                override_row = await cursor2.fetchone()
+                if not (override_row and override_row[0]):
+                    roles = await _compute_roles(db, groups)
+                    await db.execute("DELETE FROM user_roles WHERE user_id = ?", (user_id,))
+                    for role in roles:
+                        await db.execute(
+                            "INSERT INTO user_roles (user_id, role) VALUES (?, ?)",
+                            (user_id, role),
+                        )
+
+    logger.info("SCIM: synced group '%s' members (%d users)", group_name, len(member_user_ids))
+
+
 @router.put("/Groups/{group_id}")
 async def replace_group(
     group_id: str,
@@ -372,18 +477,32 @@ async def replace_group(
     db: aiosqlite.Connection = Depends(get_db),
     _=Depends(verify_scim_token),
 ):
-    """Replace (full update) a group."""
+    """Replace (full update) a group. Processes members for role sync."""
     body = await request.json()
     display_name = body.get("displayName", "")
-    cursor = await db.execute("SELECT id FROM group_role_mappings WHERE id = ?", (group_id,))
-    if not await cursor.fetchone():
+    members = body.get("members", [])
+
+    cursor = await db.execute(
+        "SELECT id, group_name FROM group_role_mappings WHERE id = ?", (group_id,)
+    )
+    row = await cursor.fetchone()
+    if not row:
         raise HTTPException(status_code=404, detail="Group not found")
-    if display_name:
+
+    current_group_name = row[1]
+
+    if display_name and display_name != current_group_name:
         await db.execute(
             "UPDATE group_role_mappings SET group_name = ? WHERE id = ?",
             (display_name, group_id),
         )
-        await db.commit()
+        current_group_name = display_name
+
+    # Sync members - extract external IDs from members array
+    member_external_ids = [m.get("value", "") for m in members if m.get("value")]
+    await _sync_group_members(db, current_group_name, member_external_ids)
+
+    await db.commit()
     cursor = await db.execute(
         "SELECT id, group_name FROM group_role_mappings WHERE id = ?", (group_id,)
     )
@@ -398,7 +517,9 @@ async def patch_group(
     db: aiosqlite.Connection = Depends(get_db),
     _=Depends(verify_scim_token),
 ):
-    """Patch a group (partial update). Authentik sends member changes via PATCH."""
+    """Patch a group (partial update). Handles member add/remove from Authentik."""
+    import json as json_mod
+
     body = await request.json()
     cursor = await db.execute(
         "SELECT id, group_name FROM group_role_mappings WHERE id = ?", (group_id,)
@@ -407,14 +528,92 @@ async def patch_group(
     if not row:
         raise HTTPException(status_code=404, detail="Group not found")
 
+    group_name = row[1]
+
     for op in body.get("Operations", []):
+        op_type = op.get("op", "").lower()
         path = op.get("path", "")
         value = op.get("value")
+
         if path == "displayName" and value:
             await db.execute(
                 "UPDATE group_role_mappings SET group_name = ? WHERE id = ?",
                 (value, group_id),
             )
+            group_name = value
+        elif "members" in path or (not path and isinstance(value, list)):
+            # Handle member operations
+            member_values = value if isinstance(value, list) else [value] if value else []
+            member_ids = [m.get("value", m) if isinstance(m, dict) else m for m in member_values]
+            member_ids = [mid for mid in member_ids if mid]
+
+            if op_type == "add" or op_type == "replace":
+                # Add these users to the group
+                for ext_id in member_ids:
+                    cursor2 = await db.execute(
+                        "SELECT id, sso_groups FROM users WHERE sso_subject = ?", (ext_id,)
+                    )
+                    user_row = await cursor2.fetchone()
+                    if user_row:
+                        user_id = user_row[0]
+                        groups = json_mod.loads(user_row[1] or "[]")
+                        if group_name not in groups:
+                            groups.append(group_name)
+                            await db.execute(
+                                "UPDATE users SET sso_groups = ?, updated_at = datetime('now') "
+                                "WHERE id = ?",
+                                (json_mod.dumps(groups), user_id),
+                            )
+                            # Recompute roles
+                            cursor3 = await db.execute(
+                                "SELECT role_override FROM users WHERE id = ?", (user_id,)
+                            )
+                            override_row = await cursor3.fetchone()
+                            if not (override_row and override_row[0]):
+                                roles = await _compute_roles(db, groups)
+                                await db.execute(
+                                    "DELETE FROM user_roles WHERE user_id = ?", (user_id,)
+                                )
+                                for role in roles:
+                                    await db.execute(
+                                        "INSERT INTO user_roles (user_id, role) VALUES (?, ?)",
+                                        (user_id, role),
+                                    )
+                        logger.info("SCIM: added user %s to group '%s'", user_id, group_name)
+
+            elif op_type == "remove":
+                # Remove these users from the group
+                for ext_id in member_ids:
+                    cursor2 = await db.execute(
+                        "SELECT id, sso_groups FROM users WHERE sso_subject = ?", (ext_id,)
+                    )
+                    user_row = await cursor2.fetchone()
+                    if user_row:
+                        user_id = user_row[0]
+                        groups = json_mod.loads(user_row[1] or "[]")
+                        if group_name in groups:
+                            groups.remove(group_name)
+                            await db.execute(
+                                "UPDATE users SET sso_groups = ?, updated_at = datetime('now') "
+                                "WHERE id = ?",
+                                (json_mod.dumps(groups), user_id),
+                            )
+                            # Recompute roles
+                            cursor3 = await db.execute(
+                                "SELECT role_override FROM users WHERE id = ?", (user_id,)
+                            )
+                            override_row = await cursor3.fetchone()
+                            if not (override_row and override_row[0]):
+                                roles = await _compute_roles(db, groups)
+                                await db.execute(
+                                    "DELETE FROM user_roles WHERE user_id = ?", (user_id,)
+                                )
+                                for role in roles:
+                                    await db.execute(
+                                        "INSERT INTO user_roles (user_id, role) VALUES (?, ?)",
+                                        (user_id, role),
+                                    )
+                        logger.info("SCIM: removed user %s from group '%s'", user_id, group_name)
 
     await db.commit()
     cursor = await db.execute(
