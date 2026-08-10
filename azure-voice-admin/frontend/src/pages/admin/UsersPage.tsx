@@ -112,6 +112,27 @@ export function UsersPage() {
     loadUsers()
   }
 
+  const resetPassword = async (u: User) => {
+    if (!confirm(`确定要重置用户 "${u.username}" 的密码吗？将生成随机新密码。`)) return
+    try {
+      const res = await fetch(`/api/admin/users/${u.id}/reset-password`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+      if (res.ok) {
+        const data = await res.json()
+        await navigator.clipboard.writeText(data.new_password)
+        alert(`密码已重置并复制到剪贴板。\n\n新密码: ${data.new_password}\n\n用户下次登录需修改密码。`)
+        loadUsers()
+      } else {
+        const d = await res.json().catch(() => ({}))
+        alert(d.detail || '重置密码失败')
+      }
+    } catch {
+      alert('网络错误')
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-12">
@@ -298,6 +319,16 @@ export function UsersPage() {
                           className="text-xs text-amber-600 hover:text-amber-700"
                         >
                           解除覆盖
+                        </Button>
+                      )}
+                      {u.auth_source === 'local' && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => resetPassword(u)}
+                          className="text-xs text-indigo-600 hover:text-indigo-700"
+                        >
+                          重置密码
                         </Button>
                       )}
                       <Button

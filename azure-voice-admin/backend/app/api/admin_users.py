@@ -226,3 +226,35 @@ async def delete_user(
     # Delete user (CASCADE will clean up user_roles and auth_sessions)
     await db.execute("DELETE FROM users WHERE id = ?", (user_id,))
     await db.commit()
+
+
+@router.post("/{user_id}/reset-password")
+async def reset_password(
+    user_id: str,
+    user: CurrentUser = Depends(require_permission("user:manage")),
+    db: aiosqlite.Connection = Depends(get_db),
+):
+    """Reset a local user's password to a random value. Returns the new password."""
+    # Check user exists and is local
+    cursor = await db.execute("SELECT id, auth_source FROM users WHERE id = ?", (user_id,))
+    row = await cursor.fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="用户不存在")
+    if row[1] != "local":
+        raise HTTPException(status_code=400, detail="仅本地账号可重置密码")
+
+    # Generate random password (16 chars, URL-safe)
+    new_password = secrets.token_urlsafe(12)  # 16 characters
+    new_hash = auth_service.hash_password(new_password)
+
+    # Update password and set must_change_password
+    await db.execute(
+        "UPDATE users SET password_hash = ?, must_change_password = 1, updated_at = datetime('now') WHERE id = ?",
+        (new_hash, user_id),
+    )
+    await db.commit()
+
+    # Invalidate existing sessions so user must re-login
+    await auth_service.invalidate_user_sessions(db, user_id)
+
+    return {"new_password": new_password}
