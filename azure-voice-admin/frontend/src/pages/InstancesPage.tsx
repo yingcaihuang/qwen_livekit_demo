@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, LayoutGrid, List, Trash2 } from 'lucide-react'
+import { Plus, LayoutGrid, List, Trash2, Download, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { InstanceCard } from '@/components/instances/InstanceCard'
+import { ExportDialog } from '@/components/instances/ExportDialog'
+import { ImportDialog } from '@/components/instances/ImportDialog'
 import { useApi } from '@/hooks/useApi'
 import { cn } from '@/lib/utils'
 import { TypeBadge } from '@/components/instances/TypeBadge'
@@ -36,6 +38,8 @@ export function InstancesPage() {
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all')
   const [viewMode, setViewMode] = useState<ViewMode>('card')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [showExport, setShowExport] = useState(false)
+  const [showImport, setShowImport] = useState(false)
 
   const url = typeFilter === 'all' ? '/api/instances' : `/api/instances?type=${typeFilter}`
   const { data: instances, loading, error, refetch } = useApi<Instance[]>(url)
@@ -88,13 +92,23 @@ export function InstancesPage() {
           </h1>
           <p className="text-sm text-muted-foreground">管理你的 Azure OpenAI 测试实例</p>
         </div>
-        <Button
-          onClick={() => navigate('/instances/new')}
-          className="bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md transition hover:from-indigo-700 hover:to-violet-700 hover:shadow-lg"
-        >
-          <Plus aria-hidden="true" />
-          新建实例
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowImport(true)}>
+            <Upload className="h-4 w-4" />
+            导入
+          </Button>
+          <Button variant="outline" onClick={() => setShowExport(true)} disabled={selectedIds.size === 0}>
+            <Download className="h-4 w-4" />
+            导出{selectedIds.size > 0 ? ` (${selectedIds.size})` : ''}
+          </Button>
+          <Button
+            onClick={() => navigate('/instances/new')}
+            className="bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md transition hover:from-indigo-700 hover:to-violet-700 hover:shadow-lg"
+          >
+            <Plus aria-hidden="true" />
+            新建实例
+          </Button>
+        </div>
       </div>
 
       {/* Filter + View Toggle */}
@@ -230,6 +244,18 @@ export function InstancesPage() {
           </table>
         </div>
       )}
+
+      {/* Dialogs */}
+      <ExportDialog
+        open={showExport}
+        onClose={() => setShowExport(false)}
+        instances={list.filter(i => selectedIds.has(i.id)).map(i => ({ id: i.id, name: i.name, type: i.type }))}
+      />
+      <ImportDialog
+        open={showImport}
+        onClose={() => setShowImport(false)}
+        onSuccess={refetch}
+      />
     </div>
   )
 }

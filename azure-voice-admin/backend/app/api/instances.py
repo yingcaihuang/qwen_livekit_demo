@@ -7,6 +7,9 @@ from starlette.status import HTTP_201_CREATED, HTTP_204_NO_CONTENT
 from app.api.deps import CurrentUser, require_permission
 from app.database import get_db
 from app.models.instance import (
+    ExportRequest,
+    ImportRequest,
+    ImportResult,
     InstanceCreate,
     InstanceDetail,
     InstanceSummary,
@@ -47,6 +50,34 @@ async def create_instance(
     Records ``created_by = user.id`` for multi-tenant isolation.
     """
     return await _service.create_instance(db, data, user=user)
+
+
+@router.post("/export")
+async def export_instances(
+    data: ExportRequest,
+    db: aiosqlite.Connection = Depends(get_db),
+    user: CurrentUser = Depends(require_permission("instance:read")),
+):
+    """Export selected instances as JSON configuration.
+
+    Returns a JSON array of instance configurations.
+    If include_api_key is false, api_key is excluded from the output.
+    """
+    return await _service.export_instances(db, data.instance_ids, data.include_api_key, user=user)
+
+
+@router.post("/import", response_model=ImportResult)
+async def import_instances(
+    data: ImportRequest,
+    db: aiosqlite.Connection = Depends(get_db),
+    user: CurrentUser = Depends(require_permission("instance:write")),
+):
+    """Import instances from a JSON configuration.
+
+    Supports conflict_strategy: "skip" (default) or "update".
+    Returns counts of created, updated, skipped, and any errors.
+    """
+    return await _service.import_instances(db, data.instances, data.conflict_strategy, user=user)
 
 
 @router.get("/{instance_id}", response_model=InstanceDetail)

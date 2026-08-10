@@ -56,3 +56,37 @@ class InstanceDetail(BaseModel):
     total_sessions: int
     total_input_tokens: int
     total_output_tokens: int
+
+
+class ExportRequest(BaseModel):
+    """Request model for exporting instances."""
+
+    instance_ids: list[str]
+    include_api_key: bool = False
+
+
+class ImportInstanceItem(BaseModel):
+    """Single instance item in an import payload."""
+
+    name: str
+    endpoint: str
+    api_key: str = ""
+    deployment: str
+    type: InstanceType
+    description: str = ""
+
+
+class ImportRequest(BaseModel):
+    """Request model for importing instances."""
+
+    instances: list["ImportInstanceItem"]
+    conflict_strategy: Literal["skip", "update"] = "skip"
+
+
+class ImportResult(BaseModel):
+    """Response model for import operation results."""
+
+    created: int = 0
+    updated: int = 0
+    skipped: int = 0
+    errors: list[str] = []

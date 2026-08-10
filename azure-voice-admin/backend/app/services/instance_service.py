@@ -372,3 +372,117 @@ class InstanceService:
         await db.execute("DELETE FROM sessions WHERE instance_id = ?", (instance_id,))
         await db.execute("DELETE FROM instances WHERE id = ?", (instance_id,))
         await db.commit()
+
+    async def export_instances(
+        self, db: aiosqlite.Connection, instance_ids: list[str], include_api_key: bool, user
+    ) -> list[dict]:
+        """Export selected instances as a list of configuration dicts.
+
+        Only exports instances owned by the user (or all if user has resource:read:all).
+        """
+        if not instance_ids:
+            return []
+
+        placeholders = ",".join("?" for _ in instance_ids)
+
+        # Multi-tenant: check ownership
+        if "resource:read:all" in user.capabilities:
+            query = f"SELECT id, name, endpoint, api_key, deployment, type, description FROM instances WHERE id IN ({placeholders})"
+            params = instance_ids
+        else:
+            query = f"SELECT id, name, endpoint, api_key, deployment, type, description FROM instances WHERE id IN ({placeholders}) AND created_by = ?"
+            params = instance_ids + [user.id]
+
+        cursor = await db.execute(query, params)
+        rows = await cursor.fetchall()
+
+        result = []
+        for row in rows:
+            item = {
+                "name": row[1],
+                "endpoint": row[2],
+                "deployment": row[4],
+                "type": row[5],
+                "description": row[6] or "",
+            }
+            if include_api_key:
+                item["api_key"] = row[3]
+            result.append(item)
+        return result
+
+    async def import_instances(
+        self, db: aiosqlite.Connection, instances: list, conflict_strategy: str, user
+    ) -> dict:
+        """Import instances from a list of configuration dicts.
+
+        Returns a dict with created, updated, skipped, errors counts.
+        """
+        import secrets
+
+        created = 0
+        updated = 0
+        skipped = 0
+        errors: list[str] = []
+
+        valid_types = ("voice", "chat", "image", "translate", "transcribe")
+
+        for i, inst in enumerate(instances):
+            name = inst.name.strip() if inst.name else ""
+            endpoint = inst.endpoint.strip() if inst.endpoint else ""
+            deployment = inst.deployment.strip() if inst.deployment else ""
+            inst_type = inst.type
+            api_key = inst.api_key.strip() if inst.api_key else ""
+            description = inst.description.strip() if inst.description else ""
+
+            # Validate required fields
+            if not name:
+                errors.append(f"第 {i+1} 条: name 不能为空")
+                continue
+            if not endpoint:
+                errors.append(f"第 {i+1} 条 ({name}): endpoint 不能为空")
+                continue
+            if not deployment:
+                errors.append(f"第 {i+1} 条 ({name}): deployment 不能为空")
+                continue
+            if inst_type not in valid_types:
+                errors.append(f"第 {i+1} 条 ({name}): 无效类型 '{inst_type}'")
+                continue
+            if not api_key:
+                errors.append(f"第 {i+1} 条 ({name}): api_key 不能为空")
+                continue
+
+            # Check for existing instance with same name (scoped to user)
+            cursor = await db.execute(
+                "SELECT id FROM instances WHERE name = ? AND created_by = ?",
+                (name, user.id),
+            )
+            existing = await cursor.fetchone()
+
+            if existing:
+                if conflict_strategy == "skip":
+                    skipped += 1
+                else:  # update
+                    await db.execute(
+                        "UPDATE instances SET endpoint = ?, api_key = ?, deployment = ?, description = ?, updated_at = datetime('now') WHERE id = ?",
+                        (endpoint, api_key, deployment, description, existing[0]),
+                    )
+                    updated += 1
+            else:
+                instance_id = secrets.token_hex(16)
+                await db.execute(
+                    "INSERT INTO instances (id, name, endpoint, api_key, deployment, type, description, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        instance_id,
+                        name,
+                        endpoint,
+                        api_key,
+                        deployment,
+                        inst_type,
+                        description,
+                        user.id,
+                    ),
+                )
+                created += 1
+
+        await db.commit()
+        return {"created": created, "updated": updated, "skipped": skipped, "errors": errors}
