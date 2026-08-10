@@ -49,8 +49,9 @@ const TYPE_OPTIONS: ReadonlyArray<{
 const TYPE_PLACEHOLDERS: Record<string, { name: string; endpoint: string; deployment: string; deploymentHint?: string }> = {
   voice: {
     name: 'gpt-realtime-2.1',
-    endpoint: 'https://your-resource.openai.azure.com',
+    endpoint: 'https://your-resource.services.ai.azure.com',
     deployment: 'gpt-realtime-2.1',
+    deploymentHint: 'Azure OpenAI Realtime 语音对话模型',
   },
   chat: {
     name: 'gpt-5.5',
@@ -62,18 +63,19 @@ const TYPE_PLACEHOLDERS: Record<string, { name: string; endpoint: string; deploy
     name: 'gpt-image-2',
     endpoint: 'https://your-resource.services.ai.azure.com',
     deployment: 'gpt-image-2',
+    deploymentHint: 'GPT-Image 系列图像生成模型',
   },
   translate: {
     name: 'gpt-realtime-translate',
     endpoint: 'https://your-resource.services.ai.azure.com',
     deployment: 'gpt-realtime-translate',
-    deploymentHint: '按小时计费的实时翻译模型',
+    deploymentHint: '按小时计费的实时翻译模型，支持多语言实时翻译',
   },
   transcribe: {
     name: 'gpt-transcribe',
     endpoint: 'https://your-resource.services.ai.azure.com',
     deployment: 'gpt-transcribe',
-    deploymentHint: '按小时计费的实时转录模型',
+    deploymentHint: '按小时计费的实时转录模型，支持多语言实时语音转文字',
   },
 }
 
