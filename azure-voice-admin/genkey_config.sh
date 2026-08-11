@@ -34,8 +34,24 @@ read -p "请选择 [1/2]: " mode
 echo ""
 
 if [ "$mode" = "2" ]; then
-    read -p "主站域名（如 livekit.verycloud.cn）: " SITE_DOMAIN
-    read -p "RTC 域名（如 rtc.verycloud.cn）: " RTC_DOMAIN
+    # Loop until valid site domain
+    SITE_DOMAIN=""
+    while [ -z "$SITE_DOMAIN" ]; do
+        read -p "主站域名（如 livekit.verycloud.cn）: " SITE_DOMAIN
+        if [ -z "$SITE_DOMAIN" ]; then
+            echo "❌ 主站域名不能为空，请重新输入"
+        fi
+    done
+
+    # Loop until valid RTC domain
+    RTC_DOMAIN=""
+    while [ -z "$RTC_DOMAIN" ]; do
+        read -p "RTC 域名（如 rtc.verycloud.cn）: " RTC_DOMAIN
+        if [ -z "$RTC_DOMAIN" ]; then
+            echo "❌ RTC 域名不能为空，请重新输入"
+        fi
+    done
+
     LIVEKIT_PUBLIC_URL="wss://${RTC_DOMAIN}"
 
     echo ""
