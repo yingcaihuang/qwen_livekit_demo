@@ -6,10 +6,11 @@ LIVEKIT_API_KEY="${LIVEKIT_API_KEY:-APIKeyForVoiceAdmin}"
 LIVEKIT_API_SECRET="${LIVEKIT_API_SECRET:-ThisIsASecretThatIsAtLeast32CharsLong!}"
 LIVEKIT_NODE_IP="${LIVEKIT_NODE_IP:-}"
 
-# Build node_ip line only if set
-NODE_IP_LINE=""
+# Build RTC config lines based on whether node_ip is provided
+RTC_EXTRA=""
 if [ -n "$LIVEKIT_NODE_IP" ]; then
-    NODE_IP_LINE="  node_ip: ${LIVEKIT_NODE_IP}"
+    RTC_EXTRA="  node_ip: ${LIVEKIT_NODE_IP}
+  use_external_ip: true"
 fi
 
 cat > /etc/livekit.yaml << EOF
@@ -18,8 +19,7 @@ rtc:
   port_range_start: 7882
   port_range_end: 7882
   tcp_port: 7881
-  use_external_ip: true
-${NODE_IP_LINE}
+${RTC_EXTRA}
 
 keys:
   ${LIVEKIT_API_KEY}: ${LIVEKIT_API_SECRET}
@@ -30,5 +30,9 @@ room:
 logging:
   level: info
 EOF
+
+echo "=== Generated livekit.yaml ==="
+cat /etc/livekit.yaml
+echo "==============================="
 
 exec /livekit-server --config /etc/livekit.yaml
