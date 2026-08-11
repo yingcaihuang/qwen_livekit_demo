@@ -50,10 +50,9 @@ services:
     volumes:
       - ./livekit-entrypoint.sh:/etc/livekit-entrypoint.sh:ro
     ports:
+      - "7880:7880"
       - "7881:7881"
       - "50000-50020:50000-50020/udp"
-    expose:
-      - "7880"
 
 volumes:
   caddy_data:
