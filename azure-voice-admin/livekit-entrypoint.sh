@@ -9,7 +9,8 @@ LIVEKIT_NODE_IP="${LIVEKIT_NODE_IP:-}"
 # Build node_ip line only if set (for WebRTC ICE candidates)
 RTC_EXTRA=""
 if [ -n "$LIVEKIT_NODE_IP" ]; then
-    RTC_EXTRA="  node_ip: ${LIVEKIT_NODE_IP}"
+    RTC_EXTRA="  node_ip: ${LIVEKIT_NODE_IP}
+  use_external_ip: true"
 fi
 
 cat > /etc/livekit.yaml << EOF
