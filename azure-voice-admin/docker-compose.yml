@@ -10,7 +10,7 @@ services:
       - "443:443/udp"
     environment:
       - SITE_DOMAIN=${SITE_DOMAIN:-:80}
-      - RTC_DOMAIN=${RTC_DOMAIN:-}
+      - RTC_DOMAIN=${RTC_DOMAIN:-localhost:9999}
     volumes:
       - caddy_data:/data
       - caddy_config:/config
