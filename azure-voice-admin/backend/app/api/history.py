@@ -105,12 +105,12 @@ def _build_union(
     parts: list[str] = []
     params: list = []
 
-    include_sessions = type_filter in (None, "voice", "chat")
+    include_sessions = type_filter in (None, "voice", "chat", "translate", "transcribe")
     include_image = type_filter in (None, "image")
 
     if include_sessions:
         clauses: list[str] = []
-        if type_filter in ("voice", "chat"):
+        if type_filter in ("voice", "chat", "translate", "transcribe"):
             clauses.append("i.type = ?")
             params.append(type_filter)
         if instance_id is not None:
@@ -175,7 +175,7 @@ async def list_history(
 
     # Guard against unrecognized type filters: return an empty page instead of
     # constructing a query with no sources (which would be invalid SQL).
-    if type is not None and type not in ("voice", "chat", "image"):
+    if type is not None and type not in ("voice", "chat", "image", "translate", "transcribe"):
         return PaginatedHistory(items=[], total=0, page=page, page_size=page_size)
 
     # Multi-tenant: restrict to user's own resources unless admin
