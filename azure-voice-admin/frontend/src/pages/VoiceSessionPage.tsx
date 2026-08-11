@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { VoiceRoom } from '@/components/session/VoiceRoom'
 import { DebugConsole } from '@/components/session/DebugConsole'
 import { useLiveKit } from '@/hooks/useLiveKit'
+import { useWebRTCStats } from '@/hooks/useWebRTCStats'
 import type { SessionResponse, Instance } from '@/types'
 
 const VOICE_OPTIONS = [
@@ -22,6 +23,7 @@ export function VoiceSessionPage() {
 
   const [instanceName, setInstanceName] = useState<string>('')
   const [sessionId, setSessionId] = useState<string | null>(null)
+  const [roomName, setRoomName] = useState<string>('')
   const [livekitToken, setLivekitToken] = useState('')
   const [livekitUrl, setLivekitUrl] = useState('')
   const [isStarting, setIsStarting] = useState(false)
@@ -44,11 +46,16 @@ export function VoiceSessionPage() {
       })
   }, [instanceId])
 
-  const { connectionState, connect, disconnect, isMicEnabled, toggleMic } = useLiveKit({
+  const { room, connectionState, connect, disconnect, isMicEnabled, toggleMic } = useLiveKit({
     token: livekitToken,
     url: livekitUrl,
     autoConnect: false,
   })
+
+  // Collect and report real WebRTC stats while session is active
+  const isConnected = connectionState === 'connecting' || connectionState === 'connected' ||
+    connectionState === 'agent_speaking' || connectionState === 'user_speaking'
+  useWebRTCStats(room, roomName, isConnected)
 
   const handleStartSession = useCallback(async () => {
     if (!instanceId) {
@@ -73,6 +80,7 @@ export function VoiceSessionPage() {
 
       const data = (await response.json()) as SessionResponse
       setSessionId(data.session_id)
+      setRoomName(data.room_name)
       setLivekitToken(data.livekit_token)
       setLivekitUrl(data.livekit_url)
 

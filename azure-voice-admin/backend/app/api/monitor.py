@@ -6,14 +6,62 @@ import re
 import socket
 import time
 from datetime import UTC, datetime
+from threading import Lock
+from typing import Any
 
 import aiosqlite
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Body, Depends
 
 from app.api.deps import CurrentUser, require_permission
 from app.database import get_db
 
 router = APIRouter(prefix="/api/admin/monitor", tags=["monitor"])
+internal_router = APIRouter(prefix="/internal/monitor", tags=["internal-monitor"])
+
+# ---------------------------------------------------------------------------
+# In-memory WebRTC stats store
+# Client-reported stats are stored here with a TTL. The /webrtc-stats endpoint
+# reads from this store to overlay real metrics on top of LiveKit RoomService data.
+# ---------------------------------------------------------------------------
+
+_STATS_TTL_SECONDS = 30  # Stats older than this are considered stale
+
+_webrtc_stats_store: dict[str, dict[str, Any]] = {}
+# Structure: { "<room_name>/<participant_identity>": { ...stats, "_updated_at": float } }
+_webrtc_stats_lock = Lock()
+
+
+def _store_participant_stats(room_name: str, identity: str, stats: dict[str, Any]) -> None:
+    """Store client-reported WebRTC stats for a participant."""
+    key = f"{room_name}/{identity}"
+    stats["_updated_at"] = time.time()
+    with _webrtc_stats_lock:
+        _webrtc_stats_store[key] = stats
+
+
+def _get_participant_stats(room_name: str, identity: str) -> dict[str, Any] | None:
+    """Get stored stats for a participant, or None if expired/missing."""
+    key = f"{room_name}/{identity}"
+    with _webrtc_stats_lock:
+        entry = _webrtc_stats_store.get(key)
+    if entry is None:
+        return None
+    if time.time() - entry.get("_updated_at", 0) > _STATS_TTL_SECONDS:
+        return None  # Stale
+    return entry
+
+
+def _cleanup_stale_stats() -> None:
+    """Remove expired entries from the store."""
+    now = time.time()
+    with _webrtc_stats_lock:
+        stale_keys = [
+            k
+            for k, v in _webrtc_stats_store.items()
+            if now - v.get("_updated_at", 0) > _STATS_TTL_SECONDS * 2
+        ]
+        for k in stale_keys:
+            del _webrtc_stats_store[k]
 
 
 def _get_livekit_api_url():
@@ -517,11 +565,11 @@ def _extract_track_stats(track_info) -> dict:
     }
 
 
-def _build_participant_stats(participant_info) -> dict:
+def _build_participant_stats(participant_info, room_name: str) -> dict:
     """Build participant stats dict from a LiveKit ParticipantInfo protobuf object.
 
-    ICE candidate type and connection state are not exposed via the RoomService
-    API (they are only available client-side). We report defaults.
+    Merges server-side track metadata with client-reported real-time stats
+    (packet loss, RTT, jitter, bitrate, ICE info) from the in-memory store.
     """
     tracks = []
     for track in participant_info.tracks:
@@ -534,10 +582,25 @@ def _build_participant_stats(participant_info) -> dict:
     state_map = {0: "joining", 1: "joined", 2: "active", 3: "disconnected"}
     state_val = participant_info.state if hasattr(participant_info, "state") else 0
 
+    identity = participant_info.identity
+    ice_candidate_type = "host"
+    ice_connection_state = state_map.get(state_val, "unknown")
+
+    # Overlay client-reported stats if available
+    client_stats = _get_participant_stats(room_name, identity)
+    if client_stats:
+        ice_candidate_type = client_stats.get("ice_candidate_type", ice_candidate_type)
+        ice_connection_state = client_stats.get("ice_connection_state", ice_connection_state)
+        # Merge track-level stats from client report
+        client_tracks = client_stats.get("tracks", [])
+        if client_tracks:
+            # Replace server-side placeholders with real client data
+            tracks = client_tracks
+
     return {
-        "identity": participant_info.identity,
-        "ice_candidate_type": "host",
-        "ice_connection_state": state_map.get(state_val, "unknown"),
+        "identity": identity,
+        "ice_candidate_type": ice_candidate_type,
+        "ice_connection_state": ice_connection_state,
         "tracks": tracks,
     }
 
@@ -546,9 +609,16 @@ def _build_participant_stats(participant_info) -> dict:
 async def webrtc_stats(
     user: CurrentUser = Depends(require_permission("audit:read")),
 ) -> dict:
-    """Return per-participant WebRTC track statistics grouped by room."""
+    """Return per-participant WebRTC track statistics grouped by room.
+
+    Combines LiveKit RoomService participant list with client-reported
+    real-time WebRTC stats (packet loss, RTT, jitter, bitrate, ICE info).
+    """
     api_key, api_secret = _get_livekit_credentials()
     timestamp = datetime.now(UTC).isoformat()
+
+    # Cleanup stale stats on each request
+    _cleanup_stale_stats()
 
     if not api_key or not api_secret:
         return {
@@ -578,7 +648,7 @@ async def webrtc_stats(
 
             participants_data = []
             for participant in participants_response.participants:
-                participants_data.append(_build_participant_stats(participant))
+                participants_data.append(_build_participant_stats(participant, room.name))
 
             rooms_data.append(
                 {
@@ -601,3 +671,52 @@ async def webrtc_stats(
             "error": f"LiveKit RoomService unavailable: {e}",
             "timestamp": timestamp,
         }
+
+
+# ---------------------------------------------------------------------------
+# Internal endpoint: client-reported WebRTC stats
+# (Called by browser frontend, authenticated via session cookie)
+# ---------------------------------------------------------------------------
+
+
+@internal_router.post("/webrtc-stats")
+async def report_webrtc_stats(
+    payload: dict = Body(...),
+) -> dict:
+    """Receive WebRTC stats reported by the browser client.
+
+    Expected payload:
+    {
+        "room_name": "session-abc123",
+        "identity": "user",
+        "ice_candidate_type": "srflx",
+        "ice_connection_state": "connected",
+        "tracks": [
+            {
+                "track_type": "audio",
+                "direction": "publish",
+                "packet_loss_ratio": 0.01,
+                "rtt_ms": 45.2,
+                "jitter_ms": 3.1,
+                "bitrate_kbps": 64.0
+            }
+        ]
+    }
+    """
+    room_name = payload.get("room_name", "")
+    identity = payload.get("identity", "")
+
+    if not room_name or not identity:
+        return {"status": "error", "message": "room_name and identity are required"}
+
+    _store_participant_stats(
+        room_name=room_name,
+        identity=identity,
+        stats={
+            "ice_candidate_type": payload.get("ice_candidate_type", "host"),
+            "ice_connection_state": payload.get("ice_connection_state", "unknown"),
+            "tracks": payload.get("tracks", []),
+        },
+    )
+
+    return {"status": "ok"}

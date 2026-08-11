@@ -342,6 +342,13 @@ try:
 except (ImportError, ModuleNotFoundError):
     pass
 
+try:
+    from app.api.monitor import internal_router as monitor_internal_router
+
+    app.include_router(monitor_internal_router)
+except (ImportError, ModuleNotFoundError):
+    pass
+
 # Register WebSocket endpoints if available
 try:
     from app.api.websockets import ws_session_logs
