@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SessionList } from '@/components/history/SessionList'
 import { HistoryFilter, type HistoryTypeFilter } from '@/components/history/HistoryFilter'
@@ -16,6 +16,7 @@ export function HistoryPage() {
   const [historyData, setHistoryData] = useState<PaginatedHistory | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   // Fetch instances for the filter dropdown.
   useEffect(() => {
@@ -29,6 +30,7 @@ export function HistoryPage() {
   const fetchHistory = useCallback(async () => {
     setLoading(true)
     setError(null)
+    setSelectedIds(new Set())
     try {
       const params = new URLSearchParams({
         page: String(page),
@@ -86,6 +88,39 @@ export function HistoryPage() {
     setPage(1)
   }
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const toggleAll = () => {
+    const items = historyData?.items ?? []
+    if (selectedIds.size === items.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(items.map(i => i.id)))
+    }
+  }
+
+  const handleBatchDelete = async () => {
+    if (selectedIds.size === 0) return
+    if (!confirm(`确定要删除选中的 ${selectedIds.size} 条记录吗？此操作不可撤销。`)) return
+
+    const items = historyData?.items ?? []
+    const promises = [...selectedIds].map(id => {
+      const item = items.find(i => i.id === id)
+      const url = item?.type === 'image' ? `/api/images/${id}` : `/api/sessions/${id}`
+      return fetch(url, { method: 'DELETE', credentials: 'include' })
+    })
+    await Promise.all(promises)
+    setSelectedIds(new Set())
+    fetchHistory()
+  }
+
   const totalPages = historyData ? Math.ceil(historyData.total / PAGE_SIZE) : 0
 
   if (error) {
@@ -119,6 +154,20 @@ export function HistoryPage() {
         onInstanceChange={handleInstanceChange}
       />
 
+      {/* Batch Actions */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-2">
+          <span className="text-sm font-medium">已选择 {selectedIds.size} 项</span>
+          <Button size="sm" variant="destructive" onClick={handleBatchDelete}>
+            <Trash2 className="h-4 w-4" />
+            批量删除
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>
+            取消选择
+          </Button>
+        </div>
+      )}
+
       {/* History List */}
       {loading ? (
         <div className="flex items-center justify-center p-12">
@@ -127,7 +176,13 @@ export function HistoryPage() {
           </div>
         </div>
       ) : (
-        <SessionList items={historyData?.items ?? []} onDelete={handleDelete} />
+        <SessionList
+          items={historyData?.items ?? []}
+          onDelete={handleDelete}
+          selectedIds={selectedIds}
+          onToggleSelect={toggleSelect}
+          onToggleAll={toggleAll}
+        />
       )}
 
       {/* Pagination Controls */}

@@ -8,6 +8,8 @@ import type { HistoryItem } from '@/types'
 interface HistoryRowProps {
   item: HistoryItem
   onDelete: (item: HistoryItem) => void
+  selected?: boolean
+  onToggleSelect?: () => void
 }
 
 interface StatusStyle {
@@ -105,7 +107,7 @@ function detailPath(item: HistoryItem): string {
   }
 }
 
-export function SessionRow({ item, onDelete }: HistoryRowProps) {
+export function SessionRow({ item, onDelete, selected, onToggleSelect }: HistoryRowProps) {
   const navigate = useNavigate()
   const status = getStatusStyle(item.status)
   const totalTokens = item.input_tokens + item.output_tokens
@@ -115,6 +117,18 @@ export function SessionRow({ item, onDelete }: HistoryRowProps) {
       className="cursor-pointer transition-colors hover:bg-muted/40"
       onClick={() => navigate(detailPath(item))}
     >
+      <td className="px-4 py-3">
+        {onToggleSelect && (
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={(e) => { e.stopPropagation(); onToggleSelect() }}
+            onClick={(e) => e.stopPropagation()}
+            className="h-4 w-4 rounded border-gray-300"
+            aria-label={`选择 ${item.title || item.id}`}
+          />
+        )}
+      </td>
       <td className="px-4 py-3">
         <TypeBadge type={item.type} />
       </td>
