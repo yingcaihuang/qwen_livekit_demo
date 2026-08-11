@@ -10,6 +10,7 @@ services:
       - "443:443/udp"
     environment:
       - SITE_DOMAIN=${SITE_DOMAIN:-:80}
+      - RTC_DOMAIN=${RTC_DOMAIN:-}
     volumes:
       - caddy_data:/data
       - caddy_config:/config
@@ -45,9 +46,10 @@ services:
     volumes:
       - ./livekit.yaml:/etc/livekit.yaml:ro
     ports:
-      - "7880:7880"
       - "7881:7881"
       - "7882:7882/udp"
+    expose:
+      - "7880"
 
 volumes:
   caddy_data:

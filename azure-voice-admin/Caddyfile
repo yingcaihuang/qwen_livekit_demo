@@ -17,3 +17,7 @@
 		file_server
 	}
 }
+
+{$RTC_DOMAIN} {
+	reverse_proxy livekit:7880
+}
