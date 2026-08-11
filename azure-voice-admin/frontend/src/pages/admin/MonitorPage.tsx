@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import { Activity, Wifi, WifiOff, Server, Globe, RefreshCw, Circle, Zap } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -74,10 +75,17 @@ export function MonitorPage() {
           </h1>
           <p className="text-sm text-muted-foreground">LiveKit 连接状态、网络链路和活跃会话监控</p>
         </div>
-        <Button variant="outline" onClick={fetchAll} disabled={refreshing}>
-          <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
-          {refreshing ? '刷新中' : '刷新'}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Link to="/admin/monitor/udp">
+            <Button variant="outline" size="sm">
+              UDP/WebRTC 监控 →
+            </Button>
+          </Link>
+          <Button variant="outline" onClick={fetchAll} disabled={refreshing}>
+            <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
+            {refreshing ? '刷新中' : '刷新'}
+          </Button>
+        </div>
       </div>
 
       {/* Status Cards */}

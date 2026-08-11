@@ -20,6 +20,7 @@ import { GroupMappingsPage } from '@/pages/admin/GroupMappingsPage'
 import { SsoConfigPage } from '@/pages/admin/SsoConfigPage'
 import { AuditPage } from '@/pages/admin/AuditPage'
 import { MonitorPage } from '@/pages/admin/MonitorPage'
+import { UdpMonitorPage } from '@/pages/admin/UdpMonitorPage'
 import { Toaster } from '@/components/ui/toast'
 
 function App() {
@@ -50,6 +51,7 @@ function App() {
           <Route path="/admin/group-mappings" element={<ProtectedRoute capability="role:manage"><AppShell><GroupMappingsPage /></AppShell></ProtectedRoute>} />
           <Route path="/admin/sso" element={<ProtectedRoute capability="sso:manage"><AppShell><SsoConfigPage /></AppShell></ProtectedRoute>} />
           <Route path="/admin/audit" element={<ProtectedRoute capability="audit:read"><AppShell><AuditPage /></AppShell></ProtectedRoute>} />
+          <Route path="/admin/monitor/udp" element={<ProtectedRoute capability="audit:read"><AppShell><UdpMonitorPage /></AppShell></ProtectedRoute>} />
           <Route path="/admin/monitor" element={<ProtectedRoute capability="audit:read"><AppShell><MonitorPage /></AppShell></ProtectedRoute>} />
         </Routes>
         <Toaster />
