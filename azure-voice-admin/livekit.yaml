@@ -1,3 +1,6 @@
+# LiveKit Server Configuration
+# In Docker deployment, this file is auto-generated from environment variables.
+# For local development without Docker, edit keys below manually.
 port: 7880
 rtc:
   port_range_start: 7882

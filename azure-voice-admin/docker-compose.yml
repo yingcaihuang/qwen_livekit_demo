@@ -42,9 +42,12 @@ services:
   livekit:
     image: livekit/livekit-server:latest
     restart: unless-stopped
-    command: --config /etc/livekit.yaml
+    entrypoint: ["/bin/sh", "/etc/livekit-entrypoint.sh"]
+    environment:
+      - LIVEKIT_API_KEY=${LIVEKIT_API_KEY:-APIKeyForVoiceAdmin}
+      - LIVEKIT_API_SECRET=${LIVEKIT_API_SECRET:-ThisIsASecretThatIsAtLeast32CharsLong!}
     volumes:
-      - ./livekit.yaml:/etc/livekit.yaml:ro
+      - ./livekit-entrypoint.sh:/etc/livekit-entrypoint.sh:ro
     ports:
       - "7881:7881"
       - "7882:7882/udp"
