@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useState } from 'react'
-import { ChevronLeft, ChevronRight, Search, Filter } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Search, Filter, RefreshCw, Copy, Check } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -46,18 +46,23 @@ export function AuditPage() {
   const [pathFilter, setPathFilter] = useState('')
   const [methodFilter, setMethodFilter] = useState('')
   const [expandedId, setExpandedId] = useState<number | null>(null)
+  const [refreshing, setRefreshing] = useState(false)
+  const [ipFilter, setIpFilter] = useState('')
+  const [copiedId, setCopiedId] = useState<number | null>(null)
 
   const fetchLogs = (p: number) => {
     setLoading(true)
+    setRefreshing(true)
     const params = new URLSearchParams({ page: String(p), page_size: '50' })
     if (pathFilter) params.set('path_contains', pathFilter)
     if (methodFilter) params.set('method', methodFilter)
+    if (ipFilter) params.set('ip', ipFilter)
 
     fetch(`/api/admin/audit?${params}`, { credentials: 'include' })
       .then(r => r.json())
       .then(setData)
       .catch(() => {})
-      .finally(() => setLoading(false))
+      .finally(() => { setLoading(false); setRefreshing(false) })
   }
 
   useEffect(() => { fetchLogs(page) }, [page])
@@ -79,8 +84,8 @@ export function AuditPage() {
 
       {/* Filters */}
       <Card>
-        <CardContent className="flex items-center gap-3 py-3">
-          <div className="flex items-center gap-2 flex-1">
+        <CardContent className="flex flex-wrap items-center gap-3 py-3">
+          <div className="flex items-center gap-2 flex-1 min-w-[200px]">
             <Search className="h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="按路径筛选（如 /api/instances）"
@@ -90,6 +95,13 @@ export function AuditPage() {
               className="h-8 max-w-xs"
             />
           </div>
+          <Input
+            placeholder="按 IP 筛选"
+            value={ipFilter}
+            onChange={e => setIpFilter(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSearch()}
+            className="h-8 w-36"
+          />
           <select
             value={methodFilter}
             onChange={e => setMethodFilter(e.target.value)}
@@ -105,6 +117,10 @@ export function AuditPage() {
           <Button size="sm" onClick={handleSearch}>
             <Filter className="h-3.5 w-3.5" />
             筛选
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => fetchLogs(page)} disabled={refreshing}>
+            <RefreshCw className={cn("h-3.5 w-3.5", refreshing && "animate-spin")} />
+            {refreshing ? '刷新中' : '刷新'}
           </Button>
           <span className="text-xs text-muted-foreground">共 {data?.total ?? 0} 条</span>
         </CardContent>
@@ -161,7 +177,24 @@ export function AuditPage() {
                       {expandedId === log.id && log.request_body && (
                         <tr className="bg-muted/20">
                           <td colSpan={7} className="px-6 py-3">
-                            <p className="text-xs font-medium text-muted-foreground mb-1">请求体：</p>
+                            <div className="flex items-center justify-between mb-1">
+                              <p className="text-xs font-medium text-muted-foreground">请求体：</p>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 gap-1 text-xs"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  const text = (() => { try { return JSON.stringify(JSON.parse(log.request_body!), null, 2) } catch { return log.request_body! } })()
+                                  navigator.clipboard.writeText(text)
+                                  setCopiedId(log.id)
+                                  setTimeout(() => setCopiedId(null), 2000)
+                                }}
+                              >
+                                {copiedId === log.id ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
+                                {copiedId === log.id ? '已复制' : '复制'}
+                              </Button>
+                            </div>
                             <pre className="text-xs bg-background rounded p-2 border overflow-x-auto max-h-40">
                               {(() => { try { return JSON.stringify(JSON.parse(log.request_body), null, 2) } catch { return log.request_body } })()}
                             </pre>

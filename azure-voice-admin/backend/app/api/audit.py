@@ -16,6 +16,7 @@ async def list_audit_logs(
     user_id: str | None = Query(default=None),
     method: str | None = Query(default=None),
     path_contains: str | None = Query(default=None),
+    ip: str | None = Query(default=None),
     user: CurrentUser = Depends(require_permission("audit:read")),
     db: aiosqlite.Connection = Depends(get_db),
 ):
@@ -32,6 +33,9 @@ async def list_audit_logs(
     if path_contains:
         conditions.append("path LIKE ?")
         params.append(f"%{path_contains}%")
+    if ip:
+        conditions.append("ip_address LIKE ?")
+        params.append(f"%{ip}%")
 
     where = ""
     if conditions:
