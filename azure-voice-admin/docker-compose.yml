@@ -46,6 +46,7 @@ services:
     environment:
       - LIVEKIT_API_KEY=${LIVEKIT_API_KEY:-APIKeyForVoiceAdmin}
       - LIVEKIT_API_SECRET=${LIVEKIT_API_SECRET:-ThisIsASecretThatIsAtLeast32CharsLong!}
+      - LIVEKIT_NODE_IP=${LIVEKIT_NODE_IP:-}
     volumes:
       - ./livekit-entrypoint.sh:/etc/livekit-entrypoint.sh:ro
     ports:

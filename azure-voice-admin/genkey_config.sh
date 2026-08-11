@@ -54,6 +54,22 @@ if [ "$mode" = "2" ]; then
 
     LIVEKIT_PUBLIC_URL="wss://${RTC_DOMAIN}"
 
+    # Get node IP (auto-detect or manual)
+    echo ""
+    echo "正在检测服务器公网 IP..."
+    AUTO_IP=$(curl -s --max-time 5 ifconfig.me 2>/dev/null || curl -s --max-time 5 ip.sb 2>/dev/null || echo "")
+    if [ -n "$AUTO_IP" ]; then
+        echo "检测到公网 IP: $AUTO_IP"
+        read -p "使用此 IP？(Y/n): " use_auto
+        if [ "$use_auto" = "n" ] || [ "$use_auto" = "N" ]; then
+            read -p "请输入服务器公网 IP: " LIVEKIT_NODE_IP
+        else
+            LIVEKIT_NODE_IP="$AUTO_IP"
+        fi
+    else
+        read -p "无法自动检测，请输入服务器公网 IP: " LIVEKIT_NODE_IP
+    fi
+
     echo ""
     echo "🌐 域名配置："
     echo "   主站: https://${SITE_DOMAIN}"
@@ -91,6 +107,10 @@ EOF
 # Add RTC_DOMAIN only for production mode
 if [ -n "$RTC_DOMAIN" ]; then
     echo "RTC_DOMAIN=${RTC_DOMAIN}" >> .env.production
+fi
+
+if [ -n "$LIVEKIT_NODE_IP" ]; then
+    echo "LIVEKIT_NODE_IP=${LIVEKIT_NODE_IP}" >> .env.production
 fi
 
 echo ""

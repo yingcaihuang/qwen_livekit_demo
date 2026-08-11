@@ -4,6 +4,13 @@
 
 LIVEKIT_API_KEY="${LIVEKIT_API_KEY:-APIKeyForVoiceAdmin}"
 LIVEKIT_API_SECRET="${LIVEKIT_API_SECRET:-ThisIsASecretThatIsAtLeast32CharsLong!}"
+LIVEKIT_NODE_IP="${LIVEKIT_NODE_IP:-}"
+
+# Build node_ip line only if set
+NODE_IP_LINE=""
+if [ -n "$LIVEKIT_NODE_IP" ]; then
+    NODE_IP_LINE="  node_ip: ${LIVEKIT_NODE_IP}"
+fi
 
 cat > /etc/livekit.yaml << EOF
 port: 7880
@@ -11,6 +18,8 @@ rtc:
   port_range_start: 7882
   port_range_end: 7882
   tcp_port: 7881
+  use_external_ip: true
+${NODE_IP_LINE}
 
 keys:
   ${LIVEKIT_API_KEY}: ${LIVEKIT_API_SECRET}
