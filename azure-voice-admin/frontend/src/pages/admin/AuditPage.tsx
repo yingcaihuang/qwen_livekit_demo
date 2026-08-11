@@ -198,6 +198,14 @@ export function AuditPage() {
                             <pre className="text-xs bg-background rounded p-2 border overflow-x-auto max-h-40">
                               {(() => { try { return JSON.stringify(JSON.parse(log.request_body), null, 2) } catch { return log.request_body } })()}
                             </pre>
+                            {log.detail && (
+                              <div className="mt-2">
+                                <p className="text-xs font-medium text-muted-foreground mb-1">关联资源：</p>
+                                <p className="text-xs bg-background rounded p-2 border">
+                                  {(() => { try { const d = JSON.parse(log.detail); return d.instances?.join(', ') || log.detail } catch { return log.detail } })()}
+                                </p>
+                              </div>
+                            )}
                           </td>
                         </tr>
                       )}

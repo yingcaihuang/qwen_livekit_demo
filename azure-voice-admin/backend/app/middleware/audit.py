@@ -95,13 +95,44 @@ class AuditMiddleware(BaseHTTPMiddleware):
         if not ip_address:
             ip_address = request.client.host if request.client else None
 
+        # Enrich: resolve instance_ids to names for better audit readability
+        detail = None
+        if body_str and "instance_id" in body_str:
+            try:
+                body_data = json.loads(body_str)
+                ids_to_resolve = []
+                if isinstance(body_data, dict):
+                    # Single instance_id
+                    if "instance_id" in body_data and isinstance(body_data["instance_id"], str):
+                        ids_to_resolve.append(body_data["instance_id"])
+                    # List of instance_ids
+                    if "instance_ids" in body_data and isinstance(body_data["instance_ids"], list):
+                        ids_to_resolve.extend(body_data["instance_ids"])
+
+                if ids_to_resolve:
+                    async with aiosqlite.connect(DB_PATH) as resolve_db:
+                        placeholders = ",".join("?" for _ in ids_to_resolve)
+                        cursor = await resolve_db.execute(
+                            f"SELECT id, name FROM instances WHERE id IN ({placeholders})",
+                            ids_to_resolve,
+                        )
+                        rows = await cursor.fetchall()
+                        if rows:
+                            names = {r[0]: r[1] for r in rows}
+                            detail = json.dumps(
+                                {"instances": [names.get(i, i) for i in ids_to_resolve]},
+                                ensure_ascii=False,
+                            )
+            except Exception:
+                pass
+
         # Write audit log asynchronously (best-effort, don't block response)
         try:
             async with aiosqlite.connect(DB_PATH) as db:
                 await db.execute(
                     """
-                    INSERT INTO audit_logs (user_id, username, method, path, status_code, ip_address, user_agent, request_body, duration_ms)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO audit_logs (user_id, username, method, path, status_code, ip_address, user_agent, request_body, duration_ms, detail)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         user_id,
@@ -113,6 +144,7 @@ class AuditMiddleware(BaseHTTPMiddleware):
                         request.headers.get("user-agent", "")[:500],
                         _redact_body(body_str) if body_str else None,
                         duration_ms,
+                        detail,
                     ),
                 )
                 await db.commit()
