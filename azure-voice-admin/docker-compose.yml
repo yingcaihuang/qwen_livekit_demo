@@ -36,7 +36,6 @@ services:
       - AUTH_SECRET_KEY=6_0Edc3WKFaGWyYPO18HsbUGv-I22PqXwa7vB6Hp80M=
     volumes:
       - ./data:/app/data
-      - /proc/net/udp:/host/proc/net/udp:ro
     depends_on:
       - livekit
 

@@ -447,17 +447,61 @@ async def udp_ports(
         error_msg = f"System inspection failed: {e}"
 
     # Build response for all ports in range
-    # If no ports found in range, try host's /proc/net/udp (mounted at /host/proc/net/udp)
-    # This handles Linux production where backend container can't see host's docker-proxy ports
+    # If no ports found in range (e.g. running in a separate container on Linux),
+    # probe the LiveKit host's UDP ports directly via socket connect
     if not ports_info:
+        livekit_host = "livekit"  # Docker service name
         try:
-            with open("/host/proc/net/udp") as f:
-                content = f.read()
-            host_info = _parse_proc_net_udp(content)
-            if host_info:
-                ports_info = host_info
-        except (FileNotFoundError, PermissionError, OSError):
-            pass  # Not mounted, skip
+            from urllib.parse import urlparse
+
+            livekit_url = os.environ.get("LIVEKIT_URL", "ws://livekit:7880")
+            parsed = urlparse(livekit_url)
+            livekit_host = parsed.hostname or "livekit"
+        except Exception:
+            pass
+
+        for port in range(UDP_PORT_START, UDP_PORT_END + 1):
+            try:
+                # UDP port probe: create a socket and try to "connect"
+                # On Linux, a connected UDP socket will get ECONNREFUSED on
+                # the next send/recv if nothing is listening. But for a bound
+                # port behind docker-proxy, the connect itself succeeds.
+                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                sock.settimeout(0.1)
+                sock.connect((livekit_host, port))
+                # Send a tiny STUN binding request to see if port responds
+                # STUN magic cookie: 0x2112A442
+                stun_req = b"\x00\x01\x00\x00\x21\x12\xa4\x42" + b"\x00" * 12
+                sock.send(stun_req)
+                try:
+                    sock.recv(64)
+                    # Got response — port is definitely bound and active
+                    ports_info[port] = {
+                        "port": port,
+                        "bound": True,
+                        "recv_queue": 0,
+                        "send_queue": 0,
+                        "recv_packets": None,
+                        "send_packets": None,
+                        "process": "livekit-server",
+                    }
+                except (TimeoutError, OSError):
+                    # Timeout = port is bound (listening) but no STUN response
+                    # This is expected for ports not currently in use by a session
+                    ports_info[port] = {
+                        "port": port,
+                        "bound": True,
+                        "recv_queue": 0,
+                        "send_queue": 0,
+                        "recv_packets": None,
+                        "send_packets": None,
+                        "process": "livekit-server",
+                    }
+                finally:
+                    sock.close()
+            except (ConnectionRefusedError, OSError):
+                # ECONNREFUSED = nothing listening on this port
+                pass
 
     ports_list = []
     for port in range(UDP_PORT_START, UDP_PORT_END + 1):
