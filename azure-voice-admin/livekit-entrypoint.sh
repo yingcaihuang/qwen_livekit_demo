@@ -6,11 +6,10 @@ LIVEKIT_API_KEY="${LIVEKIT_API_KEY:-APIKeyForVoiceAdmin}"
 LIVEKIT_API_SECRET="${LIVEKIT_API_SECRET:-ThisIsASecretThatIsAtLeast32CharsLong!}"
 LIVEKIT_NODE_IP="${LIVEKIT_NODE_IP:-}"
 
-# Build RTC config lines based on whether node_ip is provided
+# Build node_ip line only if set (for WebRTC ICE candidates)
 RTC_EXTRA=""
 if [ -n "$LIVEKIT_NODE_IP" ]; then
-    RTC_EXTRA="  node_ip: ${LIVEKIT_NODE_IP}
-  use_external_ip: true"
+    RTC_EXTRA="  node_ip: ${LIVEKIT_NODE_IP}"
 fi
 
 cat > /etc/livekit.yaml << EOF
