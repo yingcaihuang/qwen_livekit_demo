@@ -15,8 +15,8 @@ fi
 cat > /etc/livekit.yaml << EOF
 port: 7880
 rtc:
-  port_range_start: 7882
-  port_range_end: 7882
+  port_range_start: 50000
+  port_range_end: 50020
   tcp_port: 7881
 ${RTC_EXTRA}
 

@@ -51,7 +51,7 @@ services:
       - ./livekit-entrypoint.sh:/etc/livekit-entrypoint.sh:ro
     ports:
       - "7881:7881"
-      - "7882:7882/udp"
+      - "50000-50020:50000-50020/udp"
     expose:
       - "7880"
 
