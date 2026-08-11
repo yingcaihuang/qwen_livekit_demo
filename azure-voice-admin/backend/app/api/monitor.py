@@ -447,6 +447,18 @@ async def udp_ports(
         error_msg = f"System inspection failed: {e}"
 
     # Build response for all ports in range
+    # If no ports found in range, try host's /proc/net/udp (mounted at /host/proc/net/udp)
+    # This handles Linux production where backend container can't see host's docker-proxy ports
+    if not ports_info:
+        try:
+            with open("/host/proc/net/udp") as f:
+                content = f.read()
+            host_info = _parse_proc_net_udp(content)
+            if host_info:
+                ports_info = host_info
+        except (FileNotFoundError, PermissionError, OSError):
+            pass  # Not mounted, skip
+
     ports_list = []
     for port in range(UDP_PORT_START, UDP_PORT_END + 1):
         if port in ports_info:
