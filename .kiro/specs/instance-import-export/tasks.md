@@ -1,0 +1,147 @@
+# Implementation Plan
+
+- [x] 1. Write bug condition exploration test
+  - **Property 1: Bug Condition** - 导入/导出端点缺失
+  - **CRITICAL**: This test MUST FAIL on unfixed code - failure confirms the bug exists
+  - **DO NOT attempt to fix the test or the code when it fails**
+  - **NOTE**: This test encodes the expected behavior - it will validate the fix when it passes after implementation
+  - **GOAL**: Surface counterexamples that demonstrate the bug exists (no export/import endpoints)
+  - **Scoped PBT Approach**: Scope the property to concrete failing cases — POST /api/instances/export and POST /api/instances/import should return 200 with valid payloads but currently return 404/405
+  - Create test file `backend/tests/test_instance_import_export_bug.py` following existing test patterns (ASGITransport, AsyncClient, tmp_path DB fixture)
+  - Test that POST /api/instances/export with `{"instance_ids": [...], "include_api_key": false}` returns 200 with a valid JSON array (Bug Condition: system.hasNoExportEndpoint())
+  - Test that POST /api/instances/import with `{"instances": [...], "conflict_strategy": "skip"}` returns 200 with created/updated/skipped/errors fields (Bug Condition: system.hasNoImportEndpoint())
+  - Test that export with `include_api_key=false` does NOT include api_key in response
+  - Test that export with `include_api_key=true` includes plaintext api_key in response
+  - Test that import with conflict_strategy="skip" skips existing same-name instances
+  - Test that import with conflict_strategy="update" overwrites existing same-name instances
+  - Run tests on UNFIXED code
+  - **EXPECTED OUTCOME**: Tests FAIL (returns 404/405 instead of 200 — this proves the bug exists)
+  - Document counterexamples: "POST /api/instances/export returns 404 Not Found", "POST /api/instances/import returns 404 Not Found"
+  - Mark task complete when tests are written, run, and failure is documented
+  - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
+
+- [x] 2. Write preservation property tests (BEFORE implementing fix)
+  - **Property 2: Preservation** - 现有 CRUD 和列表功能不变
+  - **IMPORTANT**: Follow observation-first methodology
+  - Create test file `backend/tests/test_instance_preservation_props.py` following existing test patterns
+  - Observe: POST /api/instances with valid data returns 201 with complete instance on unfixed code
+  - Observe: GET /api/instances returns list of instances with correct structure on unfixed code
+  - Observe: GET /api/instances?type=voice filters correctly on unfixed code
+  - Observe: PUT /api/instances/{id} with partial update returns updated instance on unfixed code
+  - Observe: DELETE /api/instances/{id} returns 204 on unfixed code
+  - Write property-based tests using hypothesis:
+    - For all valid InstanceCreate payloads (generated name, endpoint, api_key, deployment, type), POST /api/instances returns 201 and the response contains all submitted fields
+    - For all created instances, GET /api/instances returns them in the list with InstanceSummary fields (no api_key exposed)
+    - For all valid type values ("voice", "chat", "image", "translate", "transcribe"), GET /api/instances?type={t} returns only instances of that type
+    - For all valid partial updates, PUT /api/instances/{id} applies only the provided fields
+    - For all existing instances without active sessions, DELETE /api/instances/{id} returns 204
+  - Verify all property tests pass on UNFIXED code
+  - **EXPECTED OUTCOME**: Tests PASS (confirms baseline behavior to preserve)
+  - Mark task complete when tests are written, run, and passing on unfixed code
+  - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
+
+- [x] 3. Implement instance import/export feature
+
+  - [x] 3.1 Add Pydantic models for import/export
+    - Add `ExportRequest` model to `backend/app/models/instance.py` with fields: `instance_ids: list[str]`, `include_api_key: bool = False`
+    - Add `ImportInstanceItem` model with fields: `name: str`, `endpoint: str`, `api_key: str = ""`, `deployment: str`, `type: InstanceType`, `description: str = ""`
+    - Add `ImportRequest` model with fields: `instances: list[ImportInstanceItem]`, `conflict_strategy: Literal["skip", "update"] = "skip"`
+    - Add `ImportResult` model with fields: `created: int`, `updated: int`, `skipped: int`, `errors: list[str]`
+    - _Bug_Condition: isBugCondition(input) where system.hasNoExportEndpoint() AND system.hasNoImportEndpoint()_
+    - _Expected_Behavior: Models enable typed request/response for import/export endpoints_
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7_
+
+  - [x] 3.2 Implement export_instances service method
+    - Add `export_instances(db, instance_ids, include_api_key, user)` method to `InstanceService` in `backend/app/services/instance_service.py`
+    - Query instances by IDs with multi-tenant check (user.id or resource:read:all permission)
+    - Return list of instance dicts containing name, endpoint, deployment, type, description
+    - If `include_api_key=True`, include plaintext api_key; otherwise exclude or set to empty string
+    - Handle case where instance_ids contains non-existent or unauthorized IDs (skip them)
+    - _Bug_Condition: isBugCondition(input) where input.action == "export" AND input.targetInstances.length >= 1_
+    - _Expected_Behavior: Returns JSON array of instance configurations respecting include_api_key flag_
+    - _Preservation: Existing list_instances, get_instance methods unchanged_
+    - _Requirements: 2.1, 2.2, 2.3_
+
+  - [x] 3.3 Implement import_instances service method
+    - Add `import_instances(db, instances, conflict_strategy, user)` method to `InstanceService` in `backend/app/services/instance_service.py`
+    - For each instance in the list: validate required fields (name, endpoint, deployment, type)
+    - Check if instance name already exists for the user
+    - If exists and strategy="skip": increment skipped counter
+    - If exists and strategy="update": execute UPDATE, increment updated counter
+    - If not exists: execute INSERT with created_by=user.id, increment created counter
+    - Collect validation errors (missing fields, invalid type) into errors list
+    - Return ImportResult with created/updated/skipped/errors counts
+    - Use partial success mode (single record errors don't abort others)
+    - _Bug_Condition: isBugCondition(input) where input.action == "import" AND input.jsonPayload IS valid JSON array_
+    - _Expected_Behavior: Batch creates/updates instances with conflict handling, returns ImportResult_
+    - _Preservation: Existing create_instance, update_instance methods unchanged_
+    - _Requirements: 2.4, 2.5, 2.6, 2.7_
+
+  - [x] 3.4 Add export and import API routes
+    - Add `POST /api/instances/export` route to `backend/app/api/instances.py`
+    - Require `instance:read` permission via `require_permission("instance:read")`
+    - Accept `ExportRequest` body, call `_service.export_instances()`, return JSON array
+    - Add `POST /api/instances/import` route to `backend/app/api/instances.py`
+    - Require `instance:write` permission via `require_permission("instance:write")`
+    - Accept `ImportRequest` body, call `_service.import_instances()`, return `ImportResult`
+    - Ensure new routes are registered BEFORE `/{instance_id}` path parameter routes to avoid conflicts
+    - _Bug_Condition: isBugCondition(input) — endpoints must exist and return proper responses_
+    - _Expected_Behavior: Export returns 200 with JSON array; Import returns 200 with ImportResult_
+    - _Preservation: Existing GET/POST/PUT/DELETE routes unchanged_
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7_
+
+  - [x] 3.5 Create ExportDialog frontend component
+    - Create `azure-voice-admin/frontend/src/components/instances/ExportDialog.tsx`
+    - Props: `open: boolean`, `onClose: () => void`, `instances: InstanceSummary[]` (selected instances)
+    - Render MUI Dialog with instance checklist (default all selected)
+    - Add "包含 API Key" Switch toggle (default off)
+    - On confirm: call POST /api/instances/export with selected IDs and include_api_key flag
+    - Download response as `instances-export-{YYYY-MM-DD}.json` via Blob + URL.createObjectURL
+    - Show loading state during export, error snackbar on failure
+    - _Requirements: 2.1, 2.2, 2.3_
+
+  - [x] 3.6 Create ImportDialog frontend component
+    - Create `azure-voice-admin/frontend/src/components/instances/ImportDialog.tsx`
+    - Props: `open: boolean`, `onClose: () => void`, `onSuccess: () => void`
+    - Step 1: File input accepting `.json` files, parse and validate JSON structure
+    - Step 2: Preview table showing parsed instances (name, type, endpoint) with checkboxes (default all selected)
+    - Step 3: For instances missing api_key, show inline TextField for user to fill in
+    - Conflict strategy RadioGroup: "跳过同名实例" / "更新同名实例" (default skip)
+    - On confirm: call POST /api/instances/import with selected instances and conflict_strategy
+    - Show result summary dialog (created/updated/skipped/errors counts)
+    - Show validation errors for invalid JSON format (requirement 2.7)
+    - _Requirements: 2.4, 2.5, 2.6, 2.7_
+
+  - [x] 3.7 Integrate import/export buttons into InstancesPage
+    - Add "导出" button (Download icon) next to existing "新建实例" button in `InstancesPage.tsx`
+    - Export button enabled only when instances are selected (tied to existing selection state)
+    - Add "导入" button (Upload icon) next to export button, always enabled
+    - Wire ExportDialog: open on export click, pass selected instances
+    - Wire ImportDialog: open on import click, refresh instance list on success
+    - _Preservation: Existing "新建实例" button, batch delete, view toggle all unchanged_
+    - _Requirements: 2.1, 2.4_
+
+  - [x] 3.8 Verify bug condition exploration test now passes
+    - **Property 1: Expected Behavior** - 导入/导出端点可用
+    - **IMPORTANT**: Re-run the SAME test from task 1 - do NOT write a new test
+    - The test from task 1 encodes the expected behavior for export/import endpoints
+    - When this test passes, it confirms the expected behavior is satisfied
+    - Run `pytest backend/tests/test_instance_import_export_bug.py -v`
+    - **EXPECTED OUTCOME**: Tests PASS (confirms export returns 200 with valid data, import returns 200 with ImportResult)
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7_
+
+  - [x] 3.9 Verify preservation tests still pass
+    - **Property 2: Preservation** - 现有 CRUD 和列表功能不变
+    - **IMPORTANT**: Re-run the SAME tests from task 2 - do NOT write new tests
+    - Run `pytest backend/tests/test_instance_preservation_props.py -v`
+    - **EXPECTED OUTCOME**: Tests PASS (confirms no regressions in existing CRUD/filter/delete functionality)
+    - Confirm all preservation property tests still pass after adding import/export feature
+    - Also run existing test suite: `pytest backend/tests/test_instances_api.py -v` to confirm no regressions
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
+
+- [x] 4. Checkpoint - Ensure all tests pass
+  - Run full backend test suite: `pytest backend/tests/ -v`
+  - Ensure all property tests pass (bug condition + preservation)
+  - Ensure all existing tests pass (no regressions)
+  - Verify frontend builds without errors: check TypeScript compilation
+  - Ask the user if questions arise

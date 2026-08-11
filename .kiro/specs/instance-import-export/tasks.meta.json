@@ -1,0 +1,176 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1. Write bug condition exploration test": [
+      {
+        "executionId": "45f85428-70a8-45d2-95e1-03bb5e0b4a56",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786353981580
+      },
+      {
+        "executionId": "45f85428-70a8-45d2-95e1-03bb5e0b4a56",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786353990186
+      }
+    ],
+    "2. Write preservation property tests (BEFORE implementing fix)": [
+      {
+        "executionId": "45f85428-70a8-45d2-95e1-03bb5e0b4a56",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786353981601
+      },
+      {
+        "executionId": "45f85428-70a8-45d2-95e1-03bb5e0b4a56",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786353990938
+      }
+    ],
+    "3.1 Add Pydantic models for import/export": [
+      {
+        "executionId": "45f85428-70a8-45d2-95e1-03bb5e0b4a56",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786353981621
+      },
+      {
+        "executionId": "45f85428-70a8-45d2-95e1-03bb5e0b4a56",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786354003543
+      },
+      {
+        "executionId": "45f85428-70a8-45d2-95e1-03bb5e0b4a56",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786354162678
+      }
+    ],
+    "3.2 Implement export_instances service method": [
+      {
+        "executionId": "45f85428-70a8-45d2-95e1-03bb5e0b4a56",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786353981639
+      },
+      {
+        "executionId": "45f85428-70a8-45d2-95e1-03bb5e0b4a56",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786354163466
+      }
+    ],
+    "3.3 Implement import_instances service method": [
+      {
+        "executionId": "45f85428-70a8-45d2-95e1-03bb5e0b4a56",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786353981663
+      },
+      {
+        "executionId": "45f85428-70a8-45d2-95e1-03bb5e0b4a56",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786354164255
+      }
+    ],
+    "3.4 Add export and import API routes": [
+      {
+        "executionId": "45f85428-70a8-45d2-95e1-03bb5e0b4a56",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786353981680
+      },
+      {
+        "executionId": "45f85428-70a8-45d2-95e1-03bb5e0b4a56",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786354165192
+      }
+    ],
+    "3.5 Create ExportDialog frontend component": [
+      {
+        "executionId": "45f85428-70a8-45d2-95e1-03bb5e0b4a56",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786353981695
+      },
+      {
+        "executionId": "45f85428-70a8-45d2-95e1-03bb5e0b4a56",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786354173234
+      },
+      {
+        "executionId": "45f85428-70a8-45d2-95e1-03bb5e0b4a56",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786354403905
+      }
+    ],
+    "3.6 Create ImportDialog frontend component": [
+      {
+        "executionId": "45f85428-70a8-45d2-95e1-03bb5e0b4a56",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786353981712
+      },
+      {
+        "executionId": "45f85428-70a8-45d2-95e1-03bb5e0b4a56",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786354174051
+      },
+      {
+        "executionId": "45f85428-70a8-45d2-95e1-03bb5e0b4a56",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786354404587
+      }
+    ],
+    "3.7 Integrate import/export buttons into InstancesPage": [
+      {
+        "executionId": "45f85428-70a8-45d2-95e1-03bb5e0b4a56",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786353981729
+      },
+      {
+        "executionId": "45f85428-70a8-45d2-95e1-03bb5e0b4a56",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786354175078
+      },
+      {
+        "executionId": "45f85428-70a8-45d2-95e1-03bb5e0b4a56",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786354405592
+      }
+    ],
+    "3.8 Verify bug condition exploration test now passes": [
+      {
+        "executionId": "45f85428-70a8-45d2-95e1-03bb5e0b4a56",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786353981747
+      },
+      {
+        "executionId": "45f85428-70a8-45d2-95e1-03bb5e0b4a56",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786354406764
+      }
+    ],
+    "3.9 Verify preservation tests still pass": [
+      {
+        "executionId": "45f85428-70a8-45d2-95e1-03bb5e0b4a56",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786353981771
+      },
+      {
+        "executionId": "45f85428-70a8-45d2-95e1-03bb5e0b4a56",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786354407736
+      }
+    ],
+    "4. Checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "45f85428-70a8-45d2-95e1-03bb5e0b4a56",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786353981788
+      },
+      {
+        "executionId": "45f85428-70a8-45d2-95e1-03bb5e0b4a56",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786354408690
+      }
+    ],
+    "3. Implement instance import/export feature": [
+      {
+        "executionId": "45f85428-70a8-45d2-95e1-03bb5e0b4a56",
+        "chatSessionId": "sess_c8fcd8ab-462e-4607-885e-13f88c74fb1b",
+        "timestamp": 1786354407756
+      }
+    ]
+  }
+}

@@ -335,6 +335,13 @@ try:
 except (ImportError, ModuleNotFoundError):
     pass
 
+try:
+    from app.api.monitor import router as monitor_router
+
+    app.include_router(monitor_router)
+except (ImportError, ModuleNotFoundError):
+    pass
+
 # Register WebSocket endpoints if available
 try:
     from app.api.websockets import ws_session_logs
