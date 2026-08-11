@@ -23,7 +23,11 @@ SENSITIVE_FIELDS = {"password", "api_key", "client_secret", "secret", "token", "
 
 
 def _redact_body(body_str: str, max_length: int = 2000) -> str:
-    """Redact sensitive fields and truncate body for storage."""
+    """Redact sensitive fields and truncate body for storage.
+
+    Only redacts fields whose value is a string (actual secrets).
+    Boolean flags like 'include_api_key' are preserved.
+    """
     if not body_str:
         return ""
     try:
@@ -31,7 +35,9 @@ def _redact_body(body_str: str, max_length: int = 2000) -> str:
         if isinstance(data, dict):
             for key in list(data.keys()):
                 if any(s in key.lower() for s in SENSITIVE_FIELDS):
-                    data[key] = "***REDACTED***"
+                    # Only redact string values (actual secrets), preserve booleans/numbers/lists
+                    if isinstance(data[key], str) and data[key]:
+                        data[key] = "***REDACTED***"
         result = json.dumps(data, ensure_ascii=False)
     except (json.JSONDecodeError, TypeError):
         result = body_str
