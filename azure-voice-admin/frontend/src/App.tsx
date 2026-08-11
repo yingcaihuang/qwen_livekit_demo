@@ -18,6 +18,7 @@ import { ChangePasswordPage } from '@/pages/ChangePasswordPage'
 import { UsersPage } from '@/pages/admin/UsersPage'
 import { GroupMappingsPage } from '@/pages/admin/GroupMappingsPage'
 import { SsoConfigPage } from '@/pages/admin/SsoConfigPage'
+import { AuditPage } from '@/pages/admin/AuditPage'
 import { Toaster } from '@/components/ui/toast'
 
 function App() {
@@ -47,6 +48,7 @@ function App() {
           <Route path="/admin/users" element={<ProtectedRoute capability="user:manage"><AppShell><UsersPage /></AppShell></ProtectedRoute>} />
           <Route path="/admin/group-mappings" element={<ProtectedRoute capability="role:manage"><AppShell><GroupMappingsPage /></AppShell></ProtectedRoute>} />
           <Route path="/admin/sso" element={<ProtectedRoute capability="sso:manage"><AppShell><SsoConfigPage /></AppShell></ProtectedRoute>} />
+          <Route path="/admin/audit" element={<ProtectedRoute capability="audit:read"><AppShell><AuditPage /></AppShell></ProtectedRoute>} />
         </Routes>
         <Toaster />
       </AuthProvider>

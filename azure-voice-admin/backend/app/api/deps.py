@@ -79,7 +79,7 @@ async def get_current_user(
     role_rows = await cursor.fetchall()
     roles = {row[0] for row in role_rows}
     caps = capabilities_for(roles)
-    return CurrentUser(
+    user_obj = CurrentUser(
         id=user_row[0],
         username=user_row[1],
         roles=roles,
@@ -87,6 +87,9 @@ async def get_current_user(
         must_change_password=bool(user_row[3]),
         auth_source=user_row[4] or "local",
     )
+    # Store on request state so that audit middleware can access user info
+    request.state.user = user_obj
+    return user_obj
 
 
 def require_permission(capability: str):

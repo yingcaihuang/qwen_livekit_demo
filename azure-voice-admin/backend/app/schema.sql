@@ -190,3 +190,26 @@ CREATE TABLE IF NOT EXISTS saml_login_state (
     relay_state TEXT,                       -- 登录后跳转路径
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- ============================================================
+-- 审计日志表
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    timestamp TEXT NOT NULL DEFAULT (datetime('now')),
+    user_id TEXT,                          -- 操作者 ID（未登录为 NULL）
+    username TEXT,                         -- 操作者用户名（冗余存储方便查询）
+    method TEXT NOT NULL,                  -- HTTP 方法 (GET/POST/PUT/DELETE/PATCH)
+    path TEXT NOT NULL,                    -- 请求路径
+    status_code INTEGER,                   -- 响应状态码
+    ip_address TEXT,                       -- 客户端 IP
+    user_agent TEXT,                       -- User-Agent
+    request_body TEXT,                     -- 请求体摘要（敏感字段脱敏）
+    duration_ms INTEGER,                   -- 请求耗时毫秒
+    detail TEXT                            -- 额外业务详情（JSON）
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON audit_logs(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON audit_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_path ON audit_logs(path);

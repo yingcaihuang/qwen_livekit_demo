@@ -16,6 +16,7 @@ CAPABILITIES = frozenset(
         "user:manage",
         "role:manage",
         "sso:manage",
+        "audit:read",
     }
 )
 

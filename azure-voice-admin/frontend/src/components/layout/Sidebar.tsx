@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Server, History, Users, Shield, Settings, LogOut, KeyRound } from 'lucide-react'
+import { LayoutDashboard, Server, History, Users, Shield, Settings, LogOut, KeyRound, ScrollText } from 'lucide-react'
 import { useAuth } from '@/components/auth/AuthProvider'
 
 interface NavItem {
@@ -19,6 +19,7 @@ const adminItems: NavItem[] = [
   { label: '用户管理', path: '/admin/users', icon: Users, capability: 'user:manage' },
   { label: '组映射', path: '/admin/group-mappings', icon: Shield, capability: 'role:manage' },
   { label: 'SSO 配置', path: '/admin/sso', icon: Settings, capability: 'sso:manage' },
+  { label: '审计日志', path: '/admin/audit', icon: ScrollText, capability: 'audit:read' },
 ]
 
 export function Sidebar() {

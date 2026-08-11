@@ -205,6 +205,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Audit logging middleware — records all API requests for compliance
+from app.middleware.audit import AuditMiddleware  # noqa: E402
+
+app.add_middleware(AuditMiddleware)
+
 # Static directory for frontend production build
 static_dir = Path(__file__).parent.parent / "static"
 
@@ -320,6 +325,13 @@ try:
     from app.api.scim import router as scim_router
 
     app.include_router(scim_router)
+except (ImportError, ModuleNotFoundError):
+    pass
+
+try:
+    from app.api.audit import router as audit_router
+
+    app.include_router(audit_router)
 except (ImportError, ModuleNotFoundError):
     pass
 
